@@ -2,7 +2,7 @@
 const { Router } = require('express');
 const validate = require('../../middlewares/validate');
 const { authenticate, authorizeRole } = require('../../middlewares/auth');
-const { listReportsSchema } = require('./admin-reports.schema');
+const { listReportsSchema, updateReportSchema } = require('./admin-reports.schema');
 const adminReportsController = require('./admin-reports.controller');
 
 const router = Router();
@@ -12,5 +12,6 @@ router.use(authenticate, authorizeRole('admin'));
 
 router.get('/', validate(listReportsSchema, 'query'), adminReportsController.listReports);
 router.get('/:id', adminReportsController.getReport);
+router.patch('/:id', validate(updateReportSchema), adminReportsController.updateReport);
 
 module.exports = router;

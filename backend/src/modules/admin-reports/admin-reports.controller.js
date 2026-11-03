@@ -10,4 +10,9 @@ async function getReport(req, res) {
   res.status(200).json({ report });
 }
 
-module.exports = { listReports, getReport };
+async function updateReport(req, res) {
+  const report = await adminReportsService.updateReport(req.params.id, req.user.id, req.body);
+  res.status(200).json({ report });
+}
+
+module.exports = { listReports, getReport, updateReport };
