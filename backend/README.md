@@ -183,9 +183,103 @@ base URL they already use: if `image_url` starts with `http`, use it as is; othe
 the API base URL (e.g. `http://192.168.1.10:3000` + `image_url`). This keeps working if storage later
 moves to the cloud and returns absolute URLs.
 
+## Admin API — `/api/admin`
+
+Every admin endpoint requires `Authorization: Bearer <token>` of an **active admin**: no token → `401`,
+any other role → `403`. Unknown or malformed ids → `404`. List endpoints use the same pagination as
+`/api/reports/me` (`page`, `limit` 1–50) and return `{ <items>, pagination: { page, limit, total } }`.
+
+### List reports — `GET /api/admin/reports`
+
+All reports, newest first, each with `reporter_name` and `reporter_email`.
+
+| Query parameter | Description |
+|---|---|
+| `status` | `pending`, `in_progress`, `completed` or `rejected` |
+| `category` | `organic`, `paper` or `plastic` |
+| `from`, `to` | Dates `YYYY-MM-DD` (Asia/Jakarta); `to` is inclusive and must not be before `from` |
+| `q` | Case-insensitive search in `description` and `address` (`%` and `_` are matched literally) |
+| `page`, `limit` | Pagination |
+
+```bash
+curl "http://localhost:3000/api/admin/reports?status=pending&from=2026-11-01&q=bus%20stop" -H "Authorization: Bearer <admin token>"
+```
+
+### Report detail — `GET /api/admin/reports/:id`
+
+`200 { report }` with the reporter (`user_id`, `reporter_name`, `reporter_email`) and the full
+`status_history`, including who made each change (`changed_by`, `changed_by_name`).
+
+### Update a report — `PATCH /api/admin/reports/:id`
+
+JSON body with at least one of:
+
+| Field | Description |
+|---|---|
+| `status` | New status — only the allowed transitions below |
+| `category` | Corrected category (`organic`, `paper`, `plastic`). `ai_predicted_category` is never changed, so the original AI result is kept. |
+| `admin_note` | Note for the report (1–1000 characters). **Required when rejecting.** |
+
+Status transitions (enforced by the backend):
+
+```
+pending      → in_progress | rejected
+in_progress  → completed   | rejected
+completed, rejected → final (no more changes of any kind)
+```
+
+- A status change writes a `report_status_history` row (`changed_by` = the admin, `note` = `admin_note`)
+  in the same transaction as the update.
+- Category or note changes without a status change are allowed on `pending` and `in_progress` reports
+  and do not add a history row.
+- Returns `200 { report }` (same shape as the detail endpoint).
+
+| Status | When |
+|---|---|
+| `400` | Empty body, invalid values, or `status: "rejected"` without `admin_note` |
+| `409` | Invalid or same-status transition (`details` lists the allowed statuses), or the report is already `completed`/`rejected` |
+
+```json
+{ "error": { "message": "Cannot change status from pending to completed", "details": [{ "field": "status", "message": "Allowed: in_progress, rejected" }] } }
+```
+
+### Dashboard stats — `GET /api/admin/stats`
+
+```json
+{
+  "totals": {
+    "reports": 12,
+    "by_status": { "pending": 5, "in_progress": 3, "completed": 3, "rejected": 1 },
+    "by_category": { "organic": 4, "paper": 3, "plastic": 5 }
+  },
+  "reports_per_day": [{ "date": "2026-10-05", "count": 0 }, "… 30 days, oldest first, today last …"],
+  "ai_accuracy": { "reviewed": 6, "matching": 5, "accuracy": 0.8333 }
+}
+```
+
+- `reports_per_day`: the last 30 days including today, counted in **Asia/Jakarta**; days without
+  reports have `count: 0`.
+- `ai_accuracy`: over reports with status `in_progress` or `completed` that have an AI prediction —
+  `matching` is how many still have `category == ai_predicted_category` (i.e. the admin did not
+  correct it). `accuracy` = `matching / reviewed` (4 decimals), or `null` when `reviewed` is 0.
+
+### List users — `GET /api/admin/users`
+
+Users newest first with `id`, `full_name`, `email`, `role`, `is_active`, `created_at`, `updated_at` and
+`report_count` (never the password hash). Filters: `role` (`admin`/`user`), `is_active`
+(`true`/`false`), `q` (search in name and email), `page`, `limit`.
+
+### Activate / deactivate a user — `PATCH /api/admin/users/:id`
+
+Body: `{ "is_active": false }` (a JSON boolean). Returns `200 { user }`. A deactivated user's token
+stops working immediately (`403 Account is deactivated`). An admin cannot deactivate their own
+account (`400`).
+
 ## Tests
 
 `npm test` uses Node's built-in test runner against the real database: tests create temporary
-users and reports and delete them afterwards. **No ML server is needed** — the tests start a fake
-ML API (`tests/helpers/fake-ml-api.js`) to cover success, ML errors, invalid responses, timeouts
-and the ML API being down.
+users and reports and delete them afterwards, and never assume the database is empty (the stats
+tests compare before/after counts). Test files run **one at a time** (`--test-concurrency=1`) so
+that tests in different files cannot change each other's data mid-test. **No ML server is needed** —
+the tests start a fake ML API (`tests/helpers/fake-ml-api.js`) to cover success, ML errors, invalid
+responses, timeouts and the ML API being down.
