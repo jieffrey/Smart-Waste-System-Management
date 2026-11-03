@@ -1,7 +1,7 @@
 const HttpError = require('../utils/http-error');
 
 function notFound(req, res) {
-  res.status(404).json({ error: { message: 'Route not found' } });
+  res.status(404).json({ error: { message: 'Route not found', details: null } });
 }
 
 // eslint-disable-next-line no-unused-vars
