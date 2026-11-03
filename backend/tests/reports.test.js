@@ -194,7 +194,9 @@ test('rejects a file that is not a JPEG, PNG or WebP with 415', async () => {
   const res = await createReport({ image: Buffer.from('this is not an image') });
 
   assert.equal(res.status, 415);
-  assert.equal(res.body.error.message, 'Unsupported file type. Upload a JPEG, PNG or WebP image');
+  assert.deepEqual(res.body, {
+    error: { message: 'Unsupported file type. Upload a JPEG, PNG or WebP image', details: null },
+  });
   assert.equal(fakeMl.state.requests.length, 0);
 });
 
@@ -203,7 +205,7 @@ test('rejects an image larger than 5 MB with 413', async () => {
   const res = await createReport({ image: tooBig });
 
   assert.equal(res.status, 413);
-  assert.equal(res.body.error.message, 'Image must be 5 MB or smaller');
+  assert.deepEqual(res.body, { error: { message: 'Image must be 5 MB or smaller', details: null } });
   assert.equal(fakeMl.state.requests.length, 0);
 });
 
@@ -221,6 +223,7 @@ test('rejects a request without a token with 401', async () => {
   const res = await createReport({ token: null });
 
   assert.equal(res.status, 401);
+  assert.deepEqual(res.body, { error: { message: 'Authentication required', details: null } });
 });
 
 test('rejects an admin with 403 (only role "user" can create reports)', async () => {

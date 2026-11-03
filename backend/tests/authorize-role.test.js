@@ -121,11 +121,13 @@ test('user token is rejected with 403, even when the body or headers claim admin
     headers: { 'X-User-Role': 'admin', 'X-Role': 'admin' },
   });
   assert.equal(res.status, 403);
-  assert.equal(res.body.error.message, 'You do not have permission to perform this action');
+  assert.deepEqual(res.body, {
+    error: { message: 'You do not have permission to perform this action', details: null },
+  });
 });
 
 test('request without a token is rejected with 401', async () => {
   const res = await postAdminArea(null, { body: { role: 'admin' } });
   assert.equal(res.status, 401);
-  assert.equal(res.body.error.message, 'Authentication required');
+  assert.deepEqual(res.body, { error: { message: 'Authentication required', details: null } });
 });
