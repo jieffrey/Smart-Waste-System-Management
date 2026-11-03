@@ -12,6 +12,21 @@ npm ci
 cp .env.example .env   # then fill in the real values (never commit .env)
 ```
 
+### Database schema
+
+The full schema — tables `users`, `waste_reports`, `report_status_history`, their constraints,
+indexes and `updated_at` triggers — is in [`db/schema.sql`](db/schema.sql). It matches the live
+database (generated from it with `pg_dump --schema-only`). To set up a **new, empty** database
+(PostgreSQL 13+, e.g. a new Neon database or branch):
+
+```bash
+psql "<connection string>" -v ON_ERROR_STOP=1 -f db/schema.sql
+npm run db:check   # confirms the connection and that the 3 tables exist
+```
+
+The file runs in one transaction, so if anything fails nothing is created. It does not drop or
+change existing tables — don't run it against a database that already has the schema.
+
 ### Environment variables
 
 | Variable | Required | Description |
