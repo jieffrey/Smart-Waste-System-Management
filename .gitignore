@@ -1,0 +1,16 @@
+# Monorepo-wide ignore rules.
+# App-specific rules live in each app's own .gitignore (web/, Mobile/).
+
+# Environment files (secrets) — keep templates only
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Python virtual environments and caches (ml/)
+.venv/
+venv/
+__pycache__/
+*.py[cod]

@@ -1,5 +1,11 @@
 {
+  "scripts": {
+    "dev": "node --watch --env-file-if-exists=.env src/index.js",
+    "start": "node src/index.js",
+    "db:check": "node --env-file-if-exists=.env scripts/db-check.js"
+  },
   "dependencies": {
-    "express": "^5.3.0"
+    "express": "^5.3.0",
+    "pg": "^8.23.1"
   }
 }
