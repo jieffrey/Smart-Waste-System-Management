@@ -3,6 +3,7 @@ const healthRoutes = require('./modules/health/health.routes');
 const authRoutes = require('./modules/auth/auth.routes');
 const reportRoutes = require('./modules/reports/reports.routes');
 const adminReportRoutes = require('./modules/admin-reports/admin-reports.routes');
+const statsRoutes = require('./modules/stats/stats.routes');
 const { UPLOAD_URL_PREFIX, serveImages } = require('./modules/uploads/uploads.service');
 const { notFound, errorHandler } = require('./middlewares/error-handler');
 
@@ -15,6 +16,7 @@ app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/admin/reports', adminReportRoutes);
+app.use('/api/admin/stats', statsRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
