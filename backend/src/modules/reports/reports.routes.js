@@ -25,4 +25,7 @@ router.get(
   reportsController.listMyReports
 );
 
+// Defined after '/me' so that '/me' is not treated as an id. Owner or admin only (checked in the service).
+router.get('/:id', authenticate, reportsController.getReport);
+
 module.exports = router;

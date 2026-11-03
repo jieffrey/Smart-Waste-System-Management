@@ -47,4 +47,7 @@ const listMyReportsSchema = z.object({
     .optional(),
 });
 
-module.exports = { createReportSchema, listMyReportsSchema, REPORT_STATUSES };
+// Report ids are UUIDs. A malformed id is treated like an unknown one (404), not as a validation error.
+const reportIdSchema = z.uuid();
+
+module.exports = { createReportSchema, listMyReportsSchema, reportIdSchema, REPORT_STATUSES };

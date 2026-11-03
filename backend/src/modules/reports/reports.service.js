@@ -1,6 +1,8 @@
 const { pool, query } = require('../../db/pool');
 const { classifyImage } = require('../ml/ml.service');
 const { saveImage, deleteImage } = require('../uploads/uploads.service');
+const HttpError = require('../../utils/http-error');
+const { reportIdSchema } = require('./reports.schema');
 
 // NUMERIC columns are cast to float8 so they are returned as JSON numbers, not strings.
 const REPORT_COLUMNS = `id, user_id, description, category, status, image_url,
@@ -79,4 +81,34 @@ async function listUserReports(userId, { page, limit, status }) {
   return { reports: rows, pagination: { page, limit, total: countResult.rows[0].total } };
 }
 
-module.exports = { createReport, listUserReports };
+// One report with its status history. Only the owner or an admin can see it; everyone else gets 404
+// (not 403), so report ids cannot be probed.
+async function getReportForViewer(reportId, viewer) {
+  if (!reportIdSchema.safeParse(reportId).success) {
+    throw new HttpError(404, 'Report not found');
+  }
+
+  const { rows } = await query(
+    `SELECT ${REPORT_COLUMNS}
+     FROM waste_reports
+     WHERE id = $1 AND (user_id = $2 OR $3 = 'admin')`,
+    [reportId, viewer.id, viewer.role]
+  );
+  const report = rows[0];
+  if (!report) {
+    throw new HttpError(404, 'Report not found');
+  }
+
+  // changed_by is left out on purpose: users don't need to see which admin changed the status.
+  const history = await query(
+    `SELECT old_status, new_status, note, created_at
+     FROM report_status_history
+     WHERE report_id = $1
+     ORDER BY created_at ASC, id ASC`,
+    [reportId]
+  );
+
+  return { ...report, status_history: history.rows };
+}
+
+module.exports = { createReport, listUserReports, getReportForViewer };

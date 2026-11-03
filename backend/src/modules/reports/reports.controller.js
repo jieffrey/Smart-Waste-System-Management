@@ -10,4 +10,9 @@ async function listMyReports(req, res) {
   res.status(200).json({ reports, pagination });
 }
 
-module.exports = { createReport, listMyReports };
+async function getReport(req, res) {
+  const report = await reportsService.getReportForViewer(req.params.id, req.user);
+  res.status(200).json({ report });
+}
+
+module.exports = { createReport, listMyReports, getReport };
