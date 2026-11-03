@@ -1,4 +1,4 @@
-const { pool } = require('../../db/pool');
+const { pool, query } = require('../../db/pool');
 const { classifyImage } = require('../ml/ml.service');
 const { saveImage, deleteImage } = require('../uploads/uploads.service');
 
@@ -56,4 +56,27 @@ async function createReport(userId, { description, latitude, longitude, address 
   }
 }
 
-module.exports = { createReport };
+// A user's own reports, newest first. `status` is optional (null = all statuses).
+async function listUserReports(userId, { page, limit, status }) {
+  const statusFilter = status || null;
+
+  const countResult = await query(
+    `SELECT COUNT(*)::int AS total
+     FROM waste_reports
+     WHERE user_id = $1 AND ($2::text IS NULL OR status = $2)`,
+    [userId, statusFilter]
+  );
+
+  const { rows } = await query(
+    `SELECT ${REPORT_COLUMNS}
+     FROM waste_reports
+     WHERE user_id = $1 AND ($2::text IS NULL OR status = $2)
+     ORDER BY created_at DESC, id DESC
+     LIMIT $3 OFFSET $4`,
+    [userId, statusFilter, limit, (page - 1) * limit]
+  );
+
+  return { reports: rows, pagination: { page, limit, total: countResult.rows[0].total } };
+}
+
+module.exports = { createReport, listUserReports };

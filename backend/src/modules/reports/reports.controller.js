@@ -5,4 +5,9 @@ async function createReport(req, res) {
   res.status(201).json({ report });
 }
 
-module.exports = { createReport };
+async function listMyReports(req, res) {
+  const { reports, pagination } = await reportsService.listUserReports(req.user.id, req.validatedQuery);
+  res.status(200).json({ reports, pagination });
+}
+
+module.exports = { createReport, listMyReports };
