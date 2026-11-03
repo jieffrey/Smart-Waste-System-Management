@@ -1,4 +1,5 @@
 const { z } = require('zod');
+const { paginationFields } = require('../../utils/pagination');
 
 // Multipart form fields always arrive as text, so coordinates are converted to numbers here.
 function coordinate(name, min, max) {
@@ -28,26 +29,28 @@ const createReportSchema = z.object({
 });
 
 const REPORT_STATUSES = ['pending', 'in_progress', 'completed', 'rejected'];
+const REPORT_CATEGORIES = ['organic', 'paper', 'plastic'];
+
+const statusField = z.enum(REPORT_STATUSES, { error: `Status must be one of: ${REPORT_STATUSES.join(', ')}` });
+const categoryField = z.enum(REPORT_CATEGORIES, {
+  error: `Category must be one of: ${REPORT_CATEGORIES.join(', ')}`,
+});
 
 // Query string for GET /api/reports/me (all values arrive as text).
 const listMyReportsSchema = z.object({
-  page: z.coerce
-    .number({ error: 'Page must be a number' })
-    .int('Page must be a whole number')
-    .min(1, 'Page must be at least 1')
-    .default(1),
-  limit: z.coerce
-    .number({ error: 'Limit must be a number' })
-    .int('Limit must be a whole number')
-    .min(1, 'Limit must be between 1 and 50')
-    .max(50, 'Limit must be between 1 and 50')
-    .default(20),
-  status: z
-    .enum(REPORT_STATUSES, { error: `Status must be one of: ${REPORT_STATUSES.join(', ')}` })
-    .optional(),
+  ...paginationFields,
+  status: statusField.optional(),
 });
 
 // Report ids are UUIDs. A malformed id is treated like an unknown one (404), not as a validation error.
 const reportIdSchema = z.uuid();
 
-module.exports = { createReportSchema, listMyReportsSchema, reportIdSchema, REPORT_STATUSES };
+module.exports = {
+  createReportSchema,
+  listMyReportsSchema,
+  reportIdSchema,
+  statusField,
+  categoryField,
+  REPORT_STATUSES,
+  REPORT_CATEGORIES,
+};
