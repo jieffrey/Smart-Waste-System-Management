@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Mobile",
+    "name": "SWMS",
     "slug": "Mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -31,6 +31,21 @@
           "backgroundColor": "#208AEF",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to use the camera to take a photo of the waste you report.",
+          "photosPermission": "Allow $(PRODUCT_NAME) to use your photos to attach a picture of the waste you report.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location to record where the waste is."
         }
       ]
     ],
