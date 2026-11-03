@@ -1,4 +1,4 @@
-// Integration tests for reading reports: GET /api/reports/me
+// Integration tests for reading reports: GET /api/reports/me and GET /api/reports/:id
 // Uses the real database: creates temporary users and reports (inserted directly, no ML) and deletes them afterwards.
 
 const { test, before, after } = require('node:test');
@@ -18,6 +18,7 @@ let ownerId;
 let otherId;
 let ownerToken;
 let otherToken;
+let adminId;
 let adminToken;
 const ownerReports = {}; // status -> report id
 
@@ -62,13 +63,23 @@ before(async () => {
 
   await postJson('/api/auth/register', { full_name: 'Test Admin', email: adminEmail, password });
   await query("UPDATE users SET role = 'admin' WHERE email = $1", [adminEmail]);
-  adminToken = (await postJson('/api/auth/login', { email: adminEmail, password })).token;
+  const admin = await postJson('/api/auth/login', { email: adminEmail, password });
+  adminId = admin.user.id;
+  adminToken = admin.token;
 
   // Owner: 3 reports, oldest first. Other user: 1 report that must never appear in the owner's list.
   ownerReports.pending = await insertReport(ownerId, 'pending', 3);
   ownerReports.in_progress = await insertReport(ownerId, 'in_progress', 2);
   ownerReports.completed = await insertReport(ownerId, 'completed', 1);
   await insertReport(otherId, 'pending', 0);
+
+  // Status history for the in-progress report: created by the owner, then moved on by an admin.
+  await query(
+    `INSERT INTO report_status_history (report_id, old_status, new_status, changed_by, note, created_at)
+     VALUES ($1, NULL, 'pending', $2, NULL, NOW() - interval '2 hours'),
+            ($1, 'pending', 'in_progress', $3, 'Cleanup team assigned', NOW() - interval '1 hour')`,
+    [ownerReports.in_progress, ownerId, adminId]
+  );
 });
 
 after(async () => {
@@ -138,4 +149,72 @@ test('rejects an admin with 403', async () => {
   const res = await get('/api/reports/me', adminToken);
 
   assert.equal(res.status, 403);
+});
+
+// ---- GET /api/reports/:id ----
+
+const NOT_FOUND = { error: { message: 'Report not found', details: null } };
+
+test('the owner gets the report with its status history (oldest first, without changed_by)', async () => {
+  const res = await get(`/api/reports/${ownerReports.in_progress}`, ownerToken);
+
+  assert.equal(res.status, 200);
+  const { report } = res.body;
+  assert.equal(report.id, ownerReports.in_progress);
+  assert.equal(report.user_id, ownerId);
+  assert.equal(report.status, 'in_progress');
+  assert.equal(report.longitude, 106.816666);
+
+  assert.deepEqual(
+    report.status_history.map(({ old_status, new_status, note }) => ({ old_status, new_status, note })),
+    [
+      { old_status: null, new_status: 'pending', note: null },
+      { old_status: 'pending', new_status: 'in_progress', note: 'Cleanup team assigned' },
+    ]
+  );
+  for (const entry of report.status_history) {
+    assert.deepEqual(Object.keys(entry).sort(), ['created_at', 'new_status', 'note', 'old_status']);
+  }
+});
+
+test('a report without history returns an empty status_history', async () => {
+  const res = await get(`/api/reports/${ownerReports.completed}`, ownerToken);
+
+  assert.equal(res.status, 200);
+  assert.deepEqual(res.body.report.status_history, []);
+});
+
+test('an admin can view any report', async () => {
+  const res = await get(`/api/reports/${ownerReports.in_progress}`, adminToken);
+
+  assert.equal(res.status, 200);
+  assert.equal(res.body.report.id, ownerReports.in_progress);
+  assert.equal(res.body.report.status_history.length, 2);
+});
+
+test('another user gets 404 (not 403), so report ids cannot be probed', async () => {
+  const res = await get(`/api/reports/${ownerReports.in_progress}`, otherToken);
+
+  assert.equal(res.status, 404);
+  assert.deepEqual(res.body, NOT_FOUND);
+});
+
+test('an unknown report id returns 404', async () => {
+  const res = await get('/api/reports/00000000-0000-4000-8000-000000000000', ownerToken);
+
+  assert.equal(res.status, 404);
+  assert.deepEqual(res.body, NOT_FOUND);
+});
+
+test('a malformed report id returns 404', async () => {
+  const res = await get('/api/reports/not-a-uuid', ownerToken);
+
+  assert.equal(res.status, 404);
+  assert.deepEqual(res.body, NOT_FOUND);
+});
+
+test('viewing a report without a token returns 401', async () => {
+  const res = await get(`/api/reports/${ownerReports.in_progress}`);
+
+  assert.equal(res.status, 401);
 });
