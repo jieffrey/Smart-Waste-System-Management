@@ -19,4 +19,9 @@ module.exports = {
   mlApiUrl: process.env.ML_API_URL ? process.env.ML_API_URL.replace(/\/+$/, '') : null,
   mlApiKey: process.env.ML_API_KEY || null,
   mlApiTimeoutMs: Number(process.env.ML_API_TIMEOUT_MS) || 30_000,
+  // Browser origins allowed to call the API (comma-separated). Empty = no CORS headers (same-origin only).
+  webOrigins: (process.env.WEB_ORIGIN || '')
+    .split(',')
+    .map((origin) => origin.trim().replace(/\/+$/, ''))
+    .filter(Boolean),
 };
