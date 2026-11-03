@@ -11,5 +11,6 @@ const router = Router();
 router.use(authenticate, authorizeRole('admin'));
 
 router.get('/', validate(listReportsSchema, 'query'), adminReportsController.listReports);
+router.get('/:id', adminReportsController.getReport);
 
 module.exports = router;

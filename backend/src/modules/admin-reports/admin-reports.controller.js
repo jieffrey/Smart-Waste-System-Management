@@ -5,4 +5,9 @@ async function listReports(req, res) {
   res.status(200).json({ reports, pagination });
 }
 
-module.exports = { listReports };
+async function getReport(req, res) {
+  const report = await adminReportsService.getReport(req.params.id);
+  res.status(200).json({ report });
+}
+
+module.exports = { listReports, getReport };

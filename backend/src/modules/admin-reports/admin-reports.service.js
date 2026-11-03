@@ -1,6 +1,8 @@
 const { query } = require('../../db/pool');
 const { TIME_ZONE } = require('../../config/constants');
 const { likePattern } = require('../../utils/like-pattern');
+const HttpError = require('../../utils/http-error');
+const { reportIdSchema } = require('../reports/reports.schema');
 
 // Same report columns as reports.service.js (prefixed with r.), plus the reporter's name and email.
 const ADMIN_REPORT_COLUMNS = `r.id, r.user_id, r.description, r.category, r.status, r.image_url,
@@ -35,4 +37,34 @@ async function listReports({ page, limit, status, category, from, to, q }) {
   return { reports: rows, pagination: { page, limit, total: countResult.rows[0].total } };
 }
 
-module.exports = { listReports };
+// One report with its reporter and full status history (including who made each change).
+async function getReport(reportId) {
+  if (!reportIdSchema.safeParse(reportId).success) {
+    throw new HttpError(404, 'Report not found');
+  }
+
+  const { rows } = await query(
+    `SELECT ${ADMIN_REPORT_COLUMNS}
+     FROM waste_reports r
+     JOIN users u ON u.id = r.user_id
+     WHERE r.id = $1`,
+    [reportId]
+  );
+  const report = rows[0];
+  if (!report) {
+    throw new HttpError(404, 'Report not found');
+  }
+
+  const history = await query(
+    `SELECT h.old_status, h.new_status, h.note, h.created_at, h.changed_by, cu.full_name AS changed_by_name
+     FROM report_status_history h
+     JOIN users cu ON cu.id = h.changed_by
+     WHERE h.report_id = $1
+     ORDER BY h.created_at ASC, h.id ASC`,
+    [reportId]
+  );
+
+  return { ...report, status_history: history.rows };
+}
+
+module.exports = { listReports, getReport };
