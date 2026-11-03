@@ -48,6 +48,21 @@ function buildQueryString(query?: Record<string, QueryValue>) {
   return parts.length > 0 ? `?${parts.join('&')}` : '';
 }
 
+// Turns an error thrown by fetch (no response received) into a message for the user.
+// - our own timeout aborted the request
+// - a real network failure: expo/fetch throws "fetch failed: ...", React Native's fetch a TypeError
+// - anything else happened in the app before sending (e.g. a request body fetch can't send)
+function describeRequestError(error: unknown, timedOut: boolean) {
+  if (timedOut) {
+    return 'The server took too long to respond. Please try again.';
+  }
+  const message = error instanceof Error ? error.message : '';
+  if (error instanceof TypeError || /^fetch failed/i.test(message) || /network request failed/i.test(message)) {
+    return "Can't reach the server. Check your internet connection and the API address.";
+  }
+  return "Couldn't send the request. Please try again.";
+}
+
 export async function apiRequest<T>(path: string, { method = 'GET', query, body, formData }: RequestOptions = {}) {
   if (!API_URL) {
     throw new ApiError(0, 'The API address is not set. Add EXPO_PUBLIC_API_URL to Mobile/.env and restart Expo.');
@@ -81,13 +96,13 @@ export async function apiRequest<T>(path: string, { method = 'GET', query, body,
       body: requestBody,
       signal: controller.signal,
     });
-  } catch {
-    throw new ApiError(
-      0,
-      timedOut
-        ? 'The server took too long to respond. Please try again.'
-        : "Can't reach the server. Check your internet connection and the API address."
-    );
+  } catch (error) {
+    if (__DEV__) {
+      // Shows the real cause in the Expo terminal before it becomes a user-friendly message.
+      const { name, message } = error instanceof Error ? error : { name: typeof error, message: String(error) };
+      console.warn(`[api] ${method} ${path} failed before a response:`, { name, message });
+    }
+    throw new ApiError(0, describeRequestError(error, timedOut));
   } finally {
     clearTimeout(timer);
   }

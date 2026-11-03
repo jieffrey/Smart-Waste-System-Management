@@ -1,3 +1,5 @@
+import { File } from 'expo-file-system';
+
 import { apiRequest } from '@/lib/api';
 import type { Report, ReportDetail, ReportListResponse, ReportStatus } from '@/types/api';
 
@@ -12,8 +14,10 @@ export interface NewReport {
 // The backend sets the category from the AI prediction. Responds 503 when the ML service is unavailable.
 export function createReport({ photoUri, description, latitude, longitude, address }: NewReport) {
   const formData = new FormData();
-  // React Native uploads a local file from { uri, name, type }.
-  formData.append('image', { uri: photoUri, name: 'photo.jpg', type: 'image/jpeg' } as unknown as Blob);
+  // Since SDK 58 the global fetch is expo/fetch, which cannot upload React Native's { uri, name, type }
+  // objects (it throws "Unsupported FormDataPart implementation"). It needs a real file object whose
+  // bytes it can read: an expo-file-system File (its name and MIME type come from the file itself).
+  formData.append('image', new File(photoUri));
   formData.append('description', description);
   formData.append('latitude', String(latitude));
   formData.append('longitude', String(longitude));
