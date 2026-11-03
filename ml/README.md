@@ -22,9 +22,10 @@ exposed publicly.
 (`x / 127.5 − 1`), so the API sends **raw 0–255 RGB pixels**. Do not divide by 255 or call
 `preprocess_input` — that would apply it twice and give wrong predictions.
 
-The API prepares each image the same way as training (`image_dataset_from_directory`):
-decode with Pillow → fix phone rotation (EXIF) → RGB → float32 → `tf.image.resize` to 224×224
-(bilinear, no antialias, no crop).
+The API resizes images the same way as training (`image_dataset_from_directory`):
+`tf.image.resize` to 224×224, bilinear, no antialias, no crop. It additionally applies EXIF
+rotation so phone photos are upright (training did not): decode with Pillow → EXIF rotation →
+RGB → float32 → resize.
 
 ## Setup
 
