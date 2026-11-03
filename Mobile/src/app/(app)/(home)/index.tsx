@@ -1,6 +1,6 @@
-import { useFocusEffect } from 'expo-router';
+import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { ReportListItem } from '@/components/reports/report-list-item';
 import { StatusFilter } from '@/components/reports/status-filter';
@@ -107,7 +107,13 @@ export default function MyReportsScreen() {
       <FlatList
         data={reports}
         keyExtractor={(report) => report.id}
-        renderItem={({ item }) => <ReportListItem report={item} />}
+        renderItem={({ item }) => (
+          <Link href={{ pathname: '/reports/[id]', params: { id: item.id } }} asChild>
+            <Pressable accessibilityRole="button" style={({ pressed }) => pressed && styles.pressed}>
+              <ReportListItem report={item} />
+            </Pressable>
+          </Link>
+        )}
         contentContainerStyle={styles.list}
         contentInsetAdjustmentBehavior="automatic"
         onEndReached={loadMore}
@@ -158,5 +164,8 @@ const styles = StyleSheet.create({
   footer: {
     paddingVertical: Spacing.three,
     gap: Spacing.two,
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });

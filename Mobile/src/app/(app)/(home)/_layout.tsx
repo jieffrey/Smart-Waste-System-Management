@@ -5,6 +5,7 @@ export default function HomeStackLayout() {
   return (
     <Stack>
       <Stack.Screen name="index" options={{ title: 'My reports' }} />
+      <Stack.Screen name="reports/[id]" options={{ title: 'Report' }} />
     </Stack>
   );
 }
