@@ -1,32 +1,58 @@
-// Creates a demo admin and a demo user from the SEED_* environment variables (see .env.example).
-// Safe to run many times: an existing account is never duplicated and its password is never changed;
-// only its role and active status are made correct.
+// Creates the demo admin and demo user below. Safe to run many times: an existing account is never
+// duplicated and its password is never changed; only its role and active status are made correct.
 //
 // Run from backend/:  npm run seed
+//
+// WARNING: these are public demo credentials. Change the admin password (or override it with
+// SEED_ADMIN_PASSWORD) before any public deployment.
 
 const { pool, query } = require('../src/db/pool');
 const { hashPassword } = require('../src/modules/auth/auth.service');
 const { registerSchema } = require('../src/modules/auth/auth.schema');
 
-const FIELD_TO_ENV_SUFFIX = { full_name: 'NAME', email: 'EMAIL', password: 'PASSWORD' };
+const DEMO_ACCOUNTS = [
+  {
+    role: 'admin',
+    envPrefix: 'SEED_ADMIN',
+    full_name: 'Admin SWMS',
+    email: 'dimoya4077@macsnipe.com',
+    password: 'Admin123!',
+  },
+  {
+    role: 'user',
+    envPrefix: 'SEED_USER',
+    full_name: 'Demo User',
+    email: 'kaseg88634@macsnipe.com',
+    password: 'Password123!',
+  },
+];
 
-// Reads and validates one account, e.g. SEED_ADMIN_NAME / SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD.
-// Uses the same rules as registration. Problems name the variable but never show its value.
-function readAccount(prefix, role) {
+// Optional override for a deployed environment: a non-empty SEED_ADMIN_* / SEED_USER_* value
+// (NAME, EMAIL, PASSWORD) replaces the matching default above.
+function withEnvOverrides(account) {
+  const prefix = account.envPrefix;
+  return {
+    ...account,
+    full_name: process.env[`${prefix}_NAME`] || account.full_name,
+    email: process.env[`${prefix}_EMAIL`] || account.email,
+    password: process.env[`${prefix}_PASSWORD`] || account.password,
+  };
+}
+
+// Checks one account with the same rules as registration. Problems never include the values.
+function validateAccount(account) {
   const result = registerSchema.safeParse({
-    full_name: process.env[`${prefix}_NAME`],
-    email: process.env[`${prefix}_EMAIL`],
-    password: process.env[`${prefix}_PASSWORD`],
+    full_name: account.full_name,
+    email: account.email,
+    password: account.password,
   });
 
   if (!result.success) {
-    const problems = result.error.issues.map(
-      (issue) => `${prefix}_${FIELD_TO_ENV_SUFFIX[issue.path[0]]}: ${issue.message}`
-    );
+    const problems = result.error.issues.map((issue) => `${account.role} ${issue.path[0]}: ${issue.message}`);
     return { account: null, problems };
   }
 
-  return { account: { ...result.data, role }, problems: [] };
+  return { account: { ...result.data, role: account.role }, problems: [] };
 }
 
 async function seedAccount({ full_name, email, password, role }) {
@@ -47,17 +73,17 @@ async function seedAccount({ full_name, email, password, role }) {
   return 'created';
 }
 
-async function seed() {
-  // Validate both accounts before writing anything, and report every problem at once.
-  const admin = readAccount('SEED_ADMIN', 'admin');
-  const user = readAccount('SEED_USER', 'user');
-  const problems = [...admin.problems, ...user.problems];
+// `accounts` defaults to the demo accounts (with any SEED_* overrides). Tests pass their own accounts.
+async function seed(accounts = DEMO_ACCOUNTS.map(withEnvOverrides)) {
+  // Validate every account before writing anything, and report every problem at once.
+  const checked = accounts.map(validateAccount);
+  const problems = checked.flatMap((check) => check.problems);
   if (problems.length > 0) {
-    throw new Error(`Invalid seed settings:\n  ${problems.join('\n  ')}`);
+    throw new Error(`Invalid seed accounts:\n  ${problems.join('\n  ')}`);
   }
 
   const results = [];
-  for (const account of [admin.account, user.account]) {
+  for (const { account } of checked) {
     results.push({ role: account.role, email: account.email, result: await seedAccount(account) });
   }
   return results;
@@ -77,4 +103,4 @@ if (require.main === module) {
     .finally(() => pool.end());
 }
 
-module.exports = { seed };
+module.exports = { seed, withEnvOverrides, DEMO_ACCOUNTS };

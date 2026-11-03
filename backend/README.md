@@ -40,8 +40,8 @@ change existing tables — don't run it against a database that already has the 
 | `ML_API_KEY` | no | Sent to the ML API as the `X-API-Key` header, only when set (e.g. for a hosted ML API) |
 | `ML_API_TIMEOUT_MS` | no | ML API request timeout in milliseconds (default `30000`) |
 | `WEB_ORIGIN` | no | Browser origins allowed to call the API (CORS), comma-separated, e.g. `http://localhost:3001,https://admin.example.com`. Empty = no CORS headers. See [CORS](#cors). |
-| `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | for `npm run seed` | Demo admin account. See [Demo accounts](#demo-accounts-npm-run-seed). |
-| `SEED_USER_NAME`, `SEED_USER_EMAIL`, `SEED_USER_PASSWORD` | for `npm run seed` | Demo user account |
+| `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | no | Optional override of the demo admin for `npm run seed` (e.g. on a deployed server). See [Demo accounts](#demo-accounts-npm-run-seed). |
+| `SEED_USER_NAME`, `SEED_USER_EMAIL`, `SEED_USER_PASSWORD` | no | Optional override of the demo user for `npm run seed` |
 
 ## Scripts
 
@@ -56,22 +56,37 @@ change existing tables — don't run it against a database that already has the 
 ### Demo accounts (`npm run seed`)
 
 Public registration only ever creates role `user`, so the first admin comes from the seed script.
-Set the six `SEED_*` variables in `.env` (same rules as registration: name 2–100 characters, a valid
-email, password 8–72 characters), then run:
+The demo accounts are defined at the top of [`scripts/seed.js`](scripts/seed.js):
+
+| Role | Name | Email | Password |
+|---|---|---|---|
+| `admin` | Admin SWMS | `dimoya4077@macsnipe.com` | `Admin123!` |
+| `user` | Demo User | `kaseg88634@macsnipe.com` | `Password123!` |
 
 ```bash
 npm run seed
 ```
 
 ```
-admin admin@example.com: created
-user  user@example.com: created
+admin dimoya4077@macsnipe.com: created
+user  kaseg88634@macsnipe.com: created
 ```
+
+> **Warning:** these credentials are public (they are in this repository). **Change the admin
+> password before any public deployment** — either log in and change it, or set your own values
+> with the optional override below *before* the first seed. Re-running the seed never changes an
+> existing password, so changing the constants later does not update an account that already exists.
+
+**Optional override (e.g. on a deployed server):** a non-empty `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL`,
+`SEED_ADMIN_PASSWORD`, `SEED_USER_NAME`, `SEED_USER_EMAIL` or `SEED_USER_PASSWORD` environment variable
+replaces the matching value above. They are not in `.env.example`; add them to `.env` or the server's
+environment only when needed.
 
 It is **safe to run again**: an account that already exists (same email, any letter case) is never
 duplicated and **its password is never changed** — only its role is set to the expected one and it is
-made active again. Both accounts are validated first; if any `SEED_*` value is missing or invalid,
-the script lists every problem (by variable name, never showing the value) and writes nothing.
+made active again. Both accounts are checked with the registration rules first (name 2–100
+characters, a valid email, password 8–72 characters); if anything is invalid, the script lists every
+problem (never showing the values) and writes nothing.
 
 ### CORS
 

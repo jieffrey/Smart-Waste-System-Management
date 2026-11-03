@@ -1,11 +1,12 @@
 // Tests for scripts/seed.js against the real database.
-// All six SEED_* variables are set here to temporary test accounts, so the real values in .env are never used.
+// The real demo accounts are never written: every database test passes its own temporary accounts to seed().
 
-const { test, beforeEach, after } = require('node:test');
+const { test, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { pool, query } = require('../src/db/pool');
 const { loginUser } = require('../src/modules/auth/auth.service');
-const { seed } = require('../scripts/seed');
+const { registerSchema } = require('../src/modules/auth/auth.schema');
+const { seed, withEnvOverrides, DEMO_ACCOUNTS } = require('../scripts/seed');
 
 const runId = Date.now();
 const adminEmail = `test+seed-admin-${runId}@example.com`;
@@ -14,16 +15,11 @@ const unusedEmail = `test+seed-unused-${runId}@example.com`;
 const adminPassword = 'seed-admin-password';
 const userPassword = 'seed-user-password';
 
-function setSeedEnv(overrides = {}) {
-  Object.assign(process.env, {
-    SEED_ADMIN_NAME: 'Seed Admin',
-    SEED_ADMIN_EMAIL: adminEmail,
-    SEED_ADMIN_PASSWORD: adminPassword,
-    SEED_USER_NAME: 'Seed User',
-    SEED_USER_EMAIL: userEmail,
-    SEED_USER_PASSWORD: userPassword,
-    ...overrides,
-  });
+function testAccounts({ userPasswordOverride } = {}) {
+  return [
+    { role: 'admin', full_name: 'Seed Admin', email: adminEmail, password: adminPassword },
+    { role: 'user', full_name: 'Seed User', email: userEmail, password: userPasswordOverride ?? userPassword },
+  ];
 }
 
 async function findUser(email) {
@@ -31,15 +27,49 @@ async function findUser(email) {
   return rows;
 }
 
-beforeEach(() => setSeedEnv());
-
 after(async () => {
   await query('DELETE FROM users WHERE email = ANY($1::text[])', [[adminEmail, userEmail, unusedEmail]]);
   await pool.end();
 });
 
+// ---- Demo account definitions (no database) ----
+
+test('the demo accounts pass the registration rules', () => {
+  assert.deepEqual(
+    DEMO_ACCOUNTS.map((account) => account.role),
+    ['admin', 'user']
+  );
+  for (const { full_name, email, password } of DEMO_ACCOUNTS) {
+    assert.equal(registerSchema.safeParse({ full_name, email, password }).success, true, email);
+  }
+});
+
+test('non-empty SEED_* values override the matching demo value; empty or missing ones do not', (t) => {
+  const saved = { ...process.env };
+  t.after(() => {
+    for (const key of ['SEED_USER_NAME', 'SEED_USER_EMAIL', 'SEED_USER_PASSWORD']) {
+      if (saved[key] === undefined) delete process.env[key];
+      else process.env[key] = saved[key];
+    }
+  });
+
+  process.env.SEED_USER_EMAIL = 'override@example.com';
+  process.env.SEED_USER_PASSWORD = '';
+  delete process.env.SEED_USER_NAME;
+
+  const [, demoUser] = DEMO_ACCOUNTS;
+  const account = withEnvOverrides(demoUser);
+
+  assert.equal(account.email, 'override@example.com');
+  assert.equal(account.password, demoUser.password); // empty value is ignored
+  assert.equal(account.full_name, demoUser.full_name); // missing value is ignored
+  assert.equal(account.role, 'user');
+});
+
+// ---- seed() with temporary accounts ----
+
 test('the first run creates the admin and the user with hashed passwords', async () => {
-  const results = await seed();
+  const results = await seed(testAccounts());
 
   assert.deepEqual(results, [
     { role: 'admin', email: adminEmail, result: 'created' },
@@ -54,9 +84,7 @@ test('the first run creates the admin and the user with hashed passwords', async
 });
 
 test('running again creates no duplicates and never changes an existing password', async () => {
-  setSeedEnv({ SEED_USER_PASSWORD: 'a-different-password' });
-
-  const results = await seed();
+  const results = await seed(testAccounts({ userPasswordOverride: 'a-different-password' }));
 
   assert.deepEqual(
     results.map(({ result }) => result),
@@ -65,7 +93,7 @@ test('running again creates no duplicates and never changes an existing password
   assert.equal((await findUser(adminEmail)).length, 1);
   assert.equal((await findUser(userEmail)).length, 1);
 
-  // The original password still works; the new value from the env was ignored.
+  // The original password still works; the new value was ignored.
   await loginUser({ email: userEmail, password: userPassword });
   await assert.rejects(loginUser({ email: userEmail, password: 'a-different-password' }), { status: 401 });
 });
@@ -73,24 +101,26 @@ test('running again creates no duplicates and never changes an existing password
 test('an existing account gets its role and active status corrected', async () => {
   await query("UPDATE users SET role = 'user', is_active = FALSE WHERE email = $1", [adminEmail]);
 
-  await seed();
+  await seed(testAccounts());
 
   assert.deepEqual(await findUser(adminEmail), [{ role: 'admin', is_active: true }]);
 });
 
-test('invalid or missing settings fail before anything is written, without showing secret values', async () => {
-  setSeedEnv({ SEED_ADMIN_EMAIL: 'not-an-email', SEED_USER_EMAIL: unusedEmail, SEED_USER_PASSWORD: 'short7!' });
-  delete process.env.SEED_ADMIN_NAME;
+test('invalid accounts fail before anything is written, listing every problem without the values', async () => {
+  const accounts = [
+    { role: 'admin', full_name: '', email: 'not-an-email', password: adminPassword },
+    { role: 'user', full_name: 'Seed Unused', email: unusedEmail, password: 'short7!' },
+  ];
 
-  await assert.rejects(seed(), (err) => {
-    assert.match(err.message, /^Invalid seed settings:/);
-    assert.match(err.message, /SEED_ADMIN_NAME: Full name is required/);
-    assert.match(err.message, /SEED_ADMIN_EMAIL: Email is invalid/);
-    assert.match(err.message, /SEED_USER_PASSWORD: Password must be at least 8 characters/);
+  await assert.rejects(seed(accounts), (err) => {
+    assert.match(err.message, /^Invalid seed accounts:/);
+    assert.match(err.message, /admin full_name: Full name must be at least 2 characters/);
+    assert.match(err.message, /admin email: Email is invalid/);
+    assert.match(err.message, /user password: Password must be at least 8 characters/);
     assert.doesNotMatch(err.message, /short7!/);
     return true;
   });
 
-  // Nothing was written for the valid account either.
+  // Nothing was written for the valid fields either.
   assert.deepEqual(await findUser(unusedEmail), []);
 });
