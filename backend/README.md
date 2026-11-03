@@ -12,6 +12,21 @@ npm ci
 cp .env.example .env   # then fill in the real values (never commit .env)
 ```
 
+### Database schema
+
+The full schema — tables `users`, `waste_reports`, `report_status_history`, their constraints,
+indexes and `updated_at` triggers — is in [`db/schema.sql`](db/schema.sql). It matches the live
+database (generated from it with `pg_dump --schema-only`). To set up a **new, empty** database
+(PostgreSQL 13+, e.g. a new Neon database or branch):
+
+```bash
+psql "<connection string>" -v ON_ERROR_STOP=1 -f db/schema.sql
+npm run db:check   # confirms the connection and that the 3 tables exist
+```
+
+The file runs in one transaction, so if anything fails nothing is created. It does not drop or
+change existing tables — don't run it against a database that already has the schema.
+
 ### Environment variables
 
 | Variable | Required | Description |
@@ -24,6 +39,9 @@ cp .env.example .env   # then fill in the real values (never commit .env)
 | `ML_API_URL` | no* | Base URL of the ML API, e.g. `http://localhost:8000`. *Without it the server still starts (with a warning), but creating a report returns `503`. |
 | `ML_API_KEY` | no | Sent to the ML API as the `X-API-Key` header, only when set (e.g. for a hosted ML API) |
 | `ML_API_TIMEOUT_MS` | no | ML API request timeout in milliseconds (default `30000`) |
+| `WEB_ORIGIN` | no | Browser origins allowed to call the API (CORS), comma-separated, e.g. `http://localhost:3001,https://admin.example.com`. Empty = no CORS headers. See [CORS](#cors). |
+| `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | no | Optional override of the demo admin for `npm run seed` (e.g. on a deployed server). See [Demo accounts](#demo-accounts-npm-run-seed). |
+| `SEED_USER_NAME`, `SEED_USER_EMAIL`, `SEED_USER_PASSWORD` | no | Optional override of the demo user for `npm run seed` |
 
 ## Scripts
 
@@ -33,6 +51,56 @@ cp .env.example .env   # then fill in the real values (never commit .env)
 | `npm start` | Start (env comes from the environment, e.g. Docker) |
 | `npm test` | Run all tests (loads `.env`; needs the database) |
 | `npm run db:check` | Check the database connection and tables |
+| `npm run seed` | Create the demo admin and user (loads `.env`; safe to run again) |
+
+### Demo accounts (`npm run seed`)
+
+Public registration only ever creates role `user`, so the first admin comes from the seed script.
+The demo accounts are defined at the top of [`scripts/seed.js`](scripts/seed.js):
+
+| Role | Name | Email | Password |
+|---|---|---|---|
+| `admin` | Admin SWMS | `dimoya4077@macsnipe.com` | `Admin123!` |
+| `user` | Demo User | `kaseg88634@macsnipe.com` | `Password123!` |
+
+```bash
+npm run seed
+```
+
+```
+admin dimoya4077@macsnipe.com: created
+user  kaseg88634@macsnipe.com: created
+```
+
+> **Warning:** these credentials are public (they are in this repository). **Change the admin
+> password before any public deployment** — either log in and change it, or set your own values
+> with the optional override below *before* the first seed. Re-running the seed never changes an
+> existing password, so changing the constants later does not update an account that already exists.
+
+**Optional override (e.g. on a deployed server):** a non-empty `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL`,
+`SEED_ADMIN_PASSWORD`, `SEED_USER_NAME`, `SEED_USER_EMAIL` or `SEED_USER_PASSWORD` environment variable
+replaces the matching value above. They are not in `.env.example`; add them to `.env` or the server's
+environment only when needed.
+
+It is **safe to run again**: an account that already exists (same email, any letter case) is never
+duplicated and **its password is never changed** — only its role is set to the expected one and it is
+made active again. Both accounts are checked with the registration rules first (name 2–100
+characters, a valid email, password 8–72 characters); if anything is invalid, the script lists every
+problem (never showing the values) and writes nothing.
+
+### CORS
+
+The admin web app runs on a different origin than the API, so the browser needs CORS headers.
+Set `WEB_ORIGIN` to the web app's origin(s), comma-separated (spaces and a trailing `/` are ignored):
+
+```
+WEB_ORIGIN=http://localhost:3001,https://admin.example.com
+```
+
+Only these origins get `Access-Control-Allow-Origin`; preflight (`OPTIONS`) requests are answered
+automatically. When `WEB_ORIGIN` is empty, no CORS headers are sent at all. CORS does not replace
+authentication — every protected endpoint still needs a valid token. The mobile app does not use
+CORS (it is not a browser), so it works with or without `WEB_ORIGIN`.
 
 ## API
 

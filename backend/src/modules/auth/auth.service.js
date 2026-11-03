@@ -15,8 +15,13 @@ function createToken(user) {
   });
 }
 
+// Used by registration and by the seed script, so every password is hashed the same way.
+function hashPassword(password) {
+  return bcrypt.hash(password, SALT_ROUNDS);
+}
+
 async function registerUser({ full_name, email, password }) {
-  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+  const passwordHash = await hashPassword(password);
 
   try {
     const { rows } = await query(
@@ -59,4 +64,4 @@ async function getUserById(id) {
   return rows[0] || null;
 }
 
-module.exports = { registerUser, loginUser, getUserById };
+module.exports = { hashPassword, registerUser, loginUser, getUserById };
