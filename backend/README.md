@@ -126,11 +126,62 @@ only logged on the server, never sent to the client.
 | `415` | Not a JPEG, PNG or WebP image |
 | `503` | ML API unavailable (see above) |
 
+### List your own reports — `GET /api/reports/me`
+
+Only role **`user`** (an admin gets `403`). Returns the signed-in user's reports, newest first.
+
+| Query parameter | Default | Rules |
+|---|---|---|
+| `page` | `1` | whole number ≥ 1 |
+| `limit` | `20` | 1–50 |
+| `status` | all | `pending`, `in_progress`, `completed` or `rejected` |
+
+```bash
+curl "http://localhost:3000/api/reports/me?status=pending&page=1&limit=10" -H "Authorization: Bearer <token>"
+```
+
+```json
+{
+  "reports": [{ "id": "…", "status": "pending", "category": "plastic", "image_url": "/uploads/<uuid>.jpg", "…": "…" }],
+  "pagination": { "page": 1, "limit": 10, "total": 1 }
+}
+```
+
+`total` is the number of matching reports across all pages. An invalid `page`, `limit` or `status`
+returns `400` with field details.
+
+### Report detail — `GET /api/reports/:id`
+
+Returns `200 { report }` with the same fields as above plus `status_history` (oldest first):
+
+```json
+{
+  "report": {
+    "id": "…",
+    "status": "in_progress",
+    "…": "…",
+    "status_history": [
+      { "old_status": null, "new_status": "pending", "note": null, "created_at": "…" },
+      { "old_status": "pending", "new_status": "in_progress", "note": "Cleanup team assigned", "created_at": "…" }
+    ]
+  }
+}
+```
+
+Only the **owner** or an **admin** can see a report. Everyone else — and unknown or malformed ids —
+gets `404` "Report not found" (not `403`), so report ids cannot be probed. The history does not
+include who made each change.
+
 ### Images
 
 Images are stored locally in `backend/uploads/` (gitignored) and served at `/uploads/<uuid>.<ext>`.
 All file access goes through `src/modules/uploads/uploads.service.js`, so it can be swapped for
 cloud storage later.
+
+`image_url` is **relative** (e.g. `/uploads/<uuid>.jpg`). Clients build the full URL from the API
+base URL they already use: if `image_url` starts with `http`, use it as is; otherwise prefix it with
+the API base URL (e.g. `http://192.168.1.10:3000` + `image_url`). This keeps working if storage later
+moves to the cloud and returns absolute URLs.
 
 ## Tests
 

@@ -27,4 +27,27 @@ const createReportSchema = z.object({
   address: z.string().trim().max(255, 'Address must be at most 255 characters').optional(),
 });
 
-module.exports = { createReportSchema };
+const REPORT_STATUSES = ['pending', 'in_progress', 'completed', 'rejected'];
+
+// Query string for GET /api/reports/me (all values arrive as text).
+const listMyReportsSchema = z.object({
+  page: z.coerce
+    .number({ error: 'Page must be a number' })
+    .int('Page must be a whole number')
+    .min(1, 'Page must be at least 1')
+    .default(1),
+  limit: z.coerce
+    .number({ error: 'Limit must be a number' })
+    .int('Limit must be a whole number')
+    .min(1, 'Limit must be between 1 and 50')
+    .max(50, 'Limit must be between 1 and 50')
+    .default(20),
+  status: z
+    .enum(REPORT_STATUSES, { error: `Status must be one of: ${REPORT_STATUSES.join(', ')}` })
+    .optional(),
+});
+
+// Report ids are UUIDs. A malformed id is treated like an unknown one (404), not as a validation error.
+const reportIdSchema = z.uuid();
+
+module.exports = { createReportSchema, listMyReportsSchema, reportIdSchema, REPORT_STATUSES };

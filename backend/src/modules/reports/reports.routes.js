@@ -3,7 +3,7 @@ const { Router } = require('express');
 const validate = require('../../middlewares/validate');
 const { authenticate, authorizeRole } = require('../../middlewares/auth');
 const { uploadImage } = require('../../middlewares/upload');
-const { createReportSchema } = require('./reports.schema');
+const { createReportSchema, listMyReportsSchema } = require('./reports.schema');
 const reportsController = require('./reports.controller');
 
 const router = Router();
@@ -16,5 +16,16 @@ router.post(
   validate(createReportSchema),
   reportsController.createReport
 );
+
+router.get(
+  '/me',
+  authenticate,
+  authorizeRole('user'),
+  validate(listMyReportsSchema, 'query'),
+  reportsController.listMyReports
+);
+
+// Defined after '/me' so that '/me' is not treated as an id. Owner or admin only (checked in the service).
+router.get('/:id', authenticate, reportsController.getReport);
 
 module.exports = router;
