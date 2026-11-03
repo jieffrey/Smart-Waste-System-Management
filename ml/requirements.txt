@@ -1,0 +1,9 @@
+# Runtime dependencies for the SWMS ML API (Python 3.12).
+# keras is pinned to the version the model was saved with.
+tensorflow==2.21.0
+keras==3.13.2
+numpy==2.5.4
+fastapi==0.162.0
+uvicorn==0.54.0
+python-multipart==0.0.33
+pillow==13.0.0
