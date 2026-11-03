@@ -1,4 +1,5 @@
 const express = require('express');
+const healthRoutes = require('./modules/health/health.routes');
 const authRoutes = require('./modules/auth/auth.routes');
 const reportRoutes = require('./modules/reports/reports.routes');
 const { UPLOAD_URL_PREFIX, serveImages } = require('./modules/uploads/uploads.service');
@@ -9,6 +10,7 @@ const app = express();
 app.use(express.json());
 
 app.use(UPLOAD_URL_PREFIX, serveImages);
+app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
 
