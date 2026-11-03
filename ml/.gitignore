@@ -1,0 +1,4 @@
+# Downloaded/split dataset images are never committed; only the .gitkeep placeholders are kept.
+/dataset/**
+!/dataset/**/
+!/dataset/**/.gitkeep

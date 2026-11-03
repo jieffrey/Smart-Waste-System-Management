@@ -1,0 +1,9 @@
+# Versions from the Google Colab runtime used for training (Python 3.13.16, GPU T4).
+# Packages for the training/evaluation scripts. Standalone on purpose: numpy differs from
+# requirements.txt (API, Python 3.12), so do not install both files into the same environment.
+tensorflow==2.21.0
+keras==3.13.2
+scikit-learn==1.6.1
+matplotlib==3.10.0
+numpy==2.4.6
+kaggle==2.0.2
