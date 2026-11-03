@@ -51,7 +51,7 @@ test('register rejects a duplicate email (case-insensitive) with 409', async () 
   });
 
   assert.equal(res.status, 409);
-  assert.equal(res.body.error.message, 'Email is already registered');
+  assert.deepEqual(res.body, { error: { message: 'Email is already registered', details: null } });
 });
 
 test('register returns 400 with field details for invalid input', async () => {
@@ -69,7 +69,7 @@ test('malformed JSON returns 400 without internal details', async () => {
   const res = await request('POST', '/register', { body: '{"email":' });
 
   assert.equal(res.status, 400);
-  assert.equal(res.body.error.message, 'Request body must be valid JSON');
+  assert.deepEqual(res.body, { error: { message: 'Request body must be valid JSON', details: null } });
 });
 
 test('login succeeds with correct credentials', async () => {
@@ -90,8 +90,8 @@ test('login fails with a wrong password or unknown email using the same message'
 
   assert.equal(wrongPassword.status, 401);
   assert.equal(unknownEmail.status, 401);
-  assert.equal(wrongPassword.body.error.message, 'Invalid email or password');
-  assert.equal(unknownEmail.body.error.message, wrongPassword.body.error.message);
+  assert.deepEqual(wrongPassword.body, { error: { message: 'Invalid email or password', details: null } });
+  assert.deepEqual(unknownEmail.body, wrongPassword.body);
 });
 
 test('me returns the current user for a valid token', async () => {
@@ -108,6 +108,8 @@ test('me rejects missing and invalid tokens with 401', async () => {
 
   assert.equal(missing.status, 401);
   assert.equal(invalid.status, 401);
+  assert.deepEqual(missing.body, { error: { message: 'Authentication required', details: null } });
+  assert.deepEqual(invalid.body, { error: { message: 'Invalid or expired token', details: null } });
 });
 
 test('me rejects a deactivated account with 403', async () => {
@@ -115,5 +117,5 @@ test('me rejects a deactivated account with 403', async () => {
   const res = await request('GET', '/me', { headers: { Authorization: `Bearer ${token}` } });
 
   assert.equal(res.status, 403);
-  assert.equal(res.body.error.message, 'Account is deactivated');
+  assert.deepEqual(res.body, { error: { message: 'Account is deactivated', details: null } });
 });
