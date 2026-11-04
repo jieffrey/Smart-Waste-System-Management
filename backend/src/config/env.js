@@ -19,6 +19,9 @@ module.exports = {
   mlApiUrl: process.env.ML_API_URL ? process.env.ML_API_URL.replace(/\/+$/, '') : null,
   mlApiKey: process.env.ML_API_KEY || null,
   mlApiTimeoutMs: Number(process.env.ML_API_TIMEOUT_MS) || 30_000,
+  // Number of reverse proxies in front of the API (e.g. 1 on Render/Railway), so req.ip is the client's IP
+  // for rate limiting. Leave unset when clients connect directly.
+  trustProxy: Number(process.env.TRUST_PROXY) || 0,
   // Browser origins allowed to call the API (comma-separated). Empty = no CORS headers (same-origin only).
   webOrigins: (process.env.WEB_ORIGIN || '')
     .split(',')

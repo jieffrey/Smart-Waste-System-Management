@@ -39,6 +39,7 @@ change existing tables — don't run it against a database that already has the 
 | `ML_API_URL` | no* | Base URL of the ML API, e.g. `http://localhost:8000`. *Without it the server still starts (with a warning), but creating a report returns `503`. |
 | `ML_API_KEY` | no | Sent to the ML API as the `X-API-Key` header, only when set (e.g. for a hosted ML API) |
 | `ML_API_TIMEOUT_MS` | no | ML API request timeout in milliseconds (default `30000`) |
+| `TRUST_PROXY` | no | Number of reverse proxies in front of the API (e.g. `1` on Render/Railway). Needed so rate limits see each client's IP instead of the proxy's. Leave unset when clients connect directly. See [Rate limits](#rate-limits). |
 | `WEB_ORIGIN` | no | Browser origins allowed to call the API (CORS), comma-separated, e.g. `http://localhost:3001,https://admin.example.com`. Empty = no CORS headers. See [CORS](#cors). |
 | `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | no | Optional override of the demo admin for `npm run seed` (local setup). See [Demo accounts](#demo-accounts-npm-run-seed-local-setup-only). |
 | `SEED_USER_NAME`, `SEED_USER_EMAIL`, `SEED_USER_PASSWORD` | no | Optional override of the demo user for `npm run seed` |
@@ -142,9 +143,24 @@ All errors use the same format:
 
 | Endpoint | Description |
 |---|---|
-| `POST /api/auth/register` | `{ full_name, email, password }` → `201 { user, token }` (role is always `user`) |
+| `POST /api/auth/register` | `{ full_name, email, password }` → `201 { user, token }` (role is always `user`). Password: 8–72 characters and not one of the most common passwords |
 | `POST /api/auth/login` | `{ email, password }` → `200 { user, token }` |
 | `GET /api/auth/me` | `Authorization: Bearer <token>` → `200 { user }` |
+
+### Rate limits
+
+Limited requests get `429` with a `Retry-After` header (seconds) and the usual error format, e.g.
+`{ "error": { "message": "Too many login attempts. Please try again in 15 minutes.", "details": null } }`.
+
+| Endpoint | Limit | Why this number |
+|---|---|---|
+| `POST /api/auth/login` | 20 per IP per 15 min | Plenty for typos or a shared office IP; far too few for password guessing |
+| `POST /api/auth/login` | 5 **failed** attempts per email per 15 min | Stops guessing one account from many IPs. Successful logins don't count. Applies to any email, registered or not, so it reveals nothing |
+| `POST /api/auth/register` | 10 per IP per hour | A group signing up together fits; mass account creation doesn't |
+| `POST /api/reports` | 20 per user per hour | A busy reporter fits; filling the disk with 5 MB photos doesn't (max ~100 MB per user per hour) |
+
+The counters are kept **in memory**: they reset when the server restarts and only work correctly with a
+single instance (use a shared store such as Redis for more). Behind a reverse proxy, set `TRUST_PROXY`.
 
 ### Create a waste report — `POST /api/reports`
 

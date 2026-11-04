@@ -113,6 +113,12 @@ local setup, and the code should make that the explicit choice, not the default.
 <a id="sec-02"></a>
 ## SEC-02: No rate limiting on login, registration or report creation
 
+- **Status: fixed in `security/fix-rate-limiting`.** In-memory limits with `429` + `Retry-After` in the standard error format:
+  login 20/IP/15 min and 5 failed attempts/email/15 min (same response for unknown emails), registration
+  10/IP/hour, new reports 20/user/hour. Covered by `backend/tests/rate-limit.test.js`. `TRUST_PROXY` makes
+  per-IP limits work behind a host proxy. **Known limitation:** web admin logins reach the API from the
+  Next.js server, so they share that server's per-IP counter. The per-email limit still applies to each
+  account; forward the client IP if that becomes a problem.
 - **Severity: Medium.** Proven, and it enables password guessing (worse together with SEC-04) and
   resource abuse, but each attack needs many requests and does damage slowly.
 - **Evidence:** proven live. 10 wrong passwords in a row for the SECURITY-TEST user all returned `401`,
@@ -158,6 +164,9 @@ Add the limits when you write the endpoint, not after an incident.
 <a id="sec-04"></a>
 ## SEC-04: Weak password policy
 
+- **Status: fixed in `security/fix-rate-limiting`.** Registration rejects about 100 very common passwords in any letter case
+  (`backend/src/modules/auth/common-passwords.js`), tested in `auth.test.js`. The local-only demo passwords
+  (`Admin123!`, `Password123!`) still pass, so the seed keeps working.
 - **Severity: Low.** Proven, but it only hurts users who pick weak passwords. With SEC-02 unfixed, it
   makes guessing those accounts realistic.
 - **Evidence:** proven live. The SECURITY-TEST user was registered with the password `12345678` (`201 Created`).
@@ -193,6 +202,9 @@ passwords attackers already have on their lists.
 <a id="sec-05"></a>
 ## SEC-05: Account enumeration through login timing and the register error
 
+- **Status: fixed in `security/fix-rate-limiting` (timing).** Login always runs one bcrypt comparison (proven by
+  `auth-login-timing.test.js`; live median after the fix: 89 ms existing vs 90 ms unknown). The register
+  409 message is kept as a deliberate trade-off and is now rate-limited.
 - **Severity: Low.** Proven, but it only reveals whether an email has an account, which helps SEC-02-style
   guessing and phishing.
 - **Evidence:** proven live.

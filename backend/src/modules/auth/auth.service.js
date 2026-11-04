@@ -7,6 +7,9 @@ const HttpError = require('../../utils/http-error');
 const SALT_ROUNDS = 10;
 const UNIQUE_VIOLATION = '23505';
 const USER_COLUMNS = 'id, full_name, email, role, is_active, created_at, updated_at';
+// Compared against when the email has no account, so a login takes the same time either way
+// (otherwise the response time reveals which emails are registered).
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync('no-account-timing-placeholder', SALT_ROUNDS);
 
 function createToken(user) {
   return jwt.sign({ sub: user.id, role: user.role }, jwtSecret, {
@@ -47,8 +50,9 @@ async function loginUser({ email, password }) {
   );
   const found = rows[0];
 
-  const passwordMatches = found && (await bcrypt.compare(password, found.password_hash));
-  if (!passwordMatches) {
+  // Always run exactly one bcrypt comparison, whether or not the account exists.
+  const passwordMatches = await bcrypt.compare(password, found ? found.password_hash : DUMMY_PASSWORD_HASH);
+  if (!found || !passwordMatches) {
     throw new HttpError(401, 'Invalid email or password');
   }
   if (!found.is_active) {
