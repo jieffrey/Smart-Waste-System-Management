@@ -4,9 +4,9 @@ import type { ReportStatus } from "@/types/api";
 
 // Status has no color: a small square that fills up as the report moves along, plus the label.
 //   pending = empty, in progress = half filled, completed = filled with a check, rejected = crossed out.
-function Square({ status }: { status: ReportStatus }) {
+function Square({ status, className }: { status: ReportStatus; className: string }) {
   return (
-    <svg viewBox="0 0 12 12" className="size-3 shrink-0" aria-hidden="true">
+    <svg viewBox="0 0 12 12" className={cn("shrink-0", className)} aria-hidden="true">
       {status === "in_progress" && <rect x="0" y="6" width="12" height="6" className="fill-ink" />}
       {status === "completed" && (
         <>
@@ -20,10 +20,18 @@ function Square({ status }: { status: ReportStatus }) {
   );
 }
 
-export function StatusMarker({ status, className }: { status: ReportStatus; className?: string }) {
+// size "lg" is for the status next to a page title (as prominent as the title deserves).
+export function StatusMarker({ status, size = "sm", className }: { status: ReportStatus; size?: "sm" | "lg"; className?: string }) {
+  const large = size === "lg";
   return (
-    <span className={cn("inline-flex items-center gap-2 text-small whitespace-nowrap text-ink", className)}>
-      <Square status={status} />
+    <span
+      className={cn(
+        "inline-flex items-center whitespace-nowrap text-ink",
+        large ? "gap-3 text-heading font-bold" : "gap-2 text-small",
+        className
+      )}
+    >
+      <Square status={status} className={large ? "size-5" : "size-3"} />
       <span className={cn(status === "rejected" && "line-through decoration-1")}>{STATUS_LABELS[status]}</span>
     </span>
   );

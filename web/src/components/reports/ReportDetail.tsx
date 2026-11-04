@@ -31,11 +31,13 @@ export function ReportDetail({ report, children }: { report: AdminReportDetail; 
       <PageHeader
         kicker={`Report · ${report.id.slice(0, 8)} · reported ${formatDateTime(report.created_at)} WIB`}
         title={`${CATEGORY_LABELS[report.category]} waste, ${place}`}
-        actions={<StatusMarker status={report.status} className="text-body font-semibold" />}
+        actions={<StatusMarker status={report.status} size="lg" />}
       />
 
+      {/* Desktop: photo + description, then the timeline, on the left; the dispatch form and details on the
+          right. Mobile: photo, form, details, timeline (the form comes before the history). */}
       <div className="grid gap-10 lg:grid-cols-12">
-        <div className="space-y-6 lg:col-span-7">
+        <div className="space-y-6 lg:col-span-7 lg:row-start-1">
           <ReportPhoto imageUrl={report.image_url} />
           {report.description && (
             <section>
@@ -45,7 +47,7 @@ export function ReportDetail({ report, children }: { report: AdminReportDetail; 
           )}
         </div>
 
-        <div className="space-y-8 lg:col-span-5">
+        <div className="space-y-8 lg:col-span-5 lg:col-start-8 lg:row-span-2 lg:row-start-1">
           {children}
           <AiClassification
             category={report.category}
@@ -92,9 +94,10 @@ export function ReportDetail({ report, children }: { report: AdminReportDetail; 
             </dl>
           </section>
         </div>
+        <div className="lg:col-span-7 lg:row-start-2">
+          <StatusTimeline history={report.status_history} />
+        </div>
       </div>
-
-      <StatusTimeline history={report.status_history} />
     </div>
   );
 }

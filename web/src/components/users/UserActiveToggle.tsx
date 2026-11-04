@@ -37,7 +37,9 @@ export function UserActiveToggle({ userId, userName, isActive }: { userId: strin
           </Button>
         </form>
       ) : (
-        <Button type="button" size="sm" onClick={() => setConfirming(true)}>
+        // Deactivate is a quiet text action (it repeats on every active row); Activate stays an outlined button,
+        // so the few deactivated users stand out.
+        <Button type="button" size="sm" variant={isActive ? "ghost" : "secondary"} className={isActive ? "px-0 text-gray-700 hover:text-ink" : undefined} onClick={() => setConfirming(true)}>
           {action}
         </Button>
       )}
