@@ -445,6 +445,37 @@ SEC-03 and SEC-08):
    (status `in_progress` or `completed`, with a prediction) whose final category still equals the AI
    prediction. Over time this measures the model on real app photos, which the test set can't do.
 
+### 10. Next steps
+
+**Option B (planned, not started): class weights + fine-tuning the top of MobileNetV2.**
+
+1. **Class weights.** Weight the loss by inverse class frequency, `weight = total / (classes × count)`. On the
+   training counts this gives (*computed*) `organic` 1.559, `paper` 0.925 and `plastic` 0.783, so a missed
+   `organic` image costs about twice as much as a missed `plastic` one. Pass them as `class_weight=` to `fit`.
+2. **Two-stage fine-tuning.**
+   1. Train the head as now.
+   2. Unfreeze the top layers of MobileNetV2 and continue with a much lower learning rate (for example 10×
+      lower), keeping BatchNorm layers in inference mode, so the pretrained features adapt to waste photos
+      without being destroyed.
+3. **Possibly augmentation** (random flip, small rotation and zoom, brightness) on the training set only, to
+   close part of the gap to real phone photos ([Limitations](#8-limitations)).
+4. **Train longer with early stopping.** The current run stopped at the epoch limit while validation loss
+   was still falling ([section 4](#4-training-setup)).
+
+**How the results will be compared, so the comparison is fair:**
+- **Same data:** the **same split** (reuse the exact `dataset_split/` folder on Google Drive rather than
+  re-running the split script, because of the file-order caveat in [section 1](#1-problem--dataset)).
+- **Same selection rule:** pick the model by **validation** loss only, and evaluate the test set **once** at
+  the end, as for the current model.
+- **Same metrics, side by side with today's model:** per-class recall (above all `organic`, the
+  smallest class, now 0.9667), the `plastic` → `paper` count (now 8), macro F1 (now 0.9769) and the full
+  confusion matrix. Overall accuracy alone could hide a trade-off between classes.
+- **Keep the current model as the baseline.** Only replace `models/swms_mobilenetv2_best.keras` if the new one
+  is better on these metrics. Then update `expected.json` (the parity samples) and `model_version`, and
+  re-run the API tests.
+
+None of these results exist yet; this section describes the plan and how it will be judged.
+
 ### Reproduce
 
 The scripts contain the notebook's code (without the earlier, abandoned 5-epoch experiment). Paths are
