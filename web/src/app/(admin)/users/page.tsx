@@ -4,7 +4,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { Pagination } from "@/components/ui/Pagination";
 import { UserFilters } from "@/components/users/UserFilters";
 import { UsersTable } from "@/components/users/UsersTable";
-import { listUsers } from "@/lib/admin-data";
+import { listUsers } from "@/lib/users-data";
 import { ApiError } from "@/lib/api";
 import { getCurrentAdmin } from "@/lib/session";
 import {

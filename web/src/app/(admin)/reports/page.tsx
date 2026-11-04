@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { Pagination } from "@/components/ui/Pagination";
+import { Pagination } from "@/components/reports/Pagination";
 import { ReportFilters } from "@/components/reports/ReportFilters";
 import { ReportsTable } from "@/components/reports/ReportsTable";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -64,13 +64,7 @@ async function ReportsResults({ filters }: { filters: Filters }) {
   return (
     <div className="space-y-3">
       <ReportsTable reports={reports} />
-      <Pagination
-        page={filters.page}
-        totalPages={totalPages}
-        total={pagination.total}
-        noun={{ one: "report", many: "reports" }}
-        hrefForPage={(page) => reportsHref({ ...filters, page })}
-      />
+      <Pagination filters={filters} total={pagination.total} totalPages={totalPages} />
     </div>
   );
 }
