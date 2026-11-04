@@ -51,7 +51,7 @@ export function ReportDetail({ report, children }: { report: AdminReportDetail; 
 
       {/* Desktop: photo + description, then the timeline, on the left; the dispatch form and details on the
           right. Mobile: photo, form, details, timeline (the form comes before the history). */}
-      <div className="grid gap-10 lg:grid-cols-12">
+      <div className="grid gap-10 lg:grid-cols-12 lg:grid-rows-[auto_1fr]">
         <div className="space-y-6 lg:col-span-7 lg:row-start-1">
           <ReportPhoto imageUrl={report.image_url} />
           {report.description && (
