@@ -35,7 +35,8 @@ export const t = {
   },
 
   auth: {
-    headline: 'Lihat sampah? Foto, kirim, beres.',
+    headline: 'Lihat sampah? Foto, kirim,',
+    headlineHighlight: 'beres.',
     subline: 'AI memilah jenis sampahnya, petugas yang turun tangan, dan kamu bisa memantau sampai selesai.',
     loginTitle: 'Masuk',
     email: 'Email',

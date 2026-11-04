@@ -2,8 +2,7 @@ import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Palette, Spacing } from '@/constants/theme';
 
 interface ScreenProps {
   children: ReactNode;
@@ -11,12 +10,10 @@ interface ScreenProps {
   edges?: Edge[];
 }
 
-// A scrollable screen with safe-area padding that moves up when the keyboard opens.
+// A scrollable snow screen with safe-area padding that moves up when the keyboard opens.
 export function Screen({ children, edges = ['top', 'left', 'right'] }: ScreenProps) {
-  const theme = useTheme();
-
   return (
-    <SafeAreaView edges={edges} style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView edges={edges} style={styles.safeArea}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {children}
@@ -29,12 +26,14 @@ export function Screen({ children, edges = ['top', 'left', 'right'] }: ScreenPro
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+    backgroundColor: Palette.snow,
   },
   flex: {
     flex: 1,
   },
   content: {
     padding: Spacing.three,
+    paddingBottom: Spacing.five,
     gap: Spacing.three,
   },
 });

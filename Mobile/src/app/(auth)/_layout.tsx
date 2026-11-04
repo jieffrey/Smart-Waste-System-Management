@@ -1,10 +1,8 @@
 import { Stack } from 'expo-router';
 
+import { Palette } from '@/constants/theme';
+
+// Login and register draw their own headers (the front-door panel); no native header bar.
 export default function AuthLayout() {
-  return (
-    <Stack>
-      <Stack.Screen name="login" options={{ title: 'Log in', headerShown: false }} />
-      <Stack.Screen name="register" options={{ title: 'Create account' }} />
-    </Stack>
-  );
+  return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Palette.snow } }} />;
 }
