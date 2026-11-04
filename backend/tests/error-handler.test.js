@@ -36,6 +36,18 @@ test('an HttpError with details returns them unchanged', () => {
   assert.deepEqual(res.body, { error: { message: 'Validation failed', details } });
 });
 
+test('a JSON body over the size limit returns 413, not 500 (SEC-14)', (t) => {
+  const errorLog = t.mock.method(console, 'error', () => {});
+  const res = fakeResponse();
+  const tooLarge = Object.assign(new Error('request entity too large'), { type: 'entity.too.large', status: 413 });
+
+  errorHandler(tooLarge, {}, res, () => {});
+
+  assert.equal(res.statusCode, 413);
+  assert.deepEqual(res.body, { error: { message: 'Request body is too large', details: null } });
+  assert.equal(errorLog.mock.callCount(), 0); // not logged as an unexpected server error
+});
+
 test('an unexpected error returns 500 with details: null and no internal information', (t) => {
   t.mock.method(console, 'error', () => {});
   const res = fakeResponse();

@@ -15,6 +15,11 @@ function errorHandler(err, req, res, next) {
     return sendError(res, err.status, err.message, err.details);
   }
 
+  // JSON body over express.json()'s 100 KB limit: the client's fault, not a server error
+  if (err.type === 'entity.too.large') {
+    return sendError(res, 413, 'Request body is too large');
+  }
+
   // Malformed JSON body from express.json()
   if (err.type === 'entity.parse.failed') {
     return sendError(res, 400, 'Request body must be valid JSON');

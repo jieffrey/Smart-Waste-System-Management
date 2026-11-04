@@ -216,12 +216,21 @@ later while the original AI result is kept.
 }
 ```
 
-**When the ML API is unavailable** — `ML_API_URL` not set, the ML API is down, takes longer than
-`ML_API_TIMEOUT_MS`, returns an error, or returns an invalid result — the request fails with `503`
-and **nothing is saved** (no image file, no database rows). The client can simply try again:
+**When the ML API can't use the photo** — it answers `400` (corrupt, empty or too many pixels), `413`
+(too large) or `415` (not a JPEG/PNG/WebP) — the request fails with `422` and an error on the `image`
+field. **Nothing is saved**, and the ML API's own error text is never passed on:
 
 ```json
-{ "error": { "message": "Classification service is unavailable, please try again", "details": null } }
+{ "error": { "message": "The photo couldn't be processed. Try another photo.", "details": [{ "field": "image", "message": "The photo couldn't be processed. Try another photo." }] } }
+```
+
+**When the ML API is unavailable** — `ML_API_URL` not set, the ML API is down, takes longer than
+`ML_API_TIMEOUT_MS`, answers `5xx` or any other unexpected status, or returns an invalid result — the
+request fails with `503` and **nothing is saved** (no image file, no database rows). The client can
+simply try again:
+
+```json
+{ "error": { "message": "AI service unavailable, please try again later", "details": null } }
 ```
 
 Order of work: validate the request → classify with the ML API → save the image → insert the report
@@ -236,6 +245,8 @@ only logged on the server, never sent to the client.
 | `403` | Not role `user` (e.g. an admin), or account deactivated |
 | `413` | Image larger than 5 MB |
 | `415` | Not a JPEG, PNG or WebP image |
+| `422` | The ML API couldn't process the photo (error on the `image` field) |
+| `429` | More than 20 new reports in an hour (see [Rate limits](#rate-limits)) |
 | `503` | ML API unavailable (see above) |
 
 ### List your own reports — `GET /api/reports/me`

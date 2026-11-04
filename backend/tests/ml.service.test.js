@@ -2,12 +2,18 @@
 
 const { test, before, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
-const { startFakeMlApi, DEFAULT_PREDICTION } = require('./helpers/fake-ml-api');
+const { startFakeMlApi, DEFAULT_PREDICTION, RAW_ML_ERROR_TEXT } = require('./helpers/fake-ml-api');
 
 const UNAVAILABLE = {
   status: 503,
-  message: 'Classification service is unavailable, please try again',
+  message: 'AI service unavailable, please try again later',
   details: null,
+};
+const IMAGE_REJECTED_MESSAGE = "The photo couldn't be processed. Try another photo.";
+const IMAGE_REJECTED = {
+  status: 422,
+  message: IMAGE_REJECTED_MESSAGE,
+  details: [{ field: 'image', message: IMAGE_REJECTED_MESSAGE }],
 };
 const image = Buffer.from('fake image bytes');
 
@@ -52,6 +58,32 @@ test('throws 503 when the ML API returns an error status', async (t) => {
 
   await assert.rejects(classifyImage(image, 'image/jpeg'), UNAVAILABLE);
 });
+
+for (const status of [400, 413, 415]) {
+  test(`throws 422 on the image field when the ML API rejects the image with ${status}`, async (t) => {
+    t.mock.method(console, 'warn', () => {});
+    fakeMl.state.mode = 'status';
+    fakeMl.state.status = status;
+
+    await assert.rejects(classifyImage(image, 'image/jpeg'), (err) => {
+      assert.equal(err.status, IMAGE_REJECTED.status);
+      assert.equal(err.message, IMAGE_REJECTED.message);
+      assert.deepEqual(err.details, IMAGE_REJECTED.details);
+      assert.doesNotMatch(JSON.stringify(err.details) + err.message, new RegExp(RAW_ML_ERROR_TEXT.slice(0, 20)));
+      return true;
+    });
+  });
+}
+
+for (const status of [401, 404, 500, 502, 503]) {
+  test(`throws 503 (not an image error) when the ML API answers ${status}`, async (t) => {
+    t.mock.method(console, 'error', () => {});
+    fakeMl.state.mode = 'status';
+    fakeMl.state.status = status;
+
+    await assert.rejects(classifyImage(image, 'image/jpeg'), UNAVAILABLE);
+  });
+}
 
 test('throws 503 when the ML API returns an invalid prediction', async (t) => {
   t.mock.method(console, 'error', () => {});

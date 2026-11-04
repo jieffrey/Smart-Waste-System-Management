@@ -89,6 +89,8 @@ export default function NewReportScreen() {
     if (!result.canceled) {
       const { uri, width, height } = result.assets[0];
       setPhoto({ uri, width, height });
+      // A new photo replaces the one the server couldn't process.
+      setFieldErrors(({ image: _rejected, ...otherErrors }) => otherErrors);
     }
   }
 
@@ -111,10 +113,12 @@ export default function NewReportScreen() {
     } catch (err) {
       // The form keeps everything the user entered, so they can simply try again.
       if (err instanceof ApiError && err.status === 503) {
-        setSubmitError('The classification service is unavailable right now. Your report was not saved — please try again.');
+        setSubmitError('The AI service is unavailable right now. Your report was not saved — please try again.');
       } else {
-        setSubmitError(getErrorMessage(err));
-        setFieldErrors(getFieldErrors(err));
+        const errors = getFieldErrors(err);
+        setFieldErrors(errors);
+        // A photo the AI couldn't process (422) is shown on the photo itself, not as a general error.
+        setSubmitError(errors.image ? null : getErrorMessage(err));
       }
     } finally {
       setSubmitting(false);
@@ -191,6 +195,11 @@ export default function NewReportScreen() {
           <Button title="From gallery" onPress={() => pickPhoto('library')} variant="secondary" />
         </View>
       </View>
+      {fieldErrors.image ? (
+        <ThemedText type="small" style={{ color: theme.danger }} accessibilityRole="alert">
+          {fieldErrors.image}
+        </ThemedText>
+      ) : null}
       {photoMessage ? (
         <View style={styles.notice}>
           <ThemedText type="small" style={{ color: theme.danger }}>

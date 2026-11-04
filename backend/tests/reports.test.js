@@ -12,7 +12,7 @@ const adminEmail = `test+report-admin-${runId}@example.com`;
 const password = 'correct-horse-battery';
 
 const UNAVAILABLE_BODY = {
-  error: { message: 'Classification service is unavailable, please try again', details: null },
+  error: { message: 'AI service unavailable, please try again later', details: null },
 };
 
 // Only the first bytes matter for type detection; the fake ML API does not decode images.
@@ -152,6 +152,22 @@ test('returns 503 and saves nothing when the ML API returns an error', async (t)
 
   assert.equal(res.status, 503);
   assert.deepEqual(res.body, UNAVAILABLE_BODY);
+  assert.equal(await countReports(), reportsBefore);
+  assert.equal(await countImageFiles(), filesBefore);
+});
+
+test('returns 422 on the image field and saves nothing when the ML API rejects the image (SEC-14)', async (t) => {
+  t.mock.method(console, 'warn', () => {});
+  fakeMl.state.mode = 'status';
+  fakeMl.state.status = 415;
+  const [reportsBefore, filesBefore] = [await countReports(), await countImageFiles()];
+
+  const res = await createReport();
+
+  const message = "The photo couldn't be processed. Try another photo.";
+  assert.equal(res.status, 422);
+  assert.deepEqual(res.body, { error: { message, details: [{ field: 'image', message }] } });
+  assert.doesNotMatch(JSON.stringify(res.body), /raw ML detail/); // the ML API's own text is never passed on
   assert.equal(await countReports(), reportsBefore);
   assert.equal(await countImageFiles(), filesBefore);
 });
