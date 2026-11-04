@@ -2,14 +2,27 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { fieldClass } from "@/components/ui/input";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { SearchInput } from "@/components/ui/SearchInput";
 import { CATEGORY_LABELS, REPORT_CATEGORIES, REPORT_STATUSES, STATUS_LABELS } from "@/lib/labels";
 import { hasActiveFilters, reportsHref, type ReportFilters as Filters } from "@/lib/report-filters";
-import { SearchInput } from "@/components/ui/SearchInput";
+import { cn } from "@/lib/utils";
 
-const inputClass = "rounded border border-zinc-300 bg-white px-2 py-1.5 text-small";
+const compactField = cn(fieldClass, "h-8 text-small");
+
+function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
+  return (
+    <label className={cn("flex min-w-0 flex-col gap-1", className)}>
+      <span className="label-micro text-gray-600">{label}</span>
+      {children}
+    </label>
+  );
+}
 
 // All filter state lives in the URL: every change navigates to a new /reports?... URL (page back to 1),
-// so filtered views can be shared and the back button works.
+// so filtered views can be shared and the back button works. One compact row on desktop.
 export function ReportFilters({ filters }: { filters: Filters }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -24,85 +37,83 @@ export function ReportFilters({ filters }: { filters: Filters }) {
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-lg border border-zinc-200 bg-white p-3">
-      <label className="flex flex-col gap-1 text-micro text-zinc-500">
-        Search
+    <div className="grid grid-cols-2 items-end gap-3 lg:grid-cols-[minmax(12rem,1fr)_10rem_9rem_9.5rem_9.5rem_auto]">
+      <Field label="Search" className="col-span-2 lg:col-span-1">
         <SearchInput
           key={searchKey}
           value={filters.q ?? ""}
           onSearch={(q) => navigate({ q: q || undefined })}
           placeholder="Description or address"
-          className={`${inputClass} w-56`}
+          className={compactField}
         />
-      </label>
+      </Field>
 
-      <label className="flex flex-col gap-1 text-micro text-zinc-500">
-        Status
-        <select
+      <Field label="Status">
+        <NativeSelect
+          size="sm"
           value={filters.status ?? ""}
           onChange={(event) => navigate({ status: (event.target.value || undefined) as Filters["status"] })}
-          className={inputClass}
         >
-          <option value="">All statuses</option>
+          <NativeSelectOption value="">All</NativeSelectOption>
           {REPORT_STATUSES.map((status) => (
-            <option key={status} value={status}>
+            <NativeSelectOption key={status} value={status}>
               {STATUS_LABELS[status]}
-            </option>
+            </NativeSelectOption>
           ))}
-        </select>
-      </label>
+        </NativeSelect>
+      </Field>
 
-      <label className="flex flex-col gap-1 text-micro text-zinc-500">
-        Category
-        <select
+      <Field label="Category">
+        <NativeSelect
+          size="sm"
           value={filters.category ?? ""}
           onChange={(event) => navigate({ category: (event.target.value || undefined) as Filters["category"] })}
-          className={inputClass}
         >
-          <option value="">All categories</option>
+          <NativeSelectOption value="">All</NativeSelectOption>
           {REPORT_CATEGORIES.map((category) => (
-            <option key={category} value={category}>
+            <NativeSelectOption key={category} value={category}>
               {CATEGORY_LABELS[category]}
-            </option>
+            </NativeSelectOption>
           ))}
-        </select>
-      </label>
+        </NativeSelect>
+      </Field>
 
-      <label className="flex flex-col gap-1 text-micro text-zinc-500">
-        From (WIB)
+      <Field label="From (WIB)">
         <input
           type="date"
           value={filters.from ?? ""}
           max={filters.to}
           onChange={(event) => navigate({ from: event.target.value || undefined })}
-          className={inputClass}
+          className={cn(compactField, "font-mono")}
         />
-      </label>
+      </Field>
 
-      <label className="flex flex-col gap-1 text-micro text-zinc-500">
-        To (WIB)
+      <Field label="To (WIB)">
         <input
           type="date"
           value={filters.to ?? ""}
           min={filters.from}
           onChange={(event) => navigate({ to: event.target.value || undefined })}
-          className={inputClass}
+          className={cn(compactField, "font-mono")}
         />
-      </label>
+      </Field>
 
-      <button
-        type="button"
-        onClick={() => {
-          setSearchKey((key) => key + 1);
-          startTransition(() => router.push("/reports"));
-        }}
-        disabled={!hasActiveFilters(filters)}
-        className="rounded border border-zinc-300 bg-white px-3 py-1.5 text-small hover:bg-zinc-100 disabled:opacity-50"
-      >
-        Reset filters
-      </button>
-
-      {pending && <p className="pb-1.5 text-small text-zinc-500">Updating…</p>}
+      <div className="col-span-2 flex items-center gap-3 lg:col-span-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="px-0"
+          onClick={() => {
+            setSearchKey((key) => key + 1);
+            startTransition(() => router.push("/reports"));
+          }}
+          disabled={!hasActiveFilters(filters)}
+        >
+          Reset filters
+        </Button>
+        {pending && <span className="font-mono text-micro text-gray-600">Updating…</span>}
+      </div>
     </div>
   );
 }

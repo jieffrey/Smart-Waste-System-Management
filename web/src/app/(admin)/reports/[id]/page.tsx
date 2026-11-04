@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { ReportDetail } from "@/components/reports/ReportDetail";
 import { ReportUpdateForm } from "@/components/reports/ReportUpdateForm";
+import { buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { getReport } from "@/lib/admin-data";
 import { ApiError } from "@/lib/api";
@@ -13,7 +15,7 @@ type Props = PageProps<"/reports/[id]">;
 export default function ReportDetailPage({ params, searchParams }: Props) {
   return (
     <section className="space-y-4">
-      <Suspense fallback={<p className="text-small text-zinc-500">Loading report…</p>}>
+      <Suspense fallback={<p className="text-small text-gray-600">Loading report…</p>}>
         <ReportDetailContent params={params} searchParams={searchParams} />
       </Suspense>
     </section>
@@ -25,7 +27,7 @@ async function ReportDetailContent({ params, searchParams }: Props) {
   // The list's filters travel with the link, so "Back to reports" returns to the same filtered page.
   const backHref = reportsHref(parseReportFilters(await searchParams));
   const backLink = (
-    <Link href={backHref} className="text-small text-blue-700 hover:underline">
+    <Link href={backHref} className={`${buttonVariants({ variant: "ghost", size: "sm" })} px-0`}>
       ← Back to reports
     </Link>
   );
@@ -40,12 +42,9 @@ async function ReportDetailContent({ params, searchParams }: Props) {
     }
     if (error.status === 404) {
       return (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {backLink}
-          <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center">
-            <h1 className="text-heading font-semibold">Report not found</h1>
-            <p className="mt-1 text-small text-zinc-500">It may have been removed, or the link is wrong.</p>
-          </div>
+          <EmptyState title="Report not found" hint="It may have been removed, or the link is wrong." />
         </div>
       );
     }
@@ -58,9 +57,8 @@ async function ReportDetailContent({ params, searchParams }: Props) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {backLink}
-      <h1 className="text-title font-semibold">Report</h1>
       <ReportDetail report={report}>
         <ReportUpdateForm report={report} />
       </ReportDetail>

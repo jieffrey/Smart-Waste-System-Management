@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
 import { UserFilters } from "@/components/users/UserFilters";
 import { UsersTable } from "@/components/users/UsersTable";
@@ -17,9 +19,9 @@ import {
 
 export default function UsersPage({ searchParams }: PageProps<"/users">) {
   return (
-    <section className="space-y-4">
-      <h1 className="text-title font-semibold">Users</h1>
-      <Suspense fallback={<p className="text-small text-zinc-500">Loading users…</p>}>
+    <section className="space-y-8">
+      <PageHeader kicker="People" title="Users" description="Residents who report waste, and the admins who dispatch it." />
+      <Suspense fallback={<p className="text-small text-gray-600">Loading users…</p>}>
         <UsersContent searchParams={searchParams} />
       </Suspense>
     </section>
@@ -30,10 +32,10 @@ async function UsersContent({ searchParams }: { searchParams: PageProps<"/users"
   const filters = parseUserFilters(await searchParams);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <UserFilters filters={filters} />
       {/* Keyed by the URL, so changing a filter shows the loading state for the results only. */}
-      <Suspense key={usersHref(filters)} fallback={<p className="text-small text-zinc-500">Loading users…</p>}>
+      <Suspense key={usersHref(filters)} fallback={<p className="text-small text-gray-600">Loading users…</p>}>
         <UsersResults filters={filters} />
       </Suspense>
     </div>
@@ -63,14 +65,15 @@ async function UsersResults({ filters }: { filters: Filters }) {
 
   if (pagination.total === 0) {
     return (
-      <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center text-small text-zinc-500">
-        {hasActiveUserFilters(filters) ? "No users match these filters." : "No users yet."}
-      </div>
+      <EmptyState
+        title={hasActiveUserFilters(filters) ? "No users match these filters." : "No users yet."}
+        hint={hasActiveUserFilters(filters) ? "Try another role or status, or reset the filters." : undefined}
+      />
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <UsersTable users={users} currentAdminId={currentAdminId} />
       <Pagination
         page={filters.page}
