@@ -1,26 +1,38 @@
 "use client";
 
 import { useActionState } from "react";
+import { AlertTriangle } from "lucide-react";
 import { login, type LoginState } from "@/actions/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const initialState: LoginState = { message: null, fieldErrors: {}, email: "" };
+
+function FieldError({ id, children }: { id: string; children: React.ReactNode }) {
+  return (
+    <p id={id} className="flex items-center gap-1.5 text-small text-ink">
+      <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />
+      {children}
+    </p>
+  );
+}
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState(login, initialState);
 
   return (
-    <form action={formAction} className="space-y-4" noValidate>
+    <form action={formAction} className="space-y-6" noValidate>
       {state.message && (
-        <p role="alert" className="rounded border border-red-200 bg-red-50 px-3 py-2 text-small text-red-700">
+        <p role="alert" className="flex gap-2 border-l-4 border-ink py-1 pl-3 text-small font-medium text-ink">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           {state.message}
         </p>
       )}
 
-      <div className="space-y-1">
-        <label htmlFor="email" className="block text-small font-medium">
-          Email
-        </label>
-        <input
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
           id="email"
           name="email"
           type="email"
@@ -29,20 +41,13 @@ export function LoginForm() {
           defaultValue={state.email}
           aria-invalid={Boolean(state.fieldErrors.email)}
           aria-describedby={state.fieldErrors.email ? "email-error" : undefined}
-          className="w-full rounded border border-zinc-300 px-3 py-2 text-small"
         />
-        {state.fieldErrors.email && (
-          <p id="email-error" className="text-small text-red-600">
-            {state.fieldErrors.email}
-          </p>
-        )}
+        {state.fieldErrors.email && <FieldError id="email-error">{state.fieldErrors.email}</FieldError>}
       </div>
 
-      <div className="space-y-1">
-        <label htmlFor="password" className="block text-small font-medium">
-          Password
-        </label>
-        <input
+      <div className="space-y-2">
+        <Label htmlFor="password">Password</Label>
+        <Input
           id="password"
           name="password"
           type="password"
@@ -50,22 +55,13 @@ export function LoginForm() {
           required
           aria-invalid={Boolean(state.fieldErrors.password)}
           aria-describedby={state.fieldErrors.password ? "password-error" : undefined}
-          className="w-full rounded border border-zinc-300 px-3 py-2 text-small"
         />
-        {state.fieldErrors.password && (
-          <p id="password-error" className="text-small text-red-600">
-            {state.fieldErrors.password}
-          </p>
-        )}
+        {state.fieldErrors.password && <FieldError id="password-error">{state.fieldErrors.password}</FieldError>}
       </div>
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded bg-zinc-900 px-3 py-2 text-small font-medium text-white disabled:opacity-60"
-      >
+      <Button type="submit" variant="primary" disabled={pending} className="w-full">
         {pending ? "Signing in…" : "Sign in"}
-      </button>
+      </Button>
     </form>
   );
 }

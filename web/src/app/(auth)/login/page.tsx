@@ -1,5 +1,8 @@
 import { Suspense } from "react";
+import { Info } from "lucide-react";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { CATEGORY_COLORS } from "@/lib/categories";
+import { REPORT_CATEGORIES } from "@/lib/labels";
 
 const REASON_MESSAGES: Record<string, string> = {
   expired: "Your session has expired. Please sign in again.",
@@ -16,25 +19,70 @@ async function ReasonNotice({ searchParams }: { searchParams: PageProps<"/login"
     return null;
   }
   return (
-    <p role="status" className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-small text-amber-800">
+    <p role="status" className="flex gap-2 border-l-4 border-ink py-1 pl-3 text-small text-ink">
+      <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       {message}
     </p>
   );
 }
 
+// Facts shown on the front door. All true for this system (the accuracy is the model's test result,
+// see ml/README.md).
+function Facts() {
+  return (
+    <dl className="grid gap-6 border-t border-gray-700 pt-6 sm:grid-cols-3">
+      <div>
+        <dt className="font-mono text-title font-semibold text-highlight">3</dt>
+        <dd className="mt-1 text-small text-gray-300">
+          waste streams the AI sorts into
+          <span className="mt-2 flex gap-1.5" aria-hidden="true">
+            {REPORT_CATEGORIES.map((category) => (
+              <span key={category} className={`size-3 border border-snow ${CATEGORY_COLORS[category].swatchClass}`} />
+            ))}
+          </span>
+        </dd>
+      </div>
+      <div>
+        <dt className="font-mono text-title font-semibold text-highlight">97.7%</dt>
+        <dd className="mt-1 text-small text-gray-300">test accuracy of the classifier on 701 held-out photos</dd>
+      </div>
+      <div>
+        <dt className="font-mono text-title font-semibold text-highlight">4</dt>
+        <dd className="mt-1 text-small text-gray-300">steps every reporter can follow, from pending to resolved</dd>
+      </div>
+    </dl>
+  );
+}
+
 export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm space-y-6 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+    <main className="grid min-h-screen lg:grid-cols-[7fr_5fr]">
+      {/* The concept, in one sentence */}
+      <section className="flex flex-col justify-between gap-12 bg-ink px-6 py-8 text-snow sm:px-12 sm:py-12">
         <div>
-          <h1 className="text-title font-semibold">Smart Waste Admin</h1>
-          <p className="text-small text-zinc-500">Sign in with an admin account.</p>
+          <p className="font-wide text-heading font-extrabold tracking-tight">SWMS</p>
+          <p className="label-micro mt-1 text-gray-300">Smart Waste Management System</p>
         </div>
-        <Suspense fallback={null}>
-          <ReasonNotice searchParams={searchParams} />
-        </Suspense>
-        <LoginForm />
-      </div>
+        <h1 className="font-semiwide max-w-3xl text-title leading-tight font-bold tracking-tight sm:text-display sm:leading-none">
+          Residents spot it. The AI sorts it. <span className="text-highlight">You dispatch it.</span>
+        </h1>
+        <Facts />
+      </section>
+
+      {/* The door */}
+      <section className="flex items-center px-6 py-12 sm:px-12">
+        <div className="w-full max-w-sm space-y-8">
+          <div className="border-b-2 border-ink pb-4">
+            <p className="label-micro text-gray-600">Admin</p>
+            <h2 className="font-semiwide mt-1 text-title font-bold tracking-tight text-ink">Sign in</h2>
+            <p className="mt-2 text-small text-gray-700">For dispatchers with an admin account. Residents use the mobile app.</p>
+          </div>
+          <Suspense fallback={null}>
+            <ReasonNotice searchParams={searchParams} />
+          </Suspense>
+          <LoginForm />
+        </div>
+      </section>
     </main>
   );
 }
