@@ -58,6 +58,8 @@ database, no rate limiting, and an ML endpoint that a big image could exhaust.
 | [SEC-18](#sec-18) | Info | "Deactivated" is detected from the error message text | Web | A10 | Code review |
 | [SEC-19](#sec-19) | Info | Small hardening notes (bcrypt cost, secret strength, gitignore, proxy) | Several | A02, A04 | Code review |
 
+Fix status is shown at the top of each finding ("Status: fixed in ...").
+
 Suggested fix order: SEC-01, then SEC-02 together with SEC-04, then SEC-03 and SEC-08 (they share a fix
 area), then the Low items as time allows.
 
@@ -68,6 +70,10 @@ area), then the Low items as time allows.
 <a id="sec-01"></a>
 ## SEC-01: Published demo admin password works against the real database
 
+- **Status: fixed in `security/fix-demo-admin-password`.** The seed is documented as local-only, a test
+  proves that re-running it never resets an existing admin password, and `npm run set-admin-password` sets
+  a strong password at a hidden prompt. **Action still needed:** run that script against the Neon database;
+  until then, the existing admin still has the demo password.
 - **Severity: High.** It's a working admin login for the real (cloud) database, written in the repo.
   The only thing between it and a full admin takeover is the backend being reachable on the internet.
 - **Evidence:** proven live. `POST /api/auth/login` with the README credentials returned `role: "admin"`.
