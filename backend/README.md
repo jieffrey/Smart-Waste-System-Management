@@ -40,7 +40,7 @@ change existing tables — don't run it against a database that already has the 
 | `ML_API_KEY` | no | Sent to the ML API as the `X-API-Key` header, only when set (e.g. for a hosted ML API) |
 | `ML_API_TIMEOUT_MS` | no | ML API request timeout in milliseconds (default `30000`) |
 | `WEB_ORIGIN` | no | Browser origins allowed to call the API (CORS), comma-separated, e.g. `http://localhost:3001,https://admin.example.com`. Empty = no CORS headers. See [CORS](#cors). |
-| `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | no | Optional override of the demo admin for `npm run seed` (e.g. on a deployed server). See [Demo accounts](#demo-accounts-npm-run-seed). |
+| `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | no | Optional override of the demo admin for `npm run seed` (local setup). See [Demo accounts](#demo-accounts-npm-run-seed-local-setup-only). |
 | `SEED_USER_NAME`, `SEED_USER_EMAIL`, `SEED_USER_PASSWORD` | no | Optional override of the demo user for `npm run seed` |
 
 ## Scripts
@@ -51,11 +51,16 @@ change existing tables — don't run it against a database that already has the 
 | `npm start` | Start (env comes from the environment, e.g. Docker) |
 | `npm test` | Run all tests (loads `.env`; needs the database) |
 | `npm run db:check` | Check the database connection and tables |
-| `npm run seed` | Create the demo admin and user (loads `.env`; safe to run again) |
+| `npm run seed` | **Local development only:** create the demo admin and user (loads `.env`; safe to run again) |
+| `npm run set-admin-password` | Set a new password for an existing admin, typed at a hidden prompt (loads `.env`) |
 
-### Demo accounts (`npm run seed`)
+### Demo accounts (`npm run seed`): local setup only
 
 Public registration only ever creates role `user`, so the first admin comes from the seed script.
+The seed is meant for **your local development database**. The credentials below are public (they are
+in this repository) and **do not work on the deployed instance**: the deployed demo credentials are
+provided in the submission email.
+
 The demo accounts are defined at the top of [`scripts/seed.js`](scripts/seed.js):
 
 | Role | Name | Email | Password |
@@ -72,12 +77,11 @@ admin dimoya4077@macsnipe.com: created
 user  kaseg88634@macsnipe.com: created
 ```
 
-> **Warning:** these credentials are public (they are in this repository). **Change the admin
-> password before any public deployment** — either log in and change it, or set your own values
-> with the optional override below *before* the first seed. Re-running the seed never changes an
-> existing password, so changing the constants later does not update an account that already exists.
+> **Warning:** these credentials are public. On any shared or deployed database, give the admin a
+> real password with `npm run set-admin-password` (below). Re-running the seed never changes an
+> existing password, so it can't reset the admin back to the demo password.
 
-**Optional override (e.g. on a deployed server):** a non-empty `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL`,
+**Optional override:** a non-empty `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL`,
 `SEED_ADMIN_PASSWORD`, `SEED_USER_NAME`, `SEED_USER_EMAIL` or `SEED_USER_PASSWORD` environment variable
 replaces the matching value above. They are not in `.env.example`; add them to `.env` or the server's
 environment only when needed.
@@ -87,6 +91,30 @@ duplicated and **its password is never changed** — only its role is set to the
 made active again. Both accounts are checked with the registration rules first (name 2–100
 characters, a valid email, password 8–72 characters); if anything is invalid, the script lists every
 problem (never showing the values) and writes nothing.
+
+### Set an admin password (`npm run set-admin-password`)
+
+Changes the password of an existing **admin** account in the database that `DATABASE_URL` points to
+(for example the deployed Neon database). Run it from `backend/` in an interactive terminal
+(PowerShell or Windows Terminal; in Git Bash use `winpty npm.cmd run set-admin-password`):
+
+```bash
+npm run set-admin-password
+```
+
+```
+Admin email: admin@example.com
+New password (hidden):
+Repeat the new password:
+Password updated for admin@example.com.
+```
+
+- The password is typed at a **hidden prompt**. It is never accepted as a command-line argument and
+  never printed or logged.
+- It must be at least 12 characters, use at least 6 different characters, and not contain common
+  words (such as "password" or "admin") or the email address. If it doesn't qualify, nothing changes.
+- It is hashed exactly like registration (bcrypt), and only accounts with role `admin` can be changed.
+- Tokens issued before the change stay valid until they expire (`JWT_EXPIRES_IN`).
 
 ### CORS
 

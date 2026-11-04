@@ -97,7 +97,8 @@ If Expo Go can't load the app itself (the QR code step), Windows may also be blo
 
 ## Demo account
 
-The backend's seed script (`npm run seed` in `backend/`) creates this user:
+For **local setup only**, the backend's seed script (`npm run seed` in `backend/`) creates this user.
+It doesn't work on the deployed instance; the deployed demo credentials are provided in the submission email.
 
 | Role | Email | Password |
 |---|---|---|
