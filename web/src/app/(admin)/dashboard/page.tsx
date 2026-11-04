@@ -64,7 +64,7 @@ async function DashboardContent() {
         >
           <div className="mb-2 flex gap-6 text-small text-ink">
             <span className="inline-flex items-center gap-2">
-              <span className="size-3 bg-gray-300" aria-hidden="true" /> Reports in
+              <span className="size-3 bg-cobalt/75" aria-hidden="true" /> Reports in
             </span>
             <span className="inline-flex items-center gap-2">
               <span className="h-0.5 w-4 bg-ink" aria-hidden="true" /> Completed
@@ -136,7 +136,7 @@ async function DashboardContent() {
           takeaway={
             flow.total === 0
               ? undefined
-              : `${flow.corrected} of ${flow.total} reports were corrected by an admin (colored flows). Gray flows are reports the AI got right.`
+              : `${flow.corrected} of ${flow.total} reports were corrected by an admin (solid flows). Faint flows are reports the AI got right.`
           }
         >
           {flow.total === 0 ? (

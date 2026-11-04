@@ -11,21 +11,32 @@ import { CATEGORY_LABELS, REPORT_CATEGORIES } from "@/lib/labels";
 import type { aiFlowSankey } from "@/lib/dashboard";
 import type { ReportCategory } from "@/types/api";
 
-// Handling flow: reported -> in progress -> completed. Neutral ink, one layer, straight edges.
+// Handling flow: reported -> in progress -> completed, as solid ink stages (no grey slabs). Labels and
+// values sit in a row underneath, because text inside ink stages would need its own colors.
 export function HandlingFunnel({ stages }: { stages: { label: string; value: number }[] }) {
   return (
-    <FunnelChart
-      data={stages}
-      color="#121212"
-      layers={1}
-      edges="straight"
-      gap={2}
-      grid={{ bands: false, lines: true, lineColor: "#D6D6D3" }}
-      showPercentage
-      showValues
-      showLabels
-      className="h-56"
-    />
+    <div>
+      <FunnelChart
+        data={stages}
+        color="#121212"
+        layers={1}
+        edges="straight"
+        gap={3}
+        grid={false}
+        showPercentage
+        showValues={false}
+        showLabels={false}
+        className="h-44"
+      />
+      <ol className="mt-3 grid grid-cols-3">
+        {stages.map((stage) => (
+          <li key={stage.label} className="border-l border-ink pl-3">
+            <p className="font-mono text-heading font-semibold text-ink">{stage.value}</p>
+            <p className="text-small text-gray-700">{stage.label}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }
 
@@ -68,8 +79,8 @@ export function CategoryRing({ byCategory, total }: { byCategory: Record<ReportC
   );
 }
 
-// AI category -> final category. Links the AI got right are light gray; corrections are drawn in the
-// color of the category the admin corrected them to, so they stand out at a glance.
+// AI category -> final category. Flows the AI got right are drawn in their category color at 25% opacity;
+// corrections at full color (the category the admin corrected them to), so they stand out at a glance.
 export function AiFlowSankey({ data }: { data: ReturnType<typeof aiFlowSankey> }) {
   const { nodes, links } = data;
   return (
@@ -87,7 +98,7 @@ export function AiFlowSankey({ data }: { data: ReturnType<typeof aiFlowSankey> }
         useGradient={false}
         strokeOpacity={1}
         fadedOpacity={0.15}
-        getLinkColor={(_link, index) => (links[index]?.corrected ? CATEGORY_COLORS[links[index].to].hex : "#D6D6D3")}
+        getLinkColor={(_link, index) => `${CATEGORY_COLORS[links[index]?.to ?? "paper"].hex}${links[index]?.corrected ? "" : "40"}`}
       />
       <SankeyNode lineCap={0} getNodeColor={(_node, index) => CATEGORY_COLORS[nodes[index]?.category ?? "paper"].hex} />
       <SankeyTooltip />

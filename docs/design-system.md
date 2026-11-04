@@ -212,9 +212,10 @@ disc** set into the cobalt field, which keeps the category colors true. On yello
 
 - **Data is drawn in the category colors** (red orange, cobalt, ink). Grey is only for gridlines, axes and
   tracks.
-- Composed chart: reports in = cobalt bars, completed = ink line with a snow outline, so the line stays
-  readable where it crosses a bar.
-- Funnel: solid ink stages, not grey slabs.
+- Composed chart: reports in = cobalt bars at 75% opacity, completed = ink line. At 75% the bars keep 3.89:1
+  against snow and the ink line keeps 4.64:1 where it crosses a bar (full cobalt would only give 2.77:1).
+- Funnel: solid ink stages, not grey slabs, with snow percentage badges; stage names and counts sit in a
+  mono row under the funnel instead of inside the dark stages.
 - Sankey: flows the AI got right are drawn in their category color at reduced opacity; corrections at full
   color.
 - The gauge and the composition donut are one family: the same ring thickness, flat butt ends, and the

@@ -629,7 +629,7 @@ function SegmentLabel({
     </span>
   );
   const pctEl = showPercentage && (
-    <span className="bg-ink px-2 py-0.5 font-mono font-semibold text-snow text-micro">
+    <span className="bg-snow px-2 py-0.5 font-mono font-semibold text-ink text-micro">
       {formatPercentage(pct)}
     </span>
   );
