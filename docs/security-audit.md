@@ -38,7 +38,7 @@ database, no rate limiting, and an ML endpoint that a big image could exhaust.
 
 | ID | Severity | Title | Area | OWASP 2025 / API 2023 | Evidence |
 |---|---|---|---|---|---|
-| [SEC-01](#sec-01) | **High** | Published demo admin password works against the real database | Repo / backend | A07, A02 | Proven live |
+| [SEC-01](#sec-01) | **High** | Published demo admin password works against the real database (fixed: `security/fix-demo-admin-password`) | Repo / backend | A07, A02 | Proven live |
 | [SEC-02](#sec-02) | Medium | No rate limiting on login, registration or report creation | Backend | A07, API4 | Proven live |
 | [SEC-03](#sec-03) | Medium | ML API can be made to use gigabytes of memory with one small image | ML | A10, API4 | Code review |
 | [SEC-04](#sec-04) | Low | Weak password policy (`12345678` is accepted) | Backend | A07 | Proven live |
@@ -68,6 +68,10 @@ area), then the Low items as time allows.
 <a id="sec-01"></a>
 ## SEC-01: Published demo admin password works against the real database
 
+- **Status: fixed in `security/fix-demo-admin-password`.** The seed is documented as local-only, a test
+  proves that re-running it never resets an existing admin password, and `npm run set-admin-password` sets
+  a strong password at a hidden prompt. **Action still needed:** run that script against the Neon database;
+  until then, the existing admin still has the demo password.
 - **Severity: High.** It's a working admin login for the real (cloud) database, written in the repo.
   The only thing between it and a full admin takeover is the backend being reachable on the internet.
 - **Evidence:** proven live. `POST /api/auth/login` with the README credentials returned `role: "admin"`.
