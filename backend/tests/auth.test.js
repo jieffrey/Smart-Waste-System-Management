@@ -65,6 +65,19 @@ test('register returns 400 with field details for invalid input', async () => {
   assert.deepEqual(fields, ['email', 'full_name', 'password']);
 });
 
+test('register rejects very common passwords in any letter case (SEC-04)', async () => {
+  for (const commonPassword of ['12345678', 'PASSWORD1', 'qwerty123']) {
+    const res = await request('POST', '/register', {
+      body: { full_name: 'Common Password', email: `common-${Date.now()}@example.com`, password: commonPassword },
+    });
+
+    assert.equal(res.status, 400);
+    assert.deepEqual(res.body.error.details, [
+      { field: 'password', message: 'This password is too common. Please choose a less predictable one' },
+    ]);
+  }
+});
+
 test('malformed JSON returns 400 without internal details', async () => {
   const res = await request('POST', '/register', { body: '{"email":' });
 

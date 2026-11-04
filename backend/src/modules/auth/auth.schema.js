@@ -1,4 +1,5 @@
 const { z } = require('zod');
+const { isCommonPassword } = require('./common-passwords');
 
 const email = z
   .string({ error: 'Email is required' })
@@ -7,10 +8,13 @@ const email = z
   .max(255, 'Email must be at most 255 characters')
   .pipe(z.email('Email is invalid'));
 
+// Rules for a new password: length, and not one of the most common passwords (NIST SP 800-63B style;
+// no "must contain a symbol" rules, which push people to predictable patterns like Password1!).
 const password = z
   .string({ error: 'Password is required' })
   .min(8, 'Password must be at least 8 characters')
-  .max(72, 'Password must be at most 72 characters');
+  .max(72, 'Password must be at most 72 characters')
+  .refine((value) => !isCommonPassword(value), 'This password is too common. Please choose a less predictable one');
 
 const registerSchema = z.object({
   full_name: z
