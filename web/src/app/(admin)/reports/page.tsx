@@ -63,7 +63,7 @@ async function ReportsResults({ filters }: { filters: Filters }) {
 
   return (
     <div className="space-y-3">
-      <ReportsTable reports={reports} />
+      <ReportsTable reports={reports} filters={filters} />
       <Pagination filters={filters} total={pagination.total} totalPages={totalPages} />
     </div>
   );

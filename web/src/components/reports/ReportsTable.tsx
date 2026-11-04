@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatDateTime, formatPercent } from "@/lib/format";
 import { CATEGORY_LABELS } from "@/lib/labels";
+import { reportDetailHref, type ReportFilters } from "@/lib/report-filters";
 import type { AdminReport } from "@/types/api";
 import { ReportThumbnail } from "./ReportThumbnail";
 import { StatusBadge } from "./StatusBadge";
@@ -10,7 +11,7 @@ function location(report: AdminReport) {
 }
 
 // Each row links to the report detail: the link sits on the reporter cell and stretches over the whole row.
-export function ReportsTable({ reports }: { reports: AdminReport[] }) {
+export function ReportsTable({ reports, filters }: { reports: AdminReport[]; filters: ReportFilters }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
       <table className="w-full min-w-[900px] text-sm">
@@ -33,7 +34,7 @@ export function ReportsTable({ reports }: { reports: AdminReport[] }) {
               </td>
               <td className="px-3 py-2">
                 <Link
-                  href={`/reports/${report.id}`}
+                  href={reportDetailHref(report.id, filters)}
                   className="font-medium after:absolute after:inset-0 after:content-[''] focus:outline-none focus-visible:after:ring-2 focus-visible:after:ring-zinc-900"
                 >
                   {report.reporter_name}

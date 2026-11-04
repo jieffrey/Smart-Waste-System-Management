@@ -63,8 +63,8 @@ export function hasActiveFilters(filters: ReportFilters) {
   return Boolean(filters.status || filters.category || filters.from || filters.to || filters.q);
 }
 
-// Link to /reports with these filters. Empty values and page 1 are left out to keep URLs short.
-export function reportsHref(filters: Partial<ReportFilters>) {
+// Query string for these filters. Empty values and page 1 are left out to keep URLs short.
+function filtersQuery(filters: Partial<ReportFilters>) {
   const params = new URLSearchParams();
   for (const key of ["status", "category", "from", "to", "q"] as const) {
     const value = filters[key];
@@ -75,6 +75,18 @@ export function reportsHref(filters: Partial<ReportFilters>) {
   if (filters.page && filters.page > 1) {
     params.set("page", String(filters.page));
   }
-  const query = params.toString();
+  return params.toString();
+}
+
+// Link to /reports with these filters.
+export function reportsHref(filters: Partial<ReportFilters>) {
+  const query = filtersQuery(filters);
   return query ? `/reports?${query}` : "/reports";
+}
+
+// Link to one report that carries the list's filters along, so "Back to reports" can return to the same
+// filtered page. The detail page re-validates them with parseReportFilters (never used as a raw URL).
+export function reportDetailHref(id: string, filters: Partial<ReportFilters>) {
+  const query = filtersQuery(filters);
+  return `/reports/${encodeURIComponent(id)}${query ? `?${query}` : ""}`;
 }
