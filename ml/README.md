@@ -336,6 +336,61 @@ find?
 model uses no class weights, no oversampling and no augmentation. This is planned work
 ([Next steps](#10-next-steps)).
 
+### 7. Error analysis
+
+The 16 test errors, from the confusion matrix:
+
+| True → predicted | Count |
+|---|---|
+| `plastic` → `paper` | **8** |
+| `organic` → `paper` | 3 |
+| `organic` → `plastic` | 2 |
+| `paper` → `organic` | 2 |
+| `paper` → `plastic` | 1 |
+| `plastic` → `organic` | 0 |
+
+**The main confusion is `plastic` predicted as `paper`:** 8 of 298 plastic test images (2.7%, *computed*),
+half of all errors. `paper` is also the class the model over-predicts most (11 of its 16 errors are
+predictions of `paper`).
+
+**What the misclassified images have in common: not verified.** The dataset images are not in this
+repository (they are gitignored), and the notebook never displays or lists the misclassified files. So I
+could not look at them, and there is no grid of examples here. The ideas below are **hypotheses to check,
+not findings**:
+- **Look-alike surfaces:** plastic packaging with printed labels, or matte, white or flat plastic
+  (wrappers, bags, cups), can look like paper or cardboard at 224×224.
+- **Mixed materials:** items such as paper cups with a plastic lining or drink cartons could reasonably sit
+  in either class, so the dataset label itself may be debatable.
+- **Background:** if many paper photos share a similar background, the model may partly rely on the
+  background rather than the object.
+
+**How to verify (next Colab session):** list the wrong files and show them in a grid. With `shuffle=False`,
+`test_ds.file_paths` lines up with the predictions:
+
+```python
+import numpy as np, matplotlib.pyplot as plt
+from PIL import Image
+
+test_ds = tf.keras.utils.image_dataset_from_directory(
+    f"{BASE}/dataset_split/test", image_size=(224, 224), batch_size=32, shuffle=False)
+probs = model.predict(test_ds, verbose=0)
+y_true = np.concatenate([y.numpy() for _, y in test_ds])
+y_pred = probs.argmax(axis=1)
+names = test_ds.class_names
+wrong = np.where(y_true != y_pred)[0]
+
+plt.figure(figsize=(16, 9))
+for n, i in enumerate(wrong[:16]):
+    plt.subplot(4, 4, n + 1)
+    plt.imshow(Image.open(test_ds.file_paths[i]).convert("RGB"))
+    plt.title(f"{names[y_true[i]]} → {names[y_pred[i]]} ({probs[i].max():.2f})", fontsize=9)
+    plt.axis("off")
+plt.tight_layout()
+plt.savefig(f"{BASE}/results/figures/misclassified.png", dpi=120)
+```
+
+Committing `misclassified.png` (16 small dataset images) would turn these hypotheses into findings.
+
 ### Reproduce
 
 The scripts contain the notebook's code (without the earlier, abandoned 5-epoch experiment). Paths are
