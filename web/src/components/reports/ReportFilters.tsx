@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CATEGORY_LABELS, REPORT_CATEGORIES, REPORT_STATUSES, STATUS_LABELS } from "@/lib/labels";
 import { hasActiveFilters, reportsHref, type ReportFilters as Filters } from "@/lib/report-filters";
+import { SearchInput } from "@/components/ui/SearchInput";
 
-const SEARCH_DELAY_MS = 400;
 const inputClass = "rounded border border-zinc-300 bg-white px-2 py-1.5 text-sm";
 
 // All filter state lives in the URL: every change navigates to a new /reports?... URL (page back to 1),
@@ -14,20 +14,8 @@ export function ReportFilters({ filters }: { filters: Filters }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  // The search box keeps its own text while typing; the URL is updated after a pause.
-  const urlQ = filters.q ?? "";
-  const [search, setSearch] = useState(urlQ);
-  const [lastUrlQ, setLastUrlQ] = useState(urlQ);
-  const [pushedQ, setPushedQ] = useState(urlQ);
-  // When the URL's q changes because of something other than our own search (back button, reset),
-  // show the URL's value. When it's the value we just pushed, keep what the user has typed since.
-  if (urlQ !== lastUrlQ) {
-    setLastUrlQ(urlQ);
-    if (urlQ !== pushedQ) {
-      setSearch(urlQ);
-      setPushedQ(urlQ);
-    }
-  }
+  // Bumped by "Reset filters" to remount the search box, which clears any text typed but not yet searched.
+  const [searchKey, setSearchKey] = useState(0);
 
   function navigate(changes: Partial<Filters>) {
     startTransition(() => {
@@ -35,30 +23,15 @@ export function ReportFilters({ filters }: { filters: Filters }) {
     });
   }
 
-  useEffect(() => {
-    const q = search.trim();
-    if (q === (filters.q ?? "")) {
-      return;
-    }
-    const timer = setTimeout(() => {
-      setPushedQ(q);
-      startTransition(() => {
-        router.push(reportsHref({ ...filters, q: q || undefined, page: 1 }));
-      });
-    }, SEARCH_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [search, filters, router]);
-
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-lg border border-zinc-200 bg-white p-3">
       <label className="flex flex-col gap-1 text-xs text-zinc-500">
         Search
-        <input
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
+        <SearchInput
+          key={searchKey}
+          value={filters.q ?? ""}
+          onSearch={(q) => navigate({ q: q || undefined })}
           placeholder="Description or address"
-          maxLength={100}
           className={`${inputClass} w-56`}
         />
       </label>
@@ -120,8 +93,7 @@ export function ReportFilters({ filters }: { filters: Filters }) {
       <button
         type="button"
         onClick={() => {
-          setSearch("");
-          setPushedQ("");
+          setSearchKey((key) => key + 1);
           startTransition(() => router.push("/reports"));
         }}
         disabled={!hasActiveFilters(filters)}

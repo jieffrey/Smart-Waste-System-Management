@@ -10,6 +10,13 @@ const dateTimeFormat = new Intl.DateTimeFormat("en-GB", {
   minute: "2-digit",
 });
 
+const dateFormat = new Intl.DateTimeFormat("en-GB", {
+  timeZone: TIME_ZONE,
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
 const dayFormat = new Intl.DateTimeFormat("en-GB", {
   timeZone: "UTC",
   weekday: "short",
@@ -21,6 +28,11 @@ const dayFormat = new Intl.DateTimeFormat("en-GB", {
 // "2026-11-04T03:15:00Z" -> "4 Nov 2026, 10:15" (Jakarta time)
 export function formatDateTime(iso: string) {
   return dateTimeFormat.format(new Date(iso));
+}
+
+// "2026-11-04T20:15:00Z" -> "5 Nov 2026" (the date in Jakarta)
+export function formatDate(iso: string) {
+  return dateFormat.format(new Date(iso));
 }
 
 // "2026-11-04" (a calendar date, no time zone) -> "Wed, 4 Nov 2026"
