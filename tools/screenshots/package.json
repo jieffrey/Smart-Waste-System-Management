@@ -1,0 +1,13 @@
+{
+  "name": "swms-screenshot-tooling",
+  "private": true,
+  "description": "DEV TOOLING ONLY: fake backend + Playwright screenshots of the admin web app (fixture data).",
+  "type": "module",
+  "scripts": {
+    "mock": "node mock-api.mjs",
+    "capture": "node capture.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.60.0"
+  }
+}
