@@ -717,3 +717,53 @@ someone rewords or translates the message, the wrong explanation appears.
 
 **Lesson.** Messages are for people and codes are for programs. Don't write program logic that depends on
 text a person might reword.
+
+---
+
+# Mobile findings (Expo)
+
+What was checked and **held up**:
+- **Token storage:** `expo-secure-store` (iOS Keychain / Android Keystore), not AsyncStorage
+  (`Mobile/src/store/session.tsx:56`).
+- **Secrets in the bundle:** none. The only build-time value is `EXPO_PUBLIC_API_URL`
+  (`Mobile/src/constants/api.ts:3`), and there are no API keys or hardcoded backend URLs in the source.
+  The only other URL is a Google Maps link.
+- **Photo metadata:** photos are re-encoded with ImageManipulator before upload, which drops EXIF
+  metadata. (The server should still do this itself; see SEC-06.)
+- **Debug logging:** `console.warn` of request errors only runs in `__DEV__`
+  (`Mobile/src/lib/api.ts:100`) and never logs the token.
+
+Not checked: an actual release build (APK/IPA) was not built or decompiled. This review covers the source
+and `app.json`.
+
+<a id="sec-12"></a>
+## SEC-12: Mobile app talks to the backend over plain HTTP
+
+- **Severity: Low.** Code review. Today it's a development setup on a home network. It becomes High if a
+  release ships with an `http://` backend URL.
+- **Where:** `Mobile/.env.example:5` (`EXPO_PUBLIC_API_URL=http://192.168.1.10:4000`), and the backend has
+  no HTTPS setup
+
+**What's wrong.** The app sends the login password and the bearer token to `http://…`, so anyone on the
+same Wi-Fi network can read them. Android release builds block plain-HTTP traffic by default (Android 9+),
+so a release build would usually fail rather than leak, unless someone "fixes" that by turning on
+`usesCleartextTraffic`.
+
+**How it could be abused.** On shared Wi-Fi (a campus, a café), another device on the network can capture
+traffic and read the password or token from a login request.
+
+**How to fix it.** Use HTTPS for anything beyond your own desk: deploy the backend behind HTTPS (most hosts
+do it automatically), or for testing on a phone, use an HTTPS tunnel. Make the app refuse `http://` in
+production builds:
+
+```ts
+// Mobile/src/constants/api.ts
+if (!__DEV__ && API_URL.startsWith("http://")) {
+  throw new Error("EXPO_PUBLIC_API_URL must use https:// in release builds");
+}
+```
+
+Never turn on `usesCleartextTraffic` / `NSAllowsArbitraryLoads` to "make it work".
+
+**Lesson.** Encryption in transit isn't optional once real users and real networks are involved. Make the
+secure setting the only one a release build accepts.
