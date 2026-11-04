@@ -81,12 +81,14 @@ function OpenReportForm({ report }: Props) {
   const noteMessage = noteError ?? state.fieldErrors.admin_note;
 
   return (
-    <section className="border-t-2 border-ink pt-4">
-      <p className="label-micro text-gray-600">Dispatch</p>
-      <h2 className="mt-1 text-heading font-semibold text-ink">Route this report</h2>
+    <section className="border-2 border-ink">
+      {/* Yellow header strip: the one action on this page (ink on yellow, 15.34:1). */}
+      <div className="border-b-2 border-ink bg-highlight px-4 py-3">
+        <h2 className="font-wide text-heading font-extrabold tracking-tight text-ink">Route this report</h2>
+      </div>
 
       {/* Remounted after each save (key), so the inputs start from the latest data. */}
-      <form key={report.updated_at} action={formAction} onSubmit={handleSubmit} className="mt-4 space-y-5" noValidate>
+      <form key={report.updated_at} action={formAction} onSubmit={handleSubmit} className="space-y-5 p-4" noValidate>
         <input type="hidden" name="report_id" value={report.id} />
         <input type="hidden" name="original_category" value={report.category} />
         <input type="hidden" name="original_admin_note" value={originalNote} />

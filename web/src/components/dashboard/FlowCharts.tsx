@@ -11,25 +11,36 @@ import { CATEGORY_LABELS, REPORT_CATEGORIES } from "@/lib/labels";
 import type { aiFlowSankey } from "@/lib/dashboard";
 import type { ReportCategory } from "@/types/api";
 
-// Handling flow: reported -> in progress -> completed. Neutral ink, one layer, straight edges.
+// Handling flow: reported -> in progress -> completed, as solid ink stages (no grey slabs). Labels and
+// values sit in a row underneath, because text inside ink stages would need its own colors.
 export function HandlingFunnel({ stages }: { stages: { label: string; value: number }[] }) {
   return (
-    <FunnelChart
-      data={stages}
-      color="#121212"
-      layers={1}
-      edges="straight"
-      gap={2}
-      grid={{ bands: false, lines: true, lineColor: "#D6D6D3" }}
-      showPercentage
-      showValues
-      showLabels
-      className="h-56"
-    />
+    <div>
+      <FunnelChart
+        data={stages}
+        color="#121212"
+        layers={1}
+        edges="straight"
+        gap={3}
+        grid={false}
+        showPercentage
+        showValues={false}
+        showLabels={false}
+        className="h-44"
+      />
+      <ol className="mt-3 grid grid-cols-3">
+        {stages.map((stage) => (
+          <li key={stage.label} className="border-l border-ink pl-3">
+            <p className="font-mono text-heading font-semibold text-ink">{stage.value}</p>
+            <p className="text-small text-gray-700">{stage.label}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }
 
-// AI accuracy as a notched gauge: ink notches on a gray track. The number sits in the center.
+// AI accuracy as a notched gauge, drawn in ink on the yellow block (15.34:1); the track is ink at low opacity.
 export function AiAccuracyGauge({ percent }: { percent: number }) {
   return (
     <Gauge
@@ -38,9 +49,9 @@ export function AiAccuracyGauge({ percent }: { percent: number }) {
       notchCornerRadius={0}
       uniformWidth
       activeFill="#121212"
-      inactiveFill="#D6D6D3"
+      inactiveFill="#121212"
       activeFillOpacity={1}
-      inactiveFillOpacity={1}
+      inactiveFillOpacity={0.14}
       centerValue={percent}
       suffix="%"
       defaultLabel="AI kept"
@@ -50,7 +61,9 @@ export function AiAccuracyGauge({ percent }: { percent: number }) {
   );
 }
 
-// Category composition: one ring per category (share of all reports), in the category colors.
+// Category composition as Bklit's concentric rings: one ring per category, filled to its share of all
+// reports, in the category colors, on light tracks (no glow, square ends). It sits on a snow disc inside the
+// cobalt block, because the category colors fail directly on cobalt (2.02 and 2.77:1).
 export function CategoryRing({ byCategory, total }: { byCategory: Record<ReportCategory, number>; total: number }) {
   const data = REPORT_CATEGORIES.map((category) => ({
     label: CATEGORY_LABELS[category],
@@ -59,17 +72,17 @@ export function CategoryRing({ byCategory, total }: { byCategory: Record<ReportC
     color: CATEGORY_COLORS[category].hex,
   }));
   return (
-    <RingChart data={data} strokeWidth={14} ringGap={6} baseInnerRadius={48} className="mx-auto aspect-square max-w-64">
+    <RingChart data={data} strokeWidth={14} ringGap={6} baseInnerRadius={48} className="aspect-square w-full">
       {data.map((ring, index) => (
         <Ring key={ring.label} index={index} color={ring.color} showGlow={false} lineCap="butt" />
       ))}
-      <RingCenter defaultLabel="reports" valueClassName="font-mono text-heading font-semibold text-ink" labelClassName="label-micro text-gray-600" />
+      <RingCenter defaultLabel="reports" />
     </RingChart>
   );
 }
 
-// AI category -> final category. Links the AI got right are light gray; corrections are drawn in the
-// color of the category the admin corrected them to, so they stand out at a glance.
+// AI category -> final category. Flows the AI got right are drawn in their category color at 25% opacity;
+// corrections at full color (the category the admin corrected them to), so they stand out at a glance.
 export function AiFlowSankey({ data }: { data: ReturnType<typeof aiFlowSankey> }) {
   const { nodes, links } = data;
   return (
@@ -87,7 +100,7 @@ export function AiFlowSankey({ data }: { data: ReturnType<typeof aiFlowSankey> }
         useGradient={false}
         strokeOpacity={1}
         fadedOpacity={0.15}
-        getLinkColor={(_link, index) => (links[index]?.corrected ? CATEGORY_COLORS[links[index].to].hex : "#D6D6D3")}
+        getLinkColor={(_link, index) => `${CATEGORY_COLORS[links[index]?.to ?? "paper"].hex}${links[index]?.corrected ? "" : "40"}`}
       />
       <SankeyNode lineCap={0} getNodeColor={(_node, index) => CATEGORY_COLORS[nodes[index]?.category ?? "paper"].hex} />
       <SankeyTooltip />

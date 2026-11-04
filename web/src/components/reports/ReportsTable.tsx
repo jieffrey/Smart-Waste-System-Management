@@ -3,12 +3,14 @@ import { CategoryLabel } from "@/components/ui/CategoryLabel";
 import { StatusMarker } from "@/components/ui/StatusMarker";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateTime, formatPercent } from "@/lib/format";
+import { coordinatesLabel, shortLocation } from "@/lib/location";
 import { reportDetailHref, type ReportFilters } from "@/lib/report-filters";
 import type { AdminReport } from "@/types/api";
 import { ReportThumbnail } from "./ReportThumbnail";
 
-function location(report: AdminReport) {
-  return report.address || `${report.latitude.toFixed(5)}, ${report.longitude.toFixed(5)}`;
+// Full address (or coordinates) for the hover title of the short location.
+function fullLocation(report: AdminReport) {
+  return report.address || coordinatesLabel(report.latitude, report.longitude);
 }
 
 // Dense and scannable: rules instead of cards, the category and status read by shape/swatch, numbers and
@@ -53,8 +55,8 @@ export function ReportsTable({ reports, filters }: { reports: AdminReport[]; fil
             <TableCell>
               <StatusMarker status={report.status} />
             </TableCell>
-            <TableCell className="max-w-56 truncate text-gray-700" title={location(report)}>
-              {location(report)}
+            <TableCell className="max-w-56 truncate text-gray-700" title={fullLocation(report)}>
+              {shortLocation(report)}
             </TableCell>
             <TableCell numeric className="whitespace-nowrap text-gray-700">
               {formatDateTime(report.created_at)}

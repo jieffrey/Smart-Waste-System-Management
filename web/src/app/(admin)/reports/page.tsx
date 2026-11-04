@@ -13,7 +13,7 @@ import { hasActiveFilters, parseReportFilters, REPORTS_PAGE_SIZE, reportsHref, t
 export default function ReportsPage({ searchParams }: PageProps<"/reports">) {
   return (
     <section className="space-y-8">
-      <PageHeader kicker="Dispatch queue" title="Reports" description="Every report from residents, newest first. Open one to route it." />
+      <PageHeader title="Reports" description="Every report from residents, newest first. Open one to route it." />
       <Suspense fallback={<p className="text-small text-gray-600">Loading reports…</p>}>
         <ReportsContent searchParams={searchParams} />
       </Suspense>

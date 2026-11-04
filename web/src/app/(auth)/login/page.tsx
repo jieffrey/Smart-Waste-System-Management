@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { Info } from "lucide-react";
 import { LoginForm } from "@/components/auth/LoginForm";
-import { CATEGORY_COLORS } from "@/lib/categories";
+import { CategorySwatch } from "@/components/ui/CategorySwatch";
 import { REPORT_CATEGORIES } from "@/lib/labels";
 
 const REASON_MESSAGES: Record<string, string> = {
@@ -37,7 +37,7 @@ function Facts() {
           waste streams the AI sorts into
           <span className="mt-2 flex gap-1.5" aria-hidden="true">
             {REPORT_CATEGORIES.map((category) => (
-              <span key={category} className={`size-3 border border-snow ${CATEGORY_COLORS[category].swatchClass}`} />
+              <CategorySwatch key={category} category={category} framed />
             ))}
           </span>
         </dd>

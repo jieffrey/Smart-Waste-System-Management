@@ -3,7 +3,10 @@ import { DashSection } from "@/components/dashboard/DashSection";
 import { AiAccuracyGauge, AiFlowSankey, CategoryRing, HandlingFunnel } from "@/components/dashboard/FlowCharts";
 import { NeedsAction } from "@/components/dashboard/NeedsAction";
 import { InVsCompletedChart } from "@/components/dashboard/TrendCharts";
-import { CategoryLabel } from "@/components/ui/CategoryLabel";
+import { ColorBlock } from "@/components/dashboard/ColorBlock";
+import { TodayJakarta } from "@/components/dashboard/TodayJakarta";
+import { CategorySwatch } from "@/components/ui/CategorySwatch";
+import { CATEGORY_LABELS } from "@/lib/labels";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { getStats } from "@/lib/admin-data";
@@ -16,7 +19,14 @@ import type { Stats } from "@/types/api";
 export default function DashboardPage() {
   return (
     <div className="space-y-10">
-      <PageHeader kicker="Overview" title="Dashboard" />
+      <PageHeader
+        kicker={
+          <Suspense fallback={<span>&nbsp;</span>}>
+            <TodayJakarta />
+          </Suspense>
+        }
+        title="Dashboard"
+      />
       <Suspense fallback={<p className="text-small text-gray-600">Loading statistics…</p>}>
         <DashboardContent />
       </Suspense>
@@ -51,8 +61,9 @@ async function DashboardContent() {
           <NeedsAction stats={stats} />
         </div>
         <DashSection
-          className="border-t-2 lg:col-span-8"
-          kicker="Trend · last 30 days"
+          weight="strong"
+          className="lg:col-span-8"
+          kicker="Last 30 days"
           title="Reports in vs. completed"
           takeaway={
             keepingUp
@@ -62,7 +73,7 @@ async function DashboardContent() {
         >
           <div className="mb-2 flex gap-6 text-small text-ink">
             <span className="inline-flex items-center gap-2">
-              <span className="size-3 bg-gray-300" aria-hidden="true" /> Reports in
+              <span className="size-3 bg-cobalt/75" aria-hidden="true" /> Reports in
             </span>
             <span className="inline-flex items-center gap-2">
               <span className="h-0.5 w-4 bg-ink" aria-hidden="true" /> Completed
@@ -76,9 +87,7 @@ async function DashboardContent() {
       <div className="grid gap-10 lg:grid-cols-12">
         <DashSection
           className="lg:col-span-7"
-          kicker="Handling speed"
-          title="Handling flow"
-          takeaway="How many reports reached each step."
+          title="How far reports get"
         >
           <HandlingFunnel stages={funnel.stages} />
           <p className="mt-3 border-t border-gray-200 pt-3 text-small text-gray-700">
@@ -87,35 +96,53 @@ async function DashboardContent() {
           </p>
         </DashSection>
 
-        <DashSection
-          className="lg:col-span-5"
-          kicker="AI trust"
-          title="AI accuracy"
-          takeaway="Reviewed reports (in progress or completed) where the admin kept the AI's category."
-        >
+        {/* Yellow block: AI trust (ink on yellow, 15.34:1) */}
+        <ColorBlock color="highlight" aria-label="AI accuracy" className="lg:col-span-5">
+          <h2 className="text-heading font-semibold">How far can the AI be trusted?</h2>
+          <p className="mt-1 text-small text-gray-700">
+            Reviewed reports (in progress or completed) where the admin kept the AI&apos;s category.
+          </p>
           {accuracy === null ? (
-            <p className="py-12 text-heading font-semibold text-ink">No reviewed reports yet</p>
+            <p className="py-12 text-heading font-semibold">No reviewed reports yet</p>
           ) : (
             <>
               <AiAccuracyGauge percent={Number((accuracy * 100).toFixed(1))} />
-              <p className="mt-2 text-center font-mono text-small text-gray-700">
+              <p className="mt-2 text-center font-mono text-small">
                 {matching} / {reviewed} kept · {formatPercent(accuracy)}
               </p>
             </>
           )}
-        </DashSection>
+        </ColorBlock>
       </div>
 
-      {/* 3. Patterns: where the AI gets corrected, and what kind of waste comes in */}
+      {/* 3. Patterns: what kind of waste comes in (cobalt block), and where the AI gets corrected */}
       <div className="grid gap-10 lg:grid-cols-12">
+        <ColorBlock color="cobalt" aria-label="What kind of waste" className="lg:col-span-4">
+          <h2 className="text-heading font-semibold">What kind of waste</h2>
+          {/* Category colors fail on cobalt (2.02 and 2.77:1), so the rings sit on a snow disc. */}
+          <div className="mx-auto mt-6 aspect-square max-w-64 rounded-full bg-snow p-3">
+            <CategoryRing byCategory={stats.totals.by_category} total={stats.totals.reports} />
+          </div>
+          <ul className="mt-6 divide-y divide-white/40 border-t border-white/60">
+            {REPORT_CATEGORIES.map((category) => (
+              <li key={category} className="flex items-center justify-between py-2 text-small">
+                <span className="inline-flex items-center gap-2">
+                  <CategorySwatch category={category} framed />
+                  {CATEGORY_LABELS[category]}
+                </span>
+                <span className="font-mono">{stats.totals.by_category[category]}</span>
+              </li>
+            ))}
+          </ul>
+        </ColorBlock>
+
         <DashSection
           className="lg:col-span-8"
-          kicker="AI routing"
-          title="AI category → final category"
+          title="Where the AI gets corrected"
           takeaway={
             flow.total === 0
               ? undefined
-              : `${flow.corrected} of ${flow.total} reports were corrected by an admin (colored flows). Gray flows are reports the AI got right.`
+              : `${flow.corrected} of ${flow.total} reports were corrected by an admin (solid flows). Faint flows are reports the AI got right.`
           }
         >
           {flow.total === 0 ? (
@@ -124,29 +151,11 @@ async function DashboardContent() {
             <AiFlowSankey data={flow} />
           )}
         </DashSection>
-
-        <DashSection className="lg:col-span-4" kicker="Composition" title="What kind of waste">
-          <CategoryRing byCategory={stats.totals.by_category} total={stats.totals.reports} />
-          <ul className="mt-4 divide-y divide-gray-200 border-t border-gray-200">
-            {REPORT_CATEGORIES.map((category) => (
-              <li key={category} className="flex items-center justify-between py-2">
-                <CategoryLabel category={category} />
-                <span className="font-mono text-small text-ink">{stats.totals.by_category[category]}</span>
-              </li>
-            ))}
-          </ul>
-        </DashSection>
       </div>
 
-      {/* 4. Reserved: the region map comes in a later phase. */}
-      <section aria-label="Region map (planned)" className="border-t border-ink pt-4">
-        <p className="label-micro text-gray-600">Planned · next phase</p>
-        <div className="mt-4 flex h-48 items-center justify-center border border-dashed border-gray-400 bg-gray-50">
-          <p className="max-w-sm text-center text-small text-gray-700">
-            Region map slot: where reports come from, by area. Reserved in the layout, not built yet.
-          </p>
-        </div>
-      </section>
+      {/* 4. Region map (next phase): add a full-width row here, e.g.
+          <section aria-label="Reports by area" className="border-t border-ink pt-4">…</section>
+          The grid above needs no change; it is hidden until it exists. */}
     </div>
   );
 }
