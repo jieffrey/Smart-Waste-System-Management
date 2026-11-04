@@ -3,16 +3,18 @@ import { redirect } from "next/navigation";
 import { Pagination } from "@/components/reports/Pagination";
 import { ReportFilters } from "@/components/reports/ReportFilters";
 import { ReportsTable } from "@/components/reports/ReportsTable";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { listReports } from "@/lib/admin-data";
 import { ApiError } from "@/lib/api";
 import { hasActiveFilters, parseReportFilters, REPORTS_PAGE_SIZE, reportsHref, type ReportFilters as Filters } from "@/lib/report-filters";
 
 export default function ReportsPage({ searchParams }: PageProps<"/reports">) {
   return (
-    <section className="space-y-4">
-      <h1 className="text-title font-semibold">Reports</h1>
-      <Suspense fallback={<p className="text-small text-zinc-500">Loading reports…</p>}>
+    <section className="space-y-8">
+      <PageHeader kicker="Dispatch queue" title="Reports" description="Every report from residents, newest first. Open one to route it." />
+      <Suspense fallback={<p className="text-small text-gray-600">Loading reports…</p>}>
         <ReportsContent searchParams={searchParams} />
       </Suspense>
     </section>
@@ -23,10 +25,10 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
   const filters = parseReportFilters(await searchParams);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <ReportFilters filters={filters} />
       {/* Keyed by the URL, so changing a filter shows the loading state for the results only. */}
-      <Suspense key={reportsHref(filters)} fallback={<p className="text-small text-zinc-500">Loading reports…</p>}>
+      <Suspense key={reportsHref(filters)} fallback={<p className="text-small text-gray-600">Loading reports…</p>}>
         <ReportsResults filters={filters} />
       </Suspense>
     </div>
@@ -55,14 +57,15 @@ async function ReportsResults({ filters }: { filters: Filters }) {
 
   if (pagination.total === 0) {
     return (
-      <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center text-small text-zinc-500">
-        {hasActiveFilters(filters) ? "No reports match these filters." : "No reports yet."}
-      </div>
+      <EmptyState
+        title={hasActiveFilters(filters) ? "No reports match these filters." : "No reports yet."}
+        hint={hasActiveFilters(filters) ? "Try another status or date range, or reset the filters." : "New reports from the mobile app appear here."}
+      />
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <ReportsTable reports={reports} filters={filters} />
       <Pagination filters={filters} total={pagination.total} totalPages={totalPages} />
     </div>
