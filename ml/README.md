@@ -306,6 +306,36 @@ The training curves are in [section 4](#4-training-setup).
 - The three images in `tests/samples/` come from the test split, but they are only used to check
   API-versus-Colab parity, not to choose anything.
 
+### 6. Class imbalance
+
+The classes are not balanced (see the table in [section 1](#1-problem--dataset)): `plastic` has 1,984 images
+and `organic` only 997, about **2.0×** fewer (*computed*: 1,984 / 997 = 1.99). The training set has the
+same ratio: 1,388 `plastic` and 697 `organic`.
+
+**Why this matters for overall accuracy.** Accuracy counts every test image equally, so the big classes
+dominate it. A useless model that always answered `plastic` would already score **42.5%** on this test
+set (*computed*: 298 / 701). A real model can look good overall while doing worse on the small class.
+
+**The fairer view is per-class recall:** of the images that really are class X, how many did the model
+find?
+
+| Class | Test images | Found (recall) | Missed |
+|---|---|---|---|
+| `organic` | 150 | 145 (0.9667) | 5 |
+| `paper` | 253 | 250 (0.9881) | 3 |
+| `plastic` | 298 | 290 (0.9732) | 8 |
+
+- **The smallest class has the lowest recall.** `organic` is 0.9667, against 0.9772 overall accuracy. That
+  fits what imbalance tends to cause, but with 150 test images (5 misses) it isn't proof of it.
+- **Macro-averaged recall** (each class counts equally) is **0.9760**, very close to the 0.9772 accuracy, so
+  on this test set the imbalance distorts the headline number only a little.
+- **Precision shows the other side:** `paper` has the lowest precision (0.9579). Of the 261 images
+  predicted as `paper` (*computed* from the confusion matrix), 11 were wrong: 8 `plastic` and 3 `organic`.
+
+**What was done about it: nothing yet.** The assessment brief suggests addressing class balance. The final
+model uses no class weights, no oversampling and no augmentation. This is planned work
+([Next steps](#10-next-steps)).
+
 ### Reproduce
 
 The scripts contain the notebook's code (without the earlier, abandoned 5-epoch experiment). Paths are
