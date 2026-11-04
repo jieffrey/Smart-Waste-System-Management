@@ -1,23 +1,39 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { AlertTriangle, Check, Lock } from "lucide-react";
 import { updateReport, type ReportUpdateState } from "@/actions/reports";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
 import { CATEGORY_LABELS, REPORT_CATEGORIES, STATUS_LABELS } from "@/lib/labels";
 import { isClosed, isFinalStatus, NEXT_STATUSES } from "@/lib/report-transitions";
 import type { AdminReportDetail, ReportStatus } from "@/types/api";
 
 const initialState: ReportUpdateState = { result: "idle", message: null, fieldErrors: {} };
-const inputClass = "w-full rounded border border-zinc-300 bg-white px-3 py-2 text-small";
+
+function FieldError({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="flex items-center gap-1.5 text-small text-ink">
+      <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />
+      {children}
+    </p>
+  );
+}
 
 type Props = { report: Pick<AdminReportDetail, "id" | "status" | "category" | "admin_note" | "updated_at"> };
 
 export function ReportUpdateForm({ report }: Props) {
   if (isClosed(report.status)) {
     return (
-      <section className="rounded-lg border border-zinc-200 bg-white p-4">
-        <h2 className="font-medium">Update report</h2>
-        <p className="mt-2 text-small text-zinc-600">
-          This report is closed ({STATUS_LABELS[report.status].toLowerCase()}), so it can no longer be changed.
+      <section className="border-t-2 border-ink pt-4">
+        <p className="label-micro text-gray-600">Dispatch</p>
+        <p className="mt-2 flex items-center gap-2 text-heading font-semibold text-ink">
+          <Lock className="size-4" aria-hidden="true" /> This report is closed
+        </p>
+        <p className="mt-1 text-small text-gray-700">
+          It was {STATUS_LABELS[report.status].toLowerCase()}, so nothing about it can change any more.
         </p>
       </section>
     );
@@ -65,11 +81,12 @@ function OpenReportForm({ report }: Props) {
   const noteMessage = noteError ?? state.fieldErrors.admin_note;
 
   return (
-    <section className="rounded-lg border border-zinc-200 bg-white p-4">
-      <h2 className="font-medium">Update report</h2>
+    <section className="border-t-2 border-ink pt-4">
+      <p className="label-micro text-gray-600">Dispatch</p>
+      <h2 className="mt-1 text-heading font-semibold text-ink">Route this report</h2>
 
       {/* Remounted after each save (key), so the inputs start from the latest data. */}
-      <form key={report.updated_at} action={formAction} onSubmit={handleSubmit} className="mt-3 space-y-4" noValidate>
+      <form key={report.updated_at} action={formAction} onSubmit={handleSubmit} className="mt-4 space-y-5" noValidate>
         <input type="hidden" name="report_id" value={report.id} />
         <input type="hidden" name="original_category" value={report.category} />
         <input type="hidden" name="original_admin_note" value={originalNote} />
@@ -77,61 +94,49 @@ function OpenReportForm({ report }: Props) {
         {state.message && (
           <p
             role={state.result === "success" ? "status" : "alert"}
-            className={`rounded border px-3 py-2 text-small ${
-              state.result === "success"
-                ? "border-green-200 bg-green-50 text-green-800"
-                : "border-red-200 bg-red-50 text-red-700"
+            className={`flex gap-2 border-l-4 py-1 pl-3 text-small font-medium text-ink ${
+              state.result === "success" ? "border-ink bg-highlight" : "border-ink"
             }`}
           >
+            {state.result === "success" ? (
+              <Check className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            ) : (
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            )}
             {state.message}
           </p>
         )}
 
-        <div className="space-y-1">
-          <label htmlFor="status" className="block text-small font-medium">
-            Status <span className="font-normal text-zinc-500">(now {STATUS_LABELS[report.status]})</span>
-          </label>
-          <select
-            id="status"
-            name="status"
-            value={status}
-            onChange={(event) => chooseStatus(event.target.value as ReportStatus | "")}
-            className={inputClass}
-          >
-            <option value="">Keep {STATUS_LABELS[report.status]}</option>
+        <div className="space-y-2">
+          <Label htmlFor="status">Next status · now {STATUS_LABELS[report.status]}</Label>
+          <NativeSelect id="status" name="status" value={status} onChange={(event) => chooseStatus(event.target.value as ReportStatus | "")}>
+            <NativeSelectOption value="">Keep {STATUS_LABELS[report.status]}</NativeSelectOption>
             {NEXT_STATUSES[report.status].map((next) => (
-              <option key={next} value={next}>
+              <NativeSelectOption key={next} value={next}>
                 {STATUS_LABELS[next]}
-              </option>
+              </NativeSelectOption>
             ))}
-          </select>
-          {state.fieldErrors.status && <p className="text-small text-red-600">{state.fieldErrors.status}</p>}
+          </NativeSelect>
+          {state.fieldErrors.status && <FieldError>{state.fieldErrors.status}</FieldError>}
         </div>
 
-        <div className="space-y-1">
-          <label htmlFor="category" className="block text-small font-medium">
-            Category
-          </label>
-          <select id="category" name="category" defaultValue={report.category} className={inputClass}>
+        <div className="space-y-2">
+          <Label htmlFor="category">Category · correct the AI if needed</Label>
+          <NativeSelect id="category" name="category" defaultValue={report.category}>
             {REPORT_CATEGORIES.map((category) => (
-              <option key={category} value={category}>
+              <NativeSelectOption key={category} value={category}>
                 {CATEGORY_LABELS[category]}
-              </option>
+              </NativeSelectOption>
             ))}
-          </select>
-          {state.fieldErrors.category && <p className="text-small text-red-600">{state.fieldErrors.category}</p>}
+          </NativeSelect>
+          {state.fieldErrors.category && <FieldError>{state.fieldErrors.category}</FieldError>}
         </div>
 
-        <div className="space-y-1">
-          <label htmlFor="admin_note" className="block text-small font-medium">
-            Admin note{" "}
-            {status === "rejected" ? (
-              <span className="font-normal text-red-700">(required when rejecting)</span>
-            ) : (
-              <span className="font-normal text-zinc-500">(the reporter sees it in the app)</span>
-            )}
-          </label>
-          <textarea
+        <div className="space-y-2">
+          <Label htmlFor="admin_note">
+            Note to the reporter {status === "rejected" ? "· required when rejecting" : "· shown in the app"}
+          </Label>
+          <Textarea
             id="admin_note"
             name="admin_note"
             value={note}
@@ -142,43 +147,29 @@ function OpenReportForm({ report }: Props) {
             rows={3}
             maxLength={1000}
             aria-invalid={Boolean(noteMessage)}
-            className={inputClass}
           />
-          {noteMessage && <p className="text-small text-red-600">{noteMessage}</p>}
+          {noteMessage && <FieldError>{noteMessage}</FieldError>}
         </div>
 
         {confirming && status !== "" ? (
-          <div role="alertdialog" aria-label="Confirm final status" className="space-y-3 rounded border border-amber-300 bg-amber-50 p-3 text-small">
-            <p className="text-amber-900">
-              Mark this report as <strong>{STATUS_LABELS[status]}</strong>? This is final: the report can&apos;t be
-              changed afterwards.
+          <div role="alertdialog" aria-label="Confirm final status" className="space-y-3 border-2 border-ink p-4">
+            <p className="text-small text-ink">
+              <span className="highlight font-semibold">This is final.</span> Mark this report as{" "}
+              <strong>{STATUS_LABELS[status]}</strong>? It can&apos;t be changed afterwards.
             </p>
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={pending}
-                className="rounded bg-zinc-900 px-3 py-2 font-medium text-white disabled:opacity-60"
-              >
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" variant="primary" disabled={pending}>
                 {pending ? "Saving…" : `Yes, mark as ${STATUS_LABELS[status]}`}
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirming(false)}
-                disabled={pending}
-                className="rounded border border-zinc-300 bg-white px-3 py-2 hover:bg-zinc-100"
-              >
+              </Button>
+              <Button type="button" onClick={() => setConfirming(false)} disabled={pending}>
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
-          <button
-            type="submit"
-            disabled={pending}
-            className="rounded bg-zinc-900 px-4 py-2 text-small font-medium text-white disabled:opacity-60"
-          >
+          <Button type="submit" variant="primary" disabled={pending} className="w-full">
             {pending ? "Saving…" : "Save changes"}
-          </button>
+          </Button>
         )}
       </form>
     </section>
