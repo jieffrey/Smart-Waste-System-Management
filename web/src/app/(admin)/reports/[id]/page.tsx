@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { ReportDetail } from "@/components/reports/ReportDetail";
+import { ReportUpdateForm } from "@/components/reports/ReportUpdateForm";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { getReport } from "@/lib/admin-data";
 import { ApiError } from "@/lib/api";
@@ -60,7 +61,9 @@ async function ReportDetailContent({ params, searchParams }: Props) {
     <div className="space-y-4">
       {backLink}
       <h1 className="text-xl font-semibold">Report</h1>
-      <ReportDetail report={report} />
+      <ReportDetail report={report}>
+        <ReportUpdateForm report={report} />
+      </ReportDetail>
     </div>
   );
 }
