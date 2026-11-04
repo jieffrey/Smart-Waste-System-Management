@@ -513,3 +513,127 @@ if (rows[0]?.role === 'admin') {
 
 **Lesson.** For every admin action, ask whether one admin could use it against another, and whether the
 system can always recover (keep at least one working admin, or have a "break glass" procedure).
+
+---
+
+# ML API findings (FastAPI)
+
+<a id="sec-03"></a>
+## SEC-03: ML API can be made to use gigabytes of memory with one small image
+
+- **Severity: Medium.** Anyone can register an account and upload a photo, and the backend forwards it to
+  the ML API, so any account can trigger this. Impact is a crash or an out-of-memory kill of the
+  classifier (reports can't be created). **Not proven live:** I didn't send it, because running it would
+  have meant exhausting this machine's memory.
+- **Where:** `ml/src/api/main.py:65` (`Image.open` with Pillow's default limit),
+  `ml/src/api/main.py:75` (`image.load()` decodes the full image), `ml/src/inference/predictor.py:26`
+  (converts the full-size image to `float32`)
+
+**What's wrong.** Image formats are compressed. A PNG that's mostly one color can be well under the 5 MB
+upload limit and still claim to be, for example, 13,000 × 13,000 pixels. Pillow only *refuses* images over
+about **179 million pixels**; between about 89M and 179M it only prints a warning. The code then:
+
+1. decodes the whole image: 13,000 × 13,000 × 3 bytes ≈ **0.5 GB**
+2. converts it to `float32` before resizing: four times bigger, ≈ **2 GB**
+3. and only *then* resizes it to 224 × 224.
+
+The model only needs 224 × 224 pixels, so almost all of that memory is wasted.
+
+**How it could be abused.** A few such uploads at the same time (each about 1 MB) push the ML process into
+gigabytes of memory, and the operating system kills it. Every report submission then fails with 503
+until someone restarts the service. This is a "decompression bomb", a classic denial-of-service.
+
+**How to fix it.** Limit pixels before decoding, and shrink the image *before* converting to floats:
+
+```python
+# ml/src/api/main.py
+MAX_PIXELS = 40_000_000           # about 40 MP: more than any phone camera
+Image.MAX_IMAGE_PIXELS = MAX_PIXELS
+
+def open_image(data: bytes) -> Image.Image:
+    ...
+    image = Image.open(BytesIO(data))          # reads only the header, cheap
+    width, height = image.size
+    if width * height > MAX_PIXELS:
+        raise HTTPException(status_code=400, detail="Image dimensions are too large")
+    image.draft("RGB", (448, 448))             # JPEG: decode at reduced size directly
+    image.load()
+    return image
+
+# ml/src/inference/predictor.py: shrink first, then convert
+image = ImageOps.exif_transpose(image).convert("RGB")
+image.thumbnail((448, 448))                    # bounded size before numpy/float32
+pixels = np.asarray(image, dtype=np.float32)
+```
+
+Also turn Pillow's warning into an error (`warnings.simplefilter("error", Image.DecompressionBombWarning)`),
+and add a test with a small file that declares huge dimensions. Then the fix branch can *prove* the 400
+without actually allocating gigabytes.
+
+**Lesson.** Never trust the size an image (or archive) *declares* to match the size of its bytes. Check the
+declared dimensions before decoding, and keep every intermediate buffer bounded.
+
+<a id="sec-09"></a>
+## SEC-09: ML `/predict` has no authentication; `/docs` is public
+
+- **Severity: Low.** Proven, but the documented start command binds to `127.0.0.1`, so only processes on
+  the same machine can reach it. It becomes Medium if the ML API is ever deployed with a public URL.
+- **Evidence:** proven live. `POST /predict` with no `X-API-Key` header returned a normal prediction, and
+  `GET /docs` returned `200`.
+- **Where:** `ml/src/api/main.py:88` (no dependency checking a key), `backend/src/modules/ml/ml.service.js:37`
+  (the backend already sends `X-API-Key` when `ML_API_KEY` is set)
+
+**What's wrong.** The backend supports sending an API key, but the ML API never checks one. The backend
+README suggests `ML_API_KEY` "for a hosted ML API", which would give a false sense of protection: the key
+is sent and ignored.
+
+**How it could be abused.** If the ML API were deployed publicly, anyone could use it as a free
+classification service (CPU cost) and send it decompression bombs (SEC-03) directly, with no account and
+no rate limit.
+
+**How to fix it.**
+
+```python
+# ml/src/api/main.py
+import os, secrets
+from fastapi import Depends, Header
+
+API_KEY = os.environ.get("ML_API_KEY")  # unset = local development, no key required
+
+def require_api_key(x_api_key: str | None = Header(default=None)):
+    if API_KEY and not secrets.compare_digest(x_api_key or "", API_KEY):
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+@app.post("/predict", dependencies=[Depends(require_api_key)], ...)
+```
+
+In production, also set `FastAPI(docs_url=None, redoc_url=None)`, or keep the ML API on a private network
+that only the backend can reach.
+
+**Lesson.** An internal service is only internal if the network makes it so. If it can ever be reached
+from outside, it needs its own authentication. `secrets.compare_digest` compares keys without leaking
+information through timing.
+
+<a id="sec-16"></a>
+## SEC-16: `keras 3.13.2` has known advisories (not reachable here)
+
+- **Severity: Low.** `pip-audit` reports 15 advisory entries (8 unique) for `keras 3.13.2`. Every one needs
+  the attacker to supply a **model file or archive** for Keras to load. This app only loads its own
+  committed model at startup and never loads user files with Keras, so none of them is reachable.
+- **Where:** `ml/requirements.txt` (`keras==3.13.2`)
+
+**What's wrong.** The advisories (for example CVE-2026-11816, CVE-2026-12479, CVE-2026-12481, CVE-2026-12570)
+cover path traversal while extracting archives, `Lambda`-layer and pickle deserialization that bypasses
+`safe_mode`, HDF5 file reads, and a DoS in `load_model`. They matter for apps that load models from users
+or the internet.
+
+**How it could be abused.** Only if someone could replace `ml/models/swms_mobilenetv2_best.keras` (for
+example a malicious pull request swapping the model file), and at that point they could already change the
+code.
+
+**How to fix it.** On the next retrain, move to `keras>=3.15.0` (it fixes all of them), re-save the model,
+and run the existing ML tests. Until then, keep treating the model file like code: review changes to it.
+The `requirements.txt` comment already explains why keras is pinned, which is good practice.
+
+**Lesson.** Read each advisory to see whether *your* code can trigger it before you panic or ignore it.
+Model files are code: loading an untrusted model is like running an untrusted script.
