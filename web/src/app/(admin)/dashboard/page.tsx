@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { DashSection } from "@/components/dashboard/DashSection";
-import { AiAccuracyGauge, AiFlowSankey, CategoryDonut, HandlingFunnel } from "@/components/dashboard/FlowCharts";
+import { AiAccuracyGauge, AiFlowSankey, CategoryRing, HandlingFunnel } from "@/components/dashboard/FlowCharts";
 import { NeedsAction } from "@/components/dashboard/NeedsAction";
 import { InVsCompletedChart } from "@/components/dashboard/TrendCharts";
 import { ColorBlock } from "@/components/dashboard/ColorBlock";
@@ -119,9 +119,9 @@ async function DashboardContent() {
       <div className="grid gap-10 lg:grid-cols-12">
         <ColorBlock color="cobalt" aria-label="What kind of waste" className="lg:col-span-4">
           <h2 className="text-heading font-semibold">What kind of waste</h2>
-          {/* Category colors fail on cobalt (2.02 and 2.77:1), so the donut sits on a snow disc. */}
+          {/* Category colors fail on cobalt (2.02 and 2.77:1), so the rings sit on a snow disc. */}
           <div className="mx-auto mt-6 aspect-square max-w-64 rounded-full bg-snow p-3">
-            <CategoryDonut byCategory={stats.totals.by_category} />
+            <CategoryRing byCategory={stats.totals.by_category} total={stats.totals.reports} />
           </div>
           <ul className="mt-6 divide-y divide-white/40 border-t border-white/60">
             {REPORT_CATEGORIES.map((category) => (

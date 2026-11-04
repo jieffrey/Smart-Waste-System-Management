@@ -1,13 +1,11 @@
 "use client";
 
-import { pie as d3Pie } from "d3-shape";
 import type { Transition } from "motion/react";
 import { domAnimation, LazyMotion } from "motion/react";
 import {
   Children,
   isValidElement,
   memo,
-  type ReactElement,
   type ReactNode,
   useCallback,
   useEffect,
@@ -19,136 +17,145 @@ import { cn } from "@/lib/utils";
 import { arcPath } from "./arc-path";
 import { ParentSize } from "./chart-parent-size";
 import {
-  defaultPieColors,
-  type PieArcData,
-  type PieContextValue,
-  type PieData,
-  PieProvider,
-} from "./pie-context";
+  defaultRingColors,
+  type RingContextValue,
+  type RingData,
+  RingProvider,
+  ringCssVars,
+} from "./ring-context";
+import { RING_GRID_PADDING } from "./ring-grid";
 
-/** Default hover offset in pixels */
-export const DEFAULT_HOVER_OFFSET = 10;
-
-export interface PieChartProps {
-  /** Data array - each item represents a slice */
-  data: PieData[];
+export interface RingChartProps {
+  /** Data array - each item represents a ring */
+  data: RingData[];
   /** Chart size in pixels. If not provided, uses parent container size */
   size?: number;
-  /** Inner radius for donut charts. Default: 0 (solid pie) */
-  innerRadius?: number;
-  /** Padding angle between slices in radians. Default: 0 */
-  padAngle?: number;
-  /** Corner radius for rounded slice edges. Default: 0 */
-  cornerRadius?: number;
-  /** Start angle in radians. Default: -PI/2 (top) */
-  startAngle?: number;
-  /** End angle in radians. Default: 3*PI/2 (full circle from top) */
-  endAngle?: number;
+  /** Stroke width of each ring. Default: 12 */
+  strokeWidth?: number;
+  /** Gap between rings. Default: 6 */
+  ringGap?: number;
+  /** Inner radius of the innermost ring. Default: 60 */
+  baseInnerRadius?: number;
+  /**
+   * Space kept clear between the outermost ring and the chart edge, px.
+   * Default: 8, or 32 when a `RingGrid` child is present (room for its labels)
+   */
+  padding?: number;
+  /** Animation duration in milliseconds. Default: 1100 */
+  animationDuration?: number;
   /** Additional class name for the container */
   className?: string;
-  /** Controlled hover state - index of hovered slice */
+  /** Controlled hover state - index of hovered ring */
   hoveredIndex?: number | null;
   /** Callback when hover state changes */
   onHoverChange?: (index: number | null) => void;
-  /**
-   * Hover offset in pixels for slice hover effects.
-   * This also determines the padding around the chart to prevent clipping.
-   * Default: 10
-   */
-  hoverOffset?: number;
-  /** Child components (PieSlice, PieCenter, patterns, gradients, etc.) */
-  children: ReactNode;
-  /** Framer Motion transition for slice enter animation */
+  /** Start angle in radians. Default: -PI/2 (top) */
+  startAngle?: number;
+  /** End angle in radians. Default: 3*PI/2 (full circle) */
+  endAngle?: number;
+  /** Framer Motion transition for ring enter animation */
   enterTransition?: Transition;
-  /** Scales slice stagger delays (1 = default). */
+  /** Scales ring stagger delays (1 = default). */
   enterStaggerScale?: number;
   /**
    * High-frequency geometry updates (e.g. studio NumberField scrub).
-   * Uses plain SVG paths instead of Motion `d` / spring hover morphing.
+   * Uses plain SVG paths instead of Motion `d` morphing.
    */
   geometryScrubbing?: boolean;
+  /** Child components (Ring, RingCenter, etc.) */
+  children: ReactNode;
 }
 
-interface PieChartInnerProps {
+interface RingChartInnerProps {
   width: number;
   height: number;
-  data: PieData[];
-  innerRadius: number;
-  padAngle: number;
-  cornerRadius: number;
-  startAngle: number;
-  endAngle: number;
-  hoverOffset: number;
+  data: RingData[];
+  strokeWidth: number;
+  ringGap: number;
+  baseInnerRadius: number;
+  padding?: number;
   children: ReactNode;
   containerRef: React.RefObject<HTMLDivElement | null>;
   hoveredIndexProp?: number | null;
   onHoverChange?: (index: number | null) => void;
+  startAngle: number;
+  endAngle: number;
   enterTransition?: Transition;
   enterStaggerScale: number;
   geometryScrubbing: boolean;
 }
 
-// Helper to check if a child is a PieCenter component
-function isPieCenter(child: ReactNode): boolean {
+function isRing(child: ReactNode): boolean {
   return (
     isValidElement(child) &&
     typeof child.type === "function" &&
-    ((child.type as { displayName?: string }).displayName === "PieCenter" ||
-      (child.type as { name?: string }).name === "PieCenter")
+    ((child.type as { displayName?: string }).displayName === "Ring" ||
+      (child.type as { name?: string }).name === "Ring")
   );
 }
 
-function isPieSlice(child: ReactNode): boolean {
+function isRingGrid(child: ReactNode): boolean {
+  return (
+    isValidElement(child) &&
+    typeof child.type !== "string" &&
+    (child.type as { displayName?: string }).displayName === "RingGrid"
+  );
+}
+
+function hasRingGrid(children: ReactNode): boolean {
+  let found = false;
+  Children.forEach(children, (child) => {
+    if (isRingGrid(child)) {
+      found = true;
+    }
+  });
+  return found;
+}
+
+// Helper to check if a child is a RingCenter component
+function isRingCenter(child: ReactNode): boolean {
   return (
     isValidElement(child) &&
     typeof child.type === "function" &&
-    ((child.type as { displayName?: string }).displayName === "PieSlice" ||
-      (child.type as { name?: string }).name === "PieSlice")
+    ((child.type as { displayName?: string }).displayName === "RingCenter" ||
+      child.type.name === "RingCenter")
   );
 }
 
-// Helper to check if a component is a gradient or pattern definition
-function isDefsComponent(child: ReactElement): boolean {
-  const displayName =
-    (child.type as { displayName?: string })?.displayName ||
-    (child.type as { name?: string })?.name ||
-    "";
-  return (
-    displayName.includes("Gradient") ||
-    displayName.includes("Pattern") ||
-    displayName === "LinearGradient" ||
-    displayName === "RadialGradient"
-  );
-}
-
-function PieChartInner(props: PieChartInnerProps) {
+function RingChartInner(props: RingChartInnerProps) {
   const size = Math.min(props.width, props.height);
 
   if (size < 10) {
     return null;
   }
 
-  return <PieChartCore {...props} />;
+  return <RingChartCore {...props} />;
 }
 
-const PieChartCore = memo(function PieChartCore({
+interface ScrubRingLayer {
+  bgPath: string;
+  progressPath: string;
+  color: string;
+}
+
+const RingChartCore = memo(function RingChartCore({
   width,
   height,
   data,
-  innerRadius: innerRadiusProp,
-  padAngle,
-  cornerRadius,
-  startAngle,
-  endAngle,
-  hoverOffset,
+  strokeWidth: strokeWidthProp,
+  ringGap: ringGapProp,
+  baseInnerRadius: baseInnerRadiusProp,
+  padding: paddingProp,
   children,
   containerRef,
   hoveredIndexProp,
   onHoverChange,
+  startAngle,
+  endAngle,
   enterTransition,
   enterStaggerScale,
   geometryScrubbing,
-}: PieChartInnerProps) {
+}: RingChartInnerProps) {
   const [internalHoveredIndex, setInternalHoveredIndex] = useState<
     number | null
   >(null);
@@ -173,10 +180,26 @@ const PieChartCore = memo(function PieChartCore({
   const size = Math.min(width, height);
   const center = size / 2;
 
-  // Calculate radii with padding based on hover offset to prevent clipping
-  const padding = hoverOffset;
-  const outerRadius = center - padding;
-  const innerRadius = innerRadiusProp;
+  // Calculate scaled dimensions to fit within the available space
+  // The outermost ring needs to fit within the chart with some padding
+  const ringCount = data.length;
+  const padding =
+    paddingProp ?? (hasRingGrid(children) ? RING_GRID_PADDING : 8);
+  const availableRadius = center - padding;
+
+  // Calculate the "design" outer radius (what we'd need at 1:1 scale)
+  const designOuterRadius =
+    baseInnerRadiusProp +
+    (ringCount - 1) * (strokeWidthProp + ringGapProp) +
+    strokeWidthProp;
+
+  // Scale factor to fit within available space
+  const scale = Math.min(1, availableRadius / designOuterRadius);
+
+  // Apply scaling to all dimensions
+  const strokeWidth = strokeWidthProp * scale;
+  const ringGap = ringGapProp * scale;
+  const baseInnerRadius = baseInnerRadiusProp * scale;
 
   // Calculate total value
   const totalValue = useMemo(
@@ -184,68 +207,68 @@ const PieChartCore = memo(function PieChartCore({
     [data]
   );
 
-  // Get color for a slice index
+  // Get color for a ring index
   const getColor = useCallback(
     (index: number) => {
       const item = data[index];
       if (item?.color) {
         return item.color;
       }
-      return defaultPieColors[index % defaultPieColors.length] as string;
+      return defaultRingColors[index % defaultRingColors.length] as string;
     },
     [data]
   );
 
-  // Get fill for a slice index (supports patterns/gradients)
-  const getFill = useCallback(
+  // Get ring radii for an index
+  const getRingRadii = useCallback(
     (index: number) => {
-      const item = data[index];
-      // Check for explicit fill (pattern/gradient URL)
-      if (item?.fill) {
-        return item.fill;
-      }
-      // Fall back to color
-      return getColor(index);
+      const innerRadius = baseInnerRadius + index * (strokeWidth + ringGap);
+      const outerRadius = innerRadius + strokeWidth;
+      return { innerRadius, outerRadius };
     },
-    [data, getColor]
+    [baseInnerRadius, strokeWidth, ringGap]
   );
 
-  // Compute arcs using d3-shape pie
-  const arcs = useMemo(() => {
-    const pieGenerator = d3Pie<PieData>()
-      .value((d) => d.value)
-      .startAngle(startAngle)
-      .endAngle(endAngle)
-      .padAngle(padAngle)
-      .sort(null); // Maintain data order
-
-    const computed = pieGenerator(data);
-
-    return computed.map((arc, index) => ({
-      data: arc.data,
-      index,
-      startAngle: arc.startAngle,
-      endAngle: arc.endAngle,
-      padAngle: arc.padAngle,
-      value: arc.value,
-    })) as PieArcData[];
-  }, [data, startAngle, endAngle, padAngle]);
-
-  const scrubSlicePaths = useMemo((): readonly string[] | null => {
+  const arcRange = endAngle - startAngle;
+  const scrubRingLayers = useMemo((): readonly ScrubRingLayer[] | null => {
     if (!geometryScrubbing) {
       return null;
     }
-    return arcs.map((arc) =>
-      arcPath(
-        innerRadius,
-        outerRadius,
-        arc.startAngle,
-        arc.endAngle,
-        cornerRadius,
-        arc.padAngle
-      )
-    );
-  }, [geometryScrubbing, arcs, innerRadius, outerRadius, cornerRadius]);
+    return data.map((ringData, index) => {
+      const { innerRadius, outerRadius } = getRingRadii(index);
+      const cornerRadius = (outerRadius - innerRadius) / 2;
+      const progress = ringData.value / ringData.maxValue;
+      const progressEndAngle = startAngle + arcRange * progress;
+      return {
+        bgPath: arcPath(
+          innerRadius,
+          outerRadius,
+          startAngle,
+          endAngle,
+          cornerRadius
+        ),
+        progressPath:
+          progressEndAngle <= startAngle + 0.01
+            ? ""
+            : arcPath(
+                innerRadius,
+                outerRadius,
+                startAngle,
+                progressEndAngle,
+                cornerRadius
+              ),
+        color: getColor(index),
+      };
+    });
+  }, [
+    geometryScrubbing,
+    data,
+    getRingRadii,
+    getColor,
+    startAngle,
+    endAngle,
+    arcRange,
+  ]);
 
   const effectiveIsLoaded = geometryScrubbing || isLoaded;
 
@@ -278,54 +301,33 @@ const PieChartCore = memo(function PieChartCore({
     return () => clearTimeout(timer);
   }, [enterTransition, enterStaggerScale, geometryScrubbing]);
 
-  // Separate children into categories
-  const { svgChildren, centerChildren, defsChildren } = useMemo(() => {
+  // Separate SVG children (rings) from HTML children (RingCenter)
+  // This avoids Safari's foreignObject positioning bugs (WebKit #23113)
+  const { svgChildren, centerChildren } = useMemo(() => {
     const svgNodes: ReactNode[] = [];
     const centerNodes: ReactNode[] = [];
-    const defsNodes: ReactElement[] = [];
 
     Children.forEach(children, (child) => {
-      if (!isValidElement(child)) {
-        svgNodes.push(child);
-        return;
-      }
-
-      if (isPieCenter(child)) {
+      if (isRingCenter(child)) {
         centerNodes.push(child);
-      } else if (isDefsComponent(child)) {
-        defsNodes.push(child);
-      } else if (geometryScrubbing && isPieSlice(child)) {
+      } else if (geometryScrubbing && isRing(child)) {
         return;
       } else {
         svgNodes.push(child);
       }
     });
 
-    return {
-      svgChildren: svgNodes,
-      centerChildren: centerNodes,
-      defsChildren: defsNodes,
-    };
+    return { svgChildren: svgNodes, centerChildren: centerNodes };
   }, [children, geometryScrubbing]);
 
-  const scrubSliceFills = useMemo(() => {
-    if (!(geometryScrubbing && scrubSlicePaths)) {
-      return null;
-    }
-    return scrubSlicePaths.map((_, index) => getFill(index));
-  }, [geometryScrubbing, scrubSlicePaths, getFill]);
-
-  const contextValue: PieContextValue = useMemo(
+  const contextValue: RingContextValue = useMemo(
     () => ({
       data,
-      arcs,
       size,
       center,
-      outerRadius,
-      innerRadius,
-      padAngle,
-      cornerRadius,
-      hoverOffset,
+      strokeWidth,
+      ringGap,
+      baseInnerRadius,
       hoveredIndex,
       setHoveredIndex,
       animationKey,
@@ -335,20 +337,18 @@ const PieChartCore = memo(function PieChartCore({
       containerRef,
       totalValue,
       getColor,
-      getFill,
+      getRingRadii,
+      startAngle,
+      endAngle,
       geometryScrubbing,
-      scrubSlicePaths,
     }),
     [
       data,
-      arcs,
       size,
       center,
-      outerRadius,
-      innerRadius,
-      padAngle,
-      cornerRadius,
-      hoverOffset,
+      strokeWidth,
+      ringGap,
+      baseInnerRadius,
       hoveredIndex,
       setHoveredIndex,
       animationKey,
@@ -358,16 +358,18 @@ const PieChartCore = memo(function PieChartCore({
       containerRef,
       totalValue,
       getColor,
-      getFill,
+      getRingRadii,
+      startAngle,
+      endAngle,
       geometryScrubbing,
-      scrubSlicePaths,
     ]
   );
 
   // Use CSS Grid stacking to layer SVG and HTML content
-  // This avoids Safari's foreignObject rendering bugs
+  // This avoids Safari's foreignObject rendering bugs where HTML content
+  // inside SVG foreignObject renders at wrong positions when it has a RenderLayer
   return (
-    <PieProvider value={contextValue}>
+    <RingProvider value={contextValue}>
       <div
         className="grid"
         style={{
@@ -377,7 +379,7 @@ const PieChartCore = memo(function PieChartCore({
           height: size,
         }}
       >
-        {/* SVG layer with pie slices */}
+        {/* SVG layer with rings */}
         <svg
           aria-hidden="true"
           height={size}
@@ -389,21 +391,16 @@ const PieChartCore = memo(function PieChartCore({
           }}
           width={size}
         >
-          {/* Defs for patterns and gradients */}
-          {defsChildren.length > 0 && <defs>{defsChildren}</defs>}
-
           <g transform={`translate(${center}, ${center})`}>
-            {scrubSlicePaths && scrubSliceFills
-              ? scrubSlicePaths.map((d, index) =>
-                  d ? (
-                    <path
-                      d={d}
-                      fill={scrubSliceFills[index]}
-                      key={data[index]?.label ?? index}
-                      pointerEvents="none"
-                    />
-                  ) : null
-                )
+            {scrubRingLayers
+              ? scrubRingLayers.map((layer, index) => (
+                  <g key={data[index]?.label ?? index}>
+                    <path d={layer.bgPath} fill={ringCssVars.ringBackground} />
+                    {layer.progressPath ? (
+                      <path d={layer.progressPath} fill={layer.color} />
+                    ) : null}
+                  </g>
+                ))
               : null}
             {svgChildren}
           </g>
@@ -419,26 +416,26 @@ const PieChartCore = memo(function PieChartCore({
           </div>
         )}
       </div>
-    </PieProvider>
+    </RingProvider>
   );
-}, pieChartCorePropsEqual);
+}, ringChartCorePropsEqual);
 
-function pieChartCorePropsEqual(
-  prev: PieChartInnerProps,
-  next: PieChartInnerProps
+function ringChartCorePropsEqual(
+  prev: RingChartInnerProps,
+  next: RingChartInnerProps
 ): boolean {
   return (
     prev.width === next.width &&
     prev.height === next.height &&
     prev.data === next.data &&
-    prev.innerRadius === next.innerRadius &&
-    prev.padAngle === next.padAngle &&
-    prev.cornerRadius === next.cornerRadius &&
-    prev.startAngle === next.startAngle &&
-    prev.endAngle === next.endAngle &&
-    prev.hoverOffset === next.hoverOffset &&
+    prev.strokeWidth === next.strokeWidth &&
+    prev.ringGap === next.ringGap &&
+    prev.baseInnerRadius === next.baseInnerRadius &&
+    prev.padding === next.padding &&
     prev.hoveredIndexProp === next.hoveredIndexProp &&
     prev.onHoverChange === next.onHoverChange &&
+    prev.startAngle === next.startAngle &&
+    prev.endAngle === next.endAngle &&
     prev.enterTransition === next.enterTransition &&
     prev.enterStaggerScale === next.enterStaggerScale &&
     prev.geometryScrubbing === next.geometryScrubbing &&
@@ -446,23 +443,23 @@ function pieChartCorePropsEqual(
   );
 }
 
-export function PieChart({
+export function RingChart({
   data,
   size: fixedSize,
-  innerRadius = 0,
-  padAngle = 0,
-  cornerRadius = 0,
-  startAngle = -Math.PI / 2,
-  endAngle = (3 * Math.PI) / 2,
+  strokeWidth = 12,
+  ringGap = 6,
+  baseInnerRadius = 60,
+  padding,
   className = "",
   hoveredIndex,
   onHoverChange,
-  hoverOffset = DEFAULT_HOVER_OFFSET,
+  startAngle = -Math.PI / 2,
+  endAngle = (3 * Math.PI) / 2,
   enterTransition,
   enterStaggerScale = 1,
   geometryScrubbing = false,
   children,
-}: PieChartProps) {
+}: RingChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // If fixed size is provided, use it directly
@@ -474,9 +471,9 @@ export function PieChart({
           ref={containerRef}
           style={{ width: fixedSize, height: fixedSize }}
         >
-          <PieChartInner
+          <RingChartInner
+            baseInnerRadius={baseInnerRadius}
             containerRef={containerRef}
-            cornerRadius={cornerRadius}
             data={data}
             endAngle={endAngle}
             enterStaggerScale={enterStaggerScale}
@@ -484,15 +481,15 @@ export function PieChart({
             geometryScrubbing={geometryScrubbing}
             height={fixedSize}
             hoveredIndexProp={hoveredIndex}
-            hoverOffset={hoverOffset}
-            innerRadius={innerRadius}
             onHoverChange={onHoverChange}
-            padAngle={padAngle}
+            padding={padding}
+            ringGap={ringGap}
             startAngle={startAngle}
+            strokeWidth={strokeWidth}
             width={fixedSize}
           >
             {children}
-          </PieChartInner>
+          </RingChartInner>
         </div>
       </LazyMotion>
     );
@@ -507,9 +504,9 @@ export function PieChart({
       >
         <ParentSize debounceTime={10}>
           {({ width, height }) => (
-            <PieChartInner
+            <RingChartInner
+              baseInnerRadius={baseInnerRadius}
               containerRef={containerRef}
-              cornerRadius={cornerRadius}
               data={data}
               endAngle={endAngle}
               enterStaggerScale={enterStaggerScale}
@@ -517,15 +514,15 @@ export function PieChart({
               geometryScrubbing={geometryScrubbing}
               height={height}
               hoveredIndexProp={hoveredIndex}
-              hoverOffset={hoverOffset}
-              innerRadius={innerRadius}
               onHoverChange={onHoverChange}
-              padAngle={padAngle}
+              padding={padding}
+              ringGap={ringGap}
               startAngle={startAngle}
+              strokeWidth={strokeWidth}
               width={width}
             >
               {children}
-            </PieChartInner>
+            </RingChartInner>
           )}
         </ParentSize>
       </div>
@@ -533,6 +530,4 @@ export function PieChart({
   );
 }
 
-PieChart.displayName = "PieChart";
-
-export default PieChart;
+export default RingChart;

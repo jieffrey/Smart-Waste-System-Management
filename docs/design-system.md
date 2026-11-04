@@ -178,7 +178,7 @@ eye moves down in reading order: act → trust → patterns. The trend chart sta
 block as the second-strongest region.
 
 **Charts inside blocks.** Category colors don't all survive on a colored field: on cobalt, red orange is
-2.02:1 and ink 2.77:1 (below the 3:1 needed for graphics). So the composition donut sits on a **snowy white
+2.02:1 and ink 2.77:1 (below the 3:1 needed for graphics). So the composition rings sit on a **snowy white
 disc** set into the cobalt field, which keeps the category colors true. On yellow, the gauge is drawn in ink
 (15.34:1), and red orange is never used on yellow (2.75:1).
 
@@ -194,7 +194,7 @@ disc** set into the cobalt field, which keeps the category colors true. On yello
 | gray-700 | yellow | 7.85 | AAA | Secondary text on yellow |
 | red orange | yellow | 2.75 | **Fail** | Never red orange on yellow |
 | white | cobalt | 6.77 | AA | Text in the cobalt block |
-| snow | cobalt | 6.53 | AA | The donut's snow disc edge, secondary text |
+| snow | cobalt | 6.53 | AA | The rings' snow disc edge, secondary text |
 | red orange | cobalt | 2.02 | **Fail** | Category color not drawn directly on cobalt (hence the snow disc) |
 | ink | cobalt | 2.77 | **Fail** | Category color not drawn directly on cobalt (hence the snow disc) |
 | ink | red orange | 5.57 | AA | Sidebar pending count: ink mono number on a red-orange chip (red-orange text on snow would fail at 12px: 3.24:1) |
@@ -218,8 +218,8 @@ disc** set into the cobalt field, which keeps the category colors true. On yello
   mono row under the funnel instead of inside the dark stages.
 - Sankey: flows the AI got right are drawn in their category color at reduced opacity; corrections at full
   color.
-- The gauge and the composition donut are one family: the same ring thickness, flat butt ends, and the
-  same center typography (mono number, micro label).
+- Composition uses Bklit's concentric ring chart (one ring per category, filled to its share), on light
+  tracks with square ends and no glow, like the gauge's flat notches.
 
 ### Typography and section rhythm
 

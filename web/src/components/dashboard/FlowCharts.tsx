@@ -2,9 +2,9 @@
 
 import { FunnelChart } from "@/components/charts/funnel-chart";
 import { Gauge } from "@/components/charts/gauge";
-import { PieCenter } from "@/components/charts/pie-center";
-import { PieChart } from "@/components/charts/pie-chart";
-import { PieSlice } from "@/components/charts/pie-slice";
+import { Ring } from "@/components/charts/ring";
+import { RingCenter } from "@/components/charts/ring-center";
+import { RingChart } from "@/components/charts/ring-chart";
 import { SankeyChart, SankeyLink, SankeyNode, SankeyTooltip } from "@/components/charts/sankey";
 import { CATEGORY_COLORS } from "@/lib/categories";
 import { CATEGORY_LABELS, REPORT_CATEGORIES } from "@/lib/labels";
@@ -61,22 +61,23 @@ export function AiAccuracyGauge({ percent }: { percent: number }) {
   );
 }
 
-// Category composition as one donut: one segment per category in the category colors, small gaps between
-// segments like the gauge's notches, flat ends, and the same center typography as the gauge (one family).
-// It sits on a snow disc inside the cobalt block (category colors fail directly on cobalt).
-export function CategoryDonut({ byCategory }: { byCategory: Record<ReportCategory, number> }) {
+// Category composition as Bklit's concentric rings: one ring per category, filled to its share of all
+// reports, in the category colors, on light tracks (no glow, square ends). It sits on a snow disc inside the
+// cobalt block, because the category colors fail directly on cobalt (2.02 and 2.77:1).
+export function CategoryRing({ byCategory, total }: { byCategory: Record<ReportCategory, number>; total: number }) {
   const data = REPORT_CATEGORIES.map((category) => ({
     label: CATEGORY_LABELS[category],
     value: byCategory[category] ?? 0,
+    maxValue: Math.max(total, 1),
     color: CATEGORY_COLORS[category].hex,
   }));
   return (
-    <PieChart data={data} innerRadius={64} padAngle={0.035} cornerRadius={0} hoverOffset={4} className="aspect-square w-full">
-      {data.map((slice, index) => (
-        <PieSlice key={slice.label} index={index} color={slice.color} showGlow={false} hoverEffect="grow" />
+    <RingChart data={data} strokeWidth={14} ringGap={6} baseInnerRadius={48} className="aspect-square w-full">
+      {data.map((ring, index) => (
+        <Ring key={ring.label} index={index} color={ring.color} showGlow={false} lineCap="butt" />
       ))}
-      <PieCenter defaultLabel="reports" />
-    </PieChart>
+      <RingCenter defaultLabel="reports" />
+    </RingChart>
   );
 }
 
