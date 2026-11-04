@@ -268,12 +268,12 @@ session state was lost), and training was re-run with checkpointing. The noteboo
 
 ![Training curves](results/figures/training_curves.png)
 
-### Test results
+### 5. Results
 
-On the 701 test images: **accuracy 97.72%**, **loss 0.0800** — 685 correct, 16 wrong
-([`results/metrics/test_metrics.json`](results/metrics/test_metrics.json)).
+On the **701 test images**: accuracy **97.72%** (685 correct, 16 wrong) and loss **0.0800**
+([`results/metrics/test_metrics.json`](results/metrics/test_metrics.json); the notebook prints 97.7175%).
 
-From [`results/metrics/classification_report.json`](results/metrics/classification_report.json):
+Per class ([`results/metrics/classification_report.json`](results/metrics/classification_report.json)):
 
 | Class | Precision | Recall | F1-score | Support |
 |---|---|---|---|---|
@@ -283,10 +283,28 @@ From [`results/metrics/classification_report.json`](results/metrics/classificati
 | macro avg | 0.9780 | 0.9760 | 0.9769 | 701 |
 | weighted avg | 0.9775 | 0.9772 | 0.9772 | 701 |
 
-The most common mistake is plastic predicted as paper (8 of 298 plastic images),
-see [`results/metrics/confusion_matrix.csv`](results/metrics/confusion_matrix.csv):
+Confusion matrix ([`results/metrics/confusion_matrix.csv`](results/metrics/confusion_matrix.csv); rows are the
+true class, columns the prediction):
+
+| True \ Predicted | `organic` | `paper` | `plastic` |
+|---|---|---|---|
+| `organic` | **145** | 3 | 2 |
+| `paper` | 2 | **250** | 1 |
+| `plastic` | 0 | 8 | **290** |
 
 ![Confusion matrix](results/figures/confusion_matrix.png)
+
+The training curves are in [section 4](#4-training-setup).
+
+**Was the test set used for model selection?** As far as the notebook records, **no**:
+- The saved epoch was picked by the checkpoint on **validation** loss.
+- The test set was only evaluated afterwards, on that saved model. The notebook evaluates it several times
+  (cells 24, 25, 27 and 30, while writing the result files), always the same model with the same 97.72%, and
+  nothing was changed or retrained after seeing a test result.
+- The 3-epoch setting was chosen after the abandoned first run, whose only visible results were training
+  and **validation** numbers.
+- The three images in `tests/samples/` come from the test split, but they are only used to check
+  API-versus-Colab parity, not to choose anything.
 
 ### Reproduce
 
