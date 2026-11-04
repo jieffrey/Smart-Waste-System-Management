@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { StatusMarker } from "@/components/ui/StatusMarker";
 import { formatDateTime } from "@/lib/format";
 import { CATEGORY_LABELS } from "@/lib/labels";
+import { shortLocation } from "@/lib/location";
 import type { AdminReportDetail } from "@/types/api";
 import { AiClassification } from "./AiClassification";
 import { ReportPhoto } from "./ReportPhoto";
@@ -31,7 +32,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 // Reading order: what and where (title) -> the photo -> the action (children = update form) -> the AI
 // result -> details -> the timeline. The form sits at the top of the right column, next to the photo.
 export function ReportDetail({ report, children }: { report: AdminReportDetail; children?: React.ReactNode }) {
-  const place = report.address || `${report.latitude.toFixed(5)}, ${report.longitude.toFixed(5)}`;
 
   return (
     <div className="space-y-10">
@@ -45,7 +45,13 @@ export function ReportDetail({ report, children }: { report: AdminReportDetail; 
             · reported {formatDateTime(report.created_at)} WIB
           </>
         }
-        title={`${CATEGORY_LABELS[report.category]} waste, ${place}`}
+        title={`${CATEGORY_LABELS[report.category]} waste`}
+        description={
+          // Short form under the title; the full address stays in Details.
+          <p className="text-heading font-semibold text-gray-800" title={report.address ?? undefined}>
+            {shortLocation(report)}
+          </p>
+        }
         actions={<StatusMarker status={report.status} size="lg" />}
       />
 
