@@ -10,7 +10,7 @@ export function Sidebar() {
         <NavLinks />
       </Suspense>
       <div className="md:mt-auto">
-        <Suspense fallback={<p className="text-sm text-zinc-500">Loading…</p>}>
+        <Suspense fallback={<p className="text-small text-zinc-500">Loading…</p>}>
           <CurrentAdmin />
         </Suspense>
       </div>

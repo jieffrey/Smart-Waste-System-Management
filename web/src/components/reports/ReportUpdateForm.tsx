@@ -7,7 +7,7 @@ import { isClosed, isFinalStatus, NEXT_STATUSES } from "@/lib/report-transitions
 import type { AdminReportDetail, ReportStatus } from "@/types/api";
 
 const initialState: ReportUpdateState = { result: "idle", message: null, fieldErrors: {} };
-const inputClass = "w-full rounded border border-zinc-300 bg-white px-3 py-2 text-sm";
+const inputClass = "w-full rounded border border-zinc-300 bg-white px-3 py-2 text-small";
 
 type Props = { report: Pick<AdminReportDetail, "id" | "status" | "category" | "admin_note" | "updated_at"> };
 
@@ -16,7 +16,7 @@ export function ReportUpdateForm({ report }: Props) {
     return (
       <section className="rounded-lg border border-zinc-200 bg-white p-4">
         <h2 className="font-medium">Update report</h2>
-        <p className="mt-2 text-sm text-zinc-600">
+        <p className="mt-2 text-small text-zinc-600">
           This report is closed ({STATUS_LABELS[report.status].toLowerCase()}), so it can no longer be changed.
         </p>
       </section>
@@ -77,7 +77,7 @@ function OpenReportForm({ report }: Props) {
         {state.message && (
           <p
             role={state.result === "success" ? "status" : "alert"}
-            className={`rounded border px-3 py-2 text-sm ${
+            className={`rounded border px-3 py-2 text-small ${
               state.result === "success"
                 ? "border-green-200 bg-green-50 text-green-800"
                 : "border-red-200 bg-red-50 text-red-700"
@@ -88,7 +88,7 @@ function OpenReportForm({ report }: Props) {
         )}
 
         <div className="space-y-1">
-          <label htmlFor="status" className="block text-sm font-medium">
+          <label htmlFor="status" className="block text-small font-medium">
             Status <span className="font-normal text-zinc-500">(now {STATUS_LABELS[report.status]})</span>
           </label>
           <select
@@ -105,11 +105,11 @@ function OpenReportForm({ report }: Props) {
               </option>
             ))}
           </select>
-          {state.fieldErrors.status && <p className="text-sm text-red-600">{state.fieldErrors.status}</p>}
+          {state.fieldErrors.status && <p className="text-small text-red-600">{state.fieldErrors.status}</p>}
         </div>
 
         <div className="space-y-1">
-          <label htmlFor="category" className="block text-sm font-medium">
+          <label htmlFor="category" className="block text-small font-medium">
             Category
           </label>
           <select id="category" name="category" defaultValue={report.category} className={inputClass}>
@@ -119,11 +119,11 @@ function OpenReportForm({ report }: Props) {
               </option>
             ))}
           </select>
-          {state.fieldErrors.category && <p className="text-sm text-red-600">{state.fieldErrors.category}</p>}
+          {state.fieldErrors.category && <p className="text-small text-red-600">{state.fieldErrors.category}</p>}
         </div>
 
         <div className="space-y-1">
-          <label htmlFor="admin_note" className="block text-sm font-medium">
+          <label htmlFor="admin_note" className="block text-small font-medium">
             Admin note{" "}
             {status === "rejected" ? (
               <span className="font-normal text-red-700">(required when rejecting)</span>
@@ -144,11 +144,11 @@ function OpenReportForm({ report }: Props) {
             aria-invalid={Boolean(noteMessage)}
             className={inputClass}
           />
-          {noteMessage && <p className="text-sm text-red-600">{noteMessage}</p>}
+          {noteMessage && <p className="text-small text-red-600">{noteMessage}</p>}
         </div>
 
         {confirming && status !== "" ? (
-          <div role="alertdialog" aria-label="Confirm final status" className="space-y-3 rounded border border-amber-300 bg-amber-50 p-3 text-sm">
+          <div role="alertdialog" aria-label="Confirm final status" className="space-y-3 rounded border border-amber-300 bg-amber-50 p-3 text-small">
             <p className="text-amber-900">
               Mark this report as <strong>{STATUS_LABELS[status]}</strong>? This is final: the report can&apos;t be
               changed afterwards.
@@ -175,7 +175,7 @@ function OpenReportForm({ report }: Props) {
           <button
             type="submit"
             disabled={pending}
-            className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+            className="rounded bg-zinc-900 px-4 py-2 text-small font-medium text-white disabled:opacity-60"
           >
             {pending ? "Saving…" : "Save changes"}
           </button>

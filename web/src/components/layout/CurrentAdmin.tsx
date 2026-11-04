@@ -18,15 +18,15 @@ export async function CurrentAdmin() {
   return (
     <div className="space-y-2">
       {admin ? (
-        <div className="text-sm">
+        <div className="text-small">
           <p className="font-medium">{admin.full_name}</p>
           <p className="truncate text-zinc-500">{admin.email}</p>
         </div>
       ) : (
-        <p className="text-sm text-red-700">Couldn&apos;t load your account.</p>
+        <p className="text-small text-red-700">Couldn&apos;t load your account.</p>
       )}
       <form action={logout}>
-        <button type="submit" className="w-full rounded border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-100">
+        <button type="submit" className="w-full rounded border border-zinc-300 px-3 py-2 text-small hover:bg-zinc-100">
           Log out
         </button>
       </form>

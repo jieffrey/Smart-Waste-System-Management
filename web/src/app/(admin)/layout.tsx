@@ -6,7 +6,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="flex min-h-screen flex-col md:flex-row">
       <Sidebar />
       <main className="flex-1 p-6">
-        <Suspense fallback={<p className="text-sm text-zinc-500">Loading…</p>}>{children}</Suspense>
+        <Suspense fallback={<p className="text-small text-zinc-500">Loading…</p>}>{children}</Suspense>
       </main>
     </div>
   );

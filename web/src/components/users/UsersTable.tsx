@@ -5,7 +5,7 @@ import { UserActiveToggle } from "./UserActiveToggle";
 function ActiveBadge({ isActive }: { isActive: boolean }) {
   return (
     <span
-      className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${
+      className={`inline-block rounded-full px-2 py-0.5 text-micro font-medium whitespace-nowrap ${
         isActive ? "bg-green-100 text-green-800" : "bg-zinc-200 text-zinc-700"
       }`}
     >
@@ -18,7 +18,7 @@ function ActiveBadge({ isActive }: { isActive: boolean }) {
 export function UsersTable({ users, currentAdminId }: { users: AdminUser[]; currentAdminId: string | null }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
-      <table className="w-full min-w-[800px] text-sm">
+      <table className="w-full min-w-[800px] text-small">
         <thead className="border-b border-zinc-200 text-left text-zinc-500">
           <tr>
             <th className="px-3 py-2 font-normal">Name</th>
@@ -45,7 +45,7 @@ export function UsersTable({ users, currentAdminId }: { users: AdminUser[]; curr
               <td className="px-3 py-2 whitespace-nowrap">{formatDate(user.created_at)}</td>
               <td className="px-3 py-2">
                 {user.id === currentAdminId ? (
-                  <span className="text-xs text-zinc-400">You</span>
+                  <span className="text-micro text-zinc-400">You</span>
                 ) : (
                   <UserActiveToggle userId={user.id} userName={user.full_name} isActive={user.is_active} />
                 )}

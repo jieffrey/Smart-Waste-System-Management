@@ -11,8 +11,8 @@ import { hasActiveFilters, parseReportFilters, REPORTS_PAGE_SIZE, reportsHref, t
 export default function ReportsPage({ searchParams }: PageProps<"/reports">) {
   return (
     <section className="space-y-4">
-      <h1 className="text-xl font-semibold">Reports</h1>
-      <Suspense fallback={<p className="text-sm text-zinc-500">Loading reports…</p>}>
+      <h1 className="text-title font-semibold">Reports</h1>
+      <Suspense fallback={<p className="text-small text-zinc-500">Loading reports…</p>}>
         <ReportsContent searchParams={searchParams} />
       </Suspense>
     </section>
@@ -26,7 +26,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
     <div className="space-y-4">
       <ReportFilters filters={filters} />
       {/* Keyed by the URL, so changing a filter shows the loading state for the results only. */}
-      <Suspense key={reportsHref(filters)} fallback={<p className="text-sm text-zinc-500">Loading reports…</p>}>
+      <Suspense key={reportsHref(filters)} fallback={<p className="text-small text-zinc-500">Loading reports…</p>}>
         <ReportsResults filters={filters} />
       </Suspense>
     </div>
@@ -55,7 +55,7 @@ async function ReportsResults({ filters }: { filters: Filters }) {
 
   if (pagination.total === 0) {
     return (
-      <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center text-sm text-zinc-500">
+      <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center text-small text-zinc-500">
         {hasActiveFilters(filters) ? "No reports match these filters." : "No reports yet."}
       </div>
     );

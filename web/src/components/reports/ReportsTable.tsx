@@ -14,7 +14,7 @@ function location(report: AdminReport) {
 export function ReportsTable({ reports, filters }: { reports: AdminReport[]; filters: ReportFilters }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
-      <table className="w-full min-w-[900px] text-sm">
+      <table className="w-full min-w-[900px] text-small">
         <thead className="border-b border-zinc-200 text-left text-zinc-500">
           <tr>
             <th className="px-3 py-2 font-normal">Photo</th>

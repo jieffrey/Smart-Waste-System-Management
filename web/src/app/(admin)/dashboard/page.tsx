@@ -11,8 +11,8 @@ import type { Stats } from "@/types/api";
 export default function DashboardPage() {
   return (
     <section className="space-y-6">
-      <h1 className="text-xl font-semibold">Dashboard</h1>
-      <Suspense fallback={<p className="text-sm text-zinc-500">Loading statistics…</p>}>
+      <h1 className="text-title font-semibold">Dashboard</h1>
+      <Suspense fallback={<p className="text-small text-zinc-500">Loading statistics…</p>}>
         <DashboardContent />
       </Suspense>
     </section>

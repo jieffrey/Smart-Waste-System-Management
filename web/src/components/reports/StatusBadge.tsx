@@ -10,7 +10,7 @@ const STATUS_CLASSES: Record<ReportStatus, string> = {
 
 export function StatusBadge({ status }: { status: ReportStatus }) {
   return (
-    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${STATUS_CLASSES[status]}`}>
+    <span className={`inline-block rounded-full px-2 py-0.5 text-micro font-medium whitespace-nowrap ${STATUS_CLASSES[status]}`}>
       {STATUS_LABELS[status]}
     </span>
   );

@@ -12,7 +12,7 @@ export function ReportThumbnail({ imageUrl, size = 56 }: { imageUrl: string | nu
     return (
       <div
         style={{ width: size, height: size }}
-        className="flex items-center justify-center rounded bg-zinc-100 text-xs text-zinc-400"
+        className="flex items-center justify-center rounded bg-zinc-100 text-micro text-zinc-400"
       >
         No photo
       </div>
