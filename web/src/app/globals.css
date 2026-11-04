@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+/* Light mode only. `dark:` utilities in vendored chart code only apply under a `.dark` class, which is never set. */
+@custom-variant dark (&:is(.dark *));
 
 /*
  * SWMS design tokens: the single source for colors, type scale, fonts and shape.
@@ -93,6 +95,46 @@
   --radius-2xl: var(--radius);
   --radius-3xl: var(--radius);
   --radius-4xl: var(--radius);
+  --color-chart-line-primary: var(--chart-line-primary);
+  --color-chart-line-secondary: var(--chart-line-secondary);
+  --color-chart-brush-border: var(--chart-brush-border);
+  --color-chart-tooltip-background: var(--chart-tooltip-background);
+  --color-chart-tooltip-foreground: var(--chart-tooltip-foreground);
+  --color-chart-tooltip-muted: var(--chart-tooltip-muted);
+  --color-chart-scale-02: var(--chart-scale-02);
+  --color-chart-scale-03: var(--chart-scale-03);
+  --color-chart-scale-04: var(--chart-scale-04);
+  --color-chart-scale-05: var(--chart-scale-05);
+  --color-chart-segment-line: var(--chart-segment-line);
+  --color-chart-segment-background: var(--chart-segment-background);
+  --color-chart-marker-badge-foreground: var(--chart-marker-badge-foreground);
+  --color-chart-marker-badge-background: var(--chart-marker-badge-background);
+  --color-chart-indicator-secondary-color: var(--chart-indicator-secondary-color);
+  --color-chart-indicator-color: var(--chart-indicator-color);
+  --color-chart-scale-pattern-color: var(--chart-scale-pattern-color);
+  --chart-scale-05: var(--chart-scale-05);
+  --chart-scale-04: var(--chart-scale-04);
+  --chart-scale-03: var(--chart-scale-03);
+  --chart-scale-02: var(--chart-scale-02);
+  --color-chart-scale-01: var(--chart-scale-01);
+  --color-chart-scale-mix: var(--chart-scale-mix);
+  --color-chart-label: var(--chart-label);
+  --color-chart-marker-foreground: var(--chart-marker-foreground);
+  --color-chart-marker-border: var(--chart-marker-border);
+  --color-chart-marker-background: var(--chart-marker-background);
+  --chart-tooltip-muted: var(--chart-tooltip-muted);
+  --chart-tooltip-foreground: var(--chart-tooltip-foreground);
+  --chart-tooltip-background: var(--chart-tooltip-background);
+  --chart-brush-border: var(--chart-brush-border);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-crosshair: var(--chart-crosshair);
+  --chart-line-secondary: var(--chart-line-secondary);
+  --chart-line-primary: var(--chart-line-primary);
+  --color-chart-foreground-muted: var(--chart-foreground-muted);
+  --color-chart-foreground: var(--chart-foreground);
+  --color-chart-background: var(--chart-background);
+  --color-chart-negative: var(--chart-negative);
+  --color-chart-positive: var(--chart-positive);
 }
 
 :root {
@@ -128,6 +170,37 @@
   --sidebar-accent-foreground: #121212;
   --sidebar-border: #121212;
   --sidebar-ring: #121212;
+  /* Bklit chart variables, mapped to the palette: no off-palette colors, no dark mode */
+  --chart-positive: #121212;
+  --chart-negative: #454545;
+  --chart-background: #fbfbf8;
+  --chart-foreground: #121212;
+  --chart-foreground-muted: #5d5d5c;
+  --chart-line-primary: var(--chart-1);
+  --chart-line-secondary: var(--chart-2);
+  --chart-crosshair: #121212;
+  --chart-grid: #d6d6d3;
+  --chart-brush-border: var(--chart-grid);
+  --chart-tooltip-background: #fbfbf8;
+  --chart-tooltip-foreground: #121212;
+  --chart-tooltip-muted: #5d5d5c;
+  --chart-marker-background: #fbfbf8;
+  --chart-marker-border: #121212;
+  --chart-marker-foreground: #121212;
+  --chart-label: #5d5d5c;
+  --chart-scale-mix: #fbfbf8;
+  --chart-scale-01: #e8e8e6;
+  --chart-scale-02: color-mix(in oklab, var(--chart-1) 35%, var(--chart-scale-mix));
+  --chart-scale-03: color-mix(in oklab, var(--chart-1) 55%, var(--chart-scale-mix));
+  --chart-scale-04: color-mix(in oklab, var(--chart-1) 78%, var(--chart-scale-mix));
+  --chart-scale-05: var(--chart-1);
+  --chart-scale-pattern-color: #fbfbf8;
+  --chart-indicator-color: #121212;
+  --chart-indicator-secondary-color: #e8e8e6;
+  --chart-marker-badge-background: #121212;
+  --chart-marker-badge-foreground: #fbfbf8;
+  --chart-segment-background: rgb(18 18 18 / 0.05);
+  --chart-segment-line: rgb(18 18 18 / 0.3);
 }
 
 /* Wider Archivo widths for display text (variable font width axis) */
