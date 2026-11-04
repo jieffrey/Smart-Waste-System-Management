@@ -55,8 +55,11 @@ export type Stats = {
     by_status: Record<ReportStatus, number>;
     by_category: Record<ReportCategory, number>;
   };
-  reports_per_day: { date: string; count: number }[];
+  // count = reports created that day; completed_count = reports that became completed that day
+  reports_per_day: { date: string; count: number; completed_count: number }[];
   ai_accuracy: { reviewed: number; matching: number; accuracy: number | null };
+  // AI category -> current category, all 9 pairs (count 0 when none)
+  ai_flow: { ai_category: ReportCategory; category: ReportCategory; count: number }[];
 };
 
 export type LoginResponse = { user: User; token: string };
