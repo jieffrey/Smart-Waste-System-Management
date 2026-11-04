@@ -412,6 +412,39 @@ Committing `misclassified.png` (16 small dataset images) would turn these hypoth
 - **Not checked:** duplicates across splits ([section 1](#1-problem--dataset)), and run-to-run variance (no
   global seed, single training run).
 
+### 9. Serving
+
+**FastAPI** ([`src/api/main.py`](src/api/main.py)), loaded once at startup:
+- **`GET /health`:** `{ status, model_loaded, model_version }`.
+- **`POST /predict`:** multipart field `file` → `{ category, confidence, probabilities, model_version }`
+  ([details](#post-predict)).
+
+**Input limits** (added in the security fixes, see [`docs/security-audit.md`](../docs/security-audit.md)
+SEC-03 and SEC-08):
+- **Body size:** a body over 5 MB is refused with `413` from its `Content-Length` **before it's read**,
+  and a chunked upload is cut off as soon as it passes the limit.
+- **Dimensions:** read from the image header and refused above **24 million pixels** **before decoding**.
+  Pillow's own `MAX_IMAGE_PIXELS` is set to the same limit as a backstop. This stops "decompression bomb"
+  images, where a small file claims huge dimensions.
+- **Format:** only JPEG, PNG and WebP, detected by decoding, not by file name.
+- **Broken files:** truncated or corrupt files get `400`/`415`, never `500`.
+- **Network:** the documented start command binds to `127.0.0.1`. The API doesn't check an API key yet
+  (audit SEC-09), so it must stay on a private network next to the backend.
+
+**How the backend uses a prediction** (Express, `backend/src/modules/ml/ml.service.js` and
+`reports.service.js`):
+1. **Classify before saving.** When a user submits a report, the backend calls `/predict` *before* saving
+   anything. If the ML API rejects the photo, the user gets `422` "The photo couldn't be processed" on the
+   image field. If the ML API is down or too slow, they get `503` and nothing is saved.
+2. **Set the category automatically.** The report's `category` is set from the prediction, and
+   `ai_predicted_category`, `ai_confidence` and `ai_model_version` are stored next to it. Users can't choose
+   the category.
+3. **Let an admin correct it.** An admin can change `category` in the web panel. The AI fields are never
+   edited, so the original prediction stays visible ("AI predicted X, corrected to Y").
+4. **Measure accuracy on real reports.** The dashboard's **AI accuracy** is the share of *reviewed* reports
+   (status `in_progress` or `completed`, with a prediction) whose final category still equals the AI
+   prediction. Over time this measures the model on real app photos, which the test set can't do.
+
 ### Reproduce
 
 The scripts contain the notebook's code (without the earlier, abandoned 5-epoch experiment). Paths are
