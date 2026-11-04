@@ -5,7 +5,7 @@ import { NeedsAction } from "@/components/dashboard/NeedsAction";
 import { InVsCompletedChart } from "@/components/dashboard/TrendCharts";
 import { ColorBlock } from "@/components/dashboard/ColorBlock";
 import { TodayJakarta } from "@/components/dashboard/TodayJakarta";
-import { CATEGORY_COLORS } from "@/lib/categories";
+import { CategorySwatch } from "@/components/ui/CategorySwatch";
 import { CATEGORY_LABELS } from "@/lib/labels";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -127,7 +127,7 @@ async function DashboardContent() {
             {REPORT_CATEGORIES.map((category) => (
               <li key={category} className="flex items-center justify-between py-2 text-small">
                 <span className="inline-flex items-center gap-2">
-                  <span className={`size-3 border border-white ${CATEGORY_COLORS[category].swatchClass}`} aria-hidden="true" />
+                  <CategorySwatch category={category} framed />
                   {CATEGORY_LABELS[category]}
                 </span>
                 <span className="font-mono">{stats.totals.by_category[category]}</span>

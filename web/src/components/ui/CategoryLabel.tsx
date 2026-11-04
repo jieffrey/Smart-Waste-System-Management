@@ -1,4 +1,4 @@
-import { CATEGORY_COLORS } from "@/lib/categories";
+import { CategorySwatch } from "./CategorySwatch";
 import { CATEGORY_LABELS } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import type { ReportCategory } from "@/types/api";
@@ -7,7 +7,7 @@ import type { ReportCategory } from "@/types/api";
 export function CategoryLabel({ category, className }: { category: ReportCategory; className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-2 text-small whitespace-nowrap text-ink", className)}>
-      <span className={cn("size-3 shrink-0", CATEGORY_COLORS[category].swatchClass)} aria-hidden="true" />
+      <CategorySwatch category={category} />
       {CATEGORY_LABELS[category]}
     </span>
   );
