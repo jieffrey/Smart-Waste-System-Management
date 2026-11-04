@@ -34,7 +34,7 @@ change existing tables — don't run it against a database that already has the 
 | `DATABASE_URL` | yes | Neon pooled connection string (keep `?sslmode=require`) |
 | `JWT_SECRET` | yes | Random secret of **at least 32 characters** — the server refuses to start otherwise. Generate one with `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
 | `JWT_EXPIRES_IN` | no | Token lifetime (default `24h`) |
-| `PORT` | no | Default `3000` |
+| `PORT` | no | Default `4000` |
 | `DB_POOL_MAX` | no | Max database connections (default `10`) |
 | `ML_API_URL` | no* | Base URL of the ML API, e.g. `http://localhost:8000`. *Without it the server still starts (with a warning), but creating a report returns `503`. |
 | `ML_API_KEY` | no | Sent to the ML API as the `X-API-Key` header, only when set (e.g. for a hosted ML API) |
@@ -132,7 +132,7 @@ Send `multipart/form-data`:
 | `address` | no | max 255 characters |
 
 ```bash
-curl -X POST http://localhost:3000/api/reports \
+curl -X POST http://localhost:4000/api/reports \
   -H "Authorization: Bearer <token>" \
   -F "image=@bottles.jpg" \
   -F "description=Plastic bottles next to the bus stop" \
@@ -205,7 +205,7 @@ Only role **`user`** (an admin gets `403`). Returns the signed-in user's reports
 | `status` | all | `pending`, `in_progress`, `completed` or `rejected` |
 
 ```bash
-curl "http://localhost:3000/api/reports/me?status=pending&page=1&limit=10" -H "Authorization: Bearer <token>"
+curl "http://localhost:4000/api/reports/me?status=pending&page=1&limit=10" -H "Authorization: Bearer <token>"
 ```
 
 ```json
@@ -248,7 +248,7 @@ cloud storage later.
 
 `image_url` is **relative** (e.g. `/uploads/<uuid>.jpg`). Clients build the full URL from the API
 base URL they already use: if `image_url` starts with `http`, use it as is; otherwise prefix it with
-the API base URL (e.g. `http://192.168.1.10:3000` + `image_url`). This keeps working if storage later
+the API base URL (e.g. `http://192.168.1.10:4000` + `image_url`). This keeps working if storage later
 moves to the cloud and returns absolute URLs.
 
 ## Admin API — `/api/admin`
@@ -270,7 +270,7 @@ All reports, newest first, each with `reporter_name` and `reporter_email`.
 | `page`, `limit` | Pagination |
 
 ```bash
-curl "http://localhost:3000/api/admin/reports?status=pending&from=2026-11-01&q=bus%20stop" -H "Authorization: Bearer <admin token>"
+curl "http://localhost:4000/api/admin/reports?status=pending&from=2026-11-01&q=bus%20stop" -H "Authorization: Bearer <admin token>"
 ```
 
 ### Report detail — `GET /api/admin/reports/:id`
