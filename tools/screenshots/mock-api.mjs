@@ -1,5 +1,5 @@
 // DEV TOOLING ONLY. A fake SWMS backend that serves deterministic FIXTURE data (made-up people, reports and
-// stats), so the admin web app can be photographed without a real account or database.
+// stats), so the admin web app and the mobile app can be photographed without a real account or database.
 // Never imported by the app, the backend or any test. See README.md.
 import http from "node:http";
 import fs from "node:fs";
@@ -58,6 +58,31 @@ for (let i = 0; i < 46; i++) {
 }
 reports.sort((a, b) => b.created_at.localeCompare(a.created_at));
 
+// The MOBILE app (citizen) is photographed as one regular user with their own reports, in Indonesian, with
+// full reverse-geocoded addresses like a phone produces. Copies, so the admin fixtures above don't change.
+const citizen = users[1];
+const idAddresses = [
+  "Jl. Rtm No.50, RT.6/RW.10, Tugu, Kec. Cimanggis, Kota Depok, Jawa Barat 16451, Indonesia",
+  "Jl. Margonda Raya No.112, Pondok Cina, Kec. Beji, Kota Depok, Jawa Barat 16424, Indonesia",
+  "Gg. Kenanga 4, RT.2/RW.5, Kemiri Muka, Kec. Beji, Kota Depok, Jawa Barat 16423, Indonesia",
+  "Jl. Juanda No.45, Bakti Jaya, Kec. Sukmajaya, Kota Depok, Jawa Barat 16418, Indonesia",
+  null,
+];
+const idDescriptions = ["Tumpukan kantong sampah di samping halte, mulai bau.", "Kardus bekas dibuang di belakang pasar.", "Botol dan gelas plastik di pinggir kali.", "Sisa makanan meluap dari tong sampah RT.", "Koran bekas basah kena hujan di trotoar."];
+// Photo and description that match the category shown (sample-0 organic, sample-1 paper, sample-2 plastic).
+const byCategory = {
+  organic: { image: "/uploads/sample-0.jpg", description: "Sisa makanan meluap dari tong sampah RT." },
+  paper: { image: "/uploads/sample-1.jpg", description: "Kardus bekas dibuang di belakang pasar." },
+  plastic: { image: "/uploads/sample-2.jpg", description: "Botol dan gelas plastik di pinggir kali." },
+};
+const idNotes = { "Crew assigned for pickup.": "Petugas sudah dijadwalkan mengangkut.", "Collected and sorted.": "Sudah diangkut dan dipilah.", "Duplicate of an earlier report at the same spot.": "Sudah dilaporkan sebelumnya di titik yang sama." };
+const mine = reports.filter((_, i) => i % 5 === 1).slice(0, 9).map((r, i) => ({
+  ...r, user_id: citizen.id, reporter_name: citizen.full_name, reporter_email: citizen.email,
+  address: idAddresses[i % idAddresses.length], description: byCategory[r.category].description, image_url: byCategory[r.category].image,
+  admin_note: r.admin_note ? idNotes[r.admin_note] : null,
+  status_history: r.status_history.map((h) => ({ ...h, note: h.note ? idNotes[h.note] : null })),
+}));
+
 const jakartaDate = (ms) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date(ms));
 function stats() {
   const by_status = { pending: 0, in_progress: 0, completed: 0, rejected: 0 };
@@ -79,8 +104,13 @@ function stats() {
 }
 
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
-const TOKEN = `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: admin.id, role: "admin", iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 86400 })}.mock-signature`;
-const send = (res, status, body) => { res.writeHead(status, { "Content-Type": "application/json" }); res.end(JSON.stringify(body)); };
+const tokenFor = (u) => `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: u.id, role: u.role, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 86400 })}.mock-signature`;
+const userFromToken = (req) => {
+  try { const sub = JSON.parse(Buffer.from((req.headers.authorization || "").split(".")[1], "base64url")).sub; return users.find((u) => u.id === sub) || admin; } catch { return admin; }
+};
+// CORS for the Expo web build (a different origin than the mock).
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Authorization, Content-Type, Accept", "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS" };
+const send = (res, status, body) => { res.writeHead(status, { "Content-Type": "application/json", ...CORS }); res.end(JSON.stringify(body)); };
 const page = (list, url, limit = 20) => { const p = Math.max(1, Number(url.searchParams.get("page")) || 1); return { items: list.slice((p - 1) * limit, p * limit), pagination: { page: p, limit, total: list.length } }; };
 
 http.createServer((req, res) => {
@@ -88,13 +118,36 @@ http.createServer((req, res) => {
   let body = "";
   req.on("data", (c) => (body += c));
   req.on("end", () => {
+    if (req.method === "OPTIONS") { res.writeHead(204, CORS); return res.end(); }
     if (url.pathname.startsWith("/uploads/")) {
       const file = path.join(SAMPLES, ["biological_102.jpg", "paper_1000.jpg", "plastic_101.jpg"][Number(url.pathname.match(/sample-(\d)/)?.[1] ?? 0)]);
-      res.writeHead(200, { "Content-Type": "image/jpeg" });
+      res.writeHead(200, { "Content-Type": "image/jpeg", ...CORS });
       return fs.createReadStream(file).pipe(res);
     }
-    if (url.pathname === "/api/auth/login" && req.method === "POST") return send(res, 200, { user: admin, token: TOKEN });
-    if (url.pathname === "/api/auth/me") return send(res, 200, { user: admin });
+    if (url.pathname === "/api/auth/login" && req.method === "POST") {
+      // The admin's email signs in as the admin (web); any other email as the citizen (mobile).
+      let email = ""; try { email = JSON.parse(body).email; } catch {}
+      const u = email === admin.email ? admin : citizen;
+      return send(res, 200, { user: u, token: tokenFor(u) });
+    }
+    if (url.pathname === "/api/auth/register" && req.method === "POST") return send(res, 201, { user: citizen, token: tokenFor(citizen) });
+    if (url.pathname === "/api/auth/me") return send(res, 200, { user: userFromToken(req) });
+    // Mobile (citizen) endpoints.
+    if (url.pathname === "/api/reports/me") {
+      const list = mine.filter((r) => !url.searchParams.get("status") || r.status === url.searchParams.get("status"));
+      const { items, pagination } = page(list, url, Number(url.searchParams.get("limit")) || 20);
+      return send(res, 200, { reports: items.map(({ status_history, reporter_name, reporter_email, ...r }) => r), pagination });
+    }
+    if (url.pathname === "/api/reports" && req.method === "POST") {
+      // A new report is always "organic, pending" (what the AI-result screenshot shows).
+      const created = new Date(now).toISOString();
+      const r = { ...mine[0], id: uuid(), category: "organic", ai_predicted_category: "organic", ai_confidence: 0.9412, status: "pending", admin_note: null, image_url: "/uploads/sample-0.jpg", address: idAddresses[0], latitude: -6.37712, longitude: 106.86094, description: idDescriptions[3], created_at: created, updated_at: created, status_history: [{ old_status: null, new_status: "pending", note: null, created_at: created, changed_by: citizen.id }] };
+      mine.unshift(r);
+      const { status_history, reporter_name, reporter_email, ...report } = r;
+      return send(res, 201, { report });
+    }
+    const myOne = url.pathname.match(/^\/api\/reports\/([^/]+)$/);
+    if (myOne) { const r = mine.find((x) => x.id === myOne[1]); if (!r) return send(res, 404, { error: { message: "Report not found", details: null } }); const { reporter_name, reporter_email, ...report } = r; return send(res, 200, { report }); }
     if (url.pathname === "/api/admin/stats") return send(res, 200, stats());
     if (url.pathname === "/api/admin/reports") {
       const q = (url.searchParams.get("q") || "").toLowerCase();

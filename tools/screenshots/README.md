@@ -30,3 +30,29 @@ node capture.mjs ../../docs/screenshots/<folder>
 
 `NEXT_PUBLIC_API_URL` is built into the web app, so rebuild it normally (without the variable) before using it
 against the real backend again. Ports can be changed with `MOCK_PORT` and `WEB_URL`.
+
+## Mobile app (Expo web, 390px)
+
+The app itself is phone-only (camera, GPS, secure storage; the root layout shows a "phone only" message on web) and
+does not ship web dependencies. To photograph it, `mobile/prepare-mobile.sh` builds a **throwaway** git worktree
+of the app and, in that copy only:
+
+- installs its own `node_modules` plus `react-dom` + `react-native-web`;
+- adds `mobile/metro.config.js`, which swaps `expo-secure-store`, `expo-location`, `expo-image-picker`,
+  `expo-image-manipulator` and `expo-file-system` for the fixture mocks in `mobile/mocks/` (a fixed spot in
+  Depok, a sample photo as "the camera");
+- lifts the web gate in `src/app/_layout.tsx`.
+
+Nothing in `Mobile/` changes. The mock API serves the mobile endpoints (`/api/reports/me`, `/api/reports/:id`,
+`POST /api/reports`, `/api/auth/register`) for one fixture citizen, with CORS for the web origin.
+
+```sh
+node mock-api.mjs                                           # :4100
+sh mobile/prepare-mobile.sh /tmp/swms-mobile-shots design/mobile-screens
+cd /tmp/swms-mobile-shots/Mobile && EXPO_PUBLIC_API_URL=http://localhost:4100 npx expo start --web --port 8095
+node capture-mobile.mjs ../../docs/screenshots/mobile       # from tools/screenshots, Playwright installed
+git worktree remove --force /tmp/swms-mobile-shots
+```
+
+Web rendering is close to, not identical with, a phone (fonts, safe areas, native header and dialogs differ
+slightly); test on a real device before judging details.
