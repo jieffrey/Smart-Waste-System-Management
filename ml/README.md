@@ -188,6 +188,45 @@ Two caveats:
   **No comparison runs were done** for either option, so there are no numbers for them in this
   repository. This choice is a reasoned starting point, not a measured winner.
 
+### 3. Preprocessing
+
+**Training** (`tf.keras.utils.image_dataset_from_directory`):
+- Images are decoded by TensorFlow and resized to **224×224** with `tf.image.resize` (bilinear, no
+  antialias, no crop; the aspect ratio is not kept).
+- **Normalization is part of the model:** the first layers are MobileNetV2's `preprocess_input`
+  (`x / 127.5 − 1`, scaling pixels to [-1, 1]; visible as the `TrueDivide` and `Subtract` layers in the
+  model summary). The model therefore takes **raw 0–255 pixels**.
+- **No data augmentation** was used: the final training run has no flip, rotation, zoom or colour layers.
+  There was nothing to restrict to the training set. Augmentation is a candidate for
+  [Next steps](#10-next-steps).
+
+**API** ([`src/inference/predictor.py`](src/inference/predictor.py)): decode with Pillow → apply the EXIF
+rotation (so phone photos are upright; training did not do this) → RGB → `float32` → `tf.image.resize` to
+224×224 (bilinear, `antialias=False`) → model. The pixels are **not** divided by 255 and `preprocess_input`
+is **not** called again: doing either would apply the normalization twice and give wrong predictions.
+
+**How parity between training and the API was proven.** Training decodes with TensorFlow and the API
+decodes with Pillow, so they could differ in small ways. To check:
+1. Notebook cell 28 ran the trained model in Colab on three test-split images, using `tf.io.decode_image` +
+   `tf.image.resize`, and printed the probabilities.
+2. Those values are stored in [`tests/samples/expected.json`](tests/samples/expected.json), next to the
+   images.
+3. `test_predict_matches_colab` sends each image through the real `/predict` endpoint and requires the same
+   class and every probability within ±0.01.
+
+The measured differences are far smaller than that tolerance. API output versus Colab, re-measured for
+this document:
+
+| Image | Class (both) | Largest absolute difference in any class probability |
+|---|---|---|
+| `biological_102.jpg` | `organic` | 0.0000 |
+| `paper_1000.jpg` | `paper` | 0.0001 |
+| `plastic_101.jpg` | `plastic` | 0.0002 |
+
+So the API reproduces the training-time predictions to within **0.0002**. Only three images are checked;
+the test guards against a broken pipeline (for example normalizing twice), not against every possible decoder
+difference.
+
 ### Training
 
 - MobileNetV2 with ImageNet weights, **frozen**; new head: `GlobalAveragePooling2D` → `Dropout(0.2)` →
