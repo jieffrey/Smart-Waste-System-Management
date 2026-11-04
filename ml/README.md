@@ -227,14 +227,24 @@ So the API reproduces the training-time predictions to within **0.0002**. Only t
 the test guards against a broken pipeline (for example normalizing twice), not against every possible decoder
 difference.
 
-### Training
+### 4. Training setup
 
-- MobileNetV2 with ImageNet weights, **frozen**; new head: `GlobalAveragePooling2D` → `Dropout(0.2)` →
-  `Dense(3, softmax)` (3,843 trainable of 2,261,827 parameters)
-- Adam (learning rate 0.001), `sparse_categorical_crossentropy`, batch size 32, 224×224 input
-- 3 epochs, `ModelCheckpoint` on `val_loss` (best only), `EarlyStopping(patience=2, restore_best_weights=True)`
+Exactly as in the final notebook run (cells 19–23) and [`src/training/train.py`](src/training/train.py):
 
-From [`results/metrics/training_history.csv`](results/metrics/training_history.csv):
+| Setting | Value |
+|---|---|
+| Base | MobileNetV2, ImageNet weights, `include_top=False`, **frozen** (`trainable = False`, called with `training=False`, so BatchNorm stays in inference mode) |
+| Head | `GlobalAveragePooling2D` → `Dropout(0.2)` → `Dense(3, softmax)` |
+| Parameters | 3,843 trainable / 2,257,984 frozen / 2,261,827 total |
+| Loss | `sparse_categorical_crossentropy` (integer labels) |
+| Optimizer | Adam, learning rate **0.001** |
+| Batch size | **32** (102 steps per epoch in the training log) |
+| Epochs | **3** |
+| Callbacks | `ModelCheckpoint(monitor="val_loss", save_best_only=True)` and `EarlyStopping(monitor="val_loss", patience=2, restore_best_weights=True)` |
+| Seeds | `seed=42` for shuffling the training set; **no global seed**, so a rerun is not bit-for-bit identical |
+| Environment | Colab GPU runtime, TensorFlow 2.21.0 (printed in the notebook) |
+
+Per-epoch history ([`results/metrics/training_history.csv`](results/metrics/training_history.csv)):
 
 | Epoch | Train accuracy | Train loss | Val accuracy | Val loss |
 |---|---|---|---|---|
@@ -242,7 +252,19 @@ From [`results/metrics/training_history.csv`](results/metrics/training_history.c
 | 2 | 0.9678 | 0.0949 | 0.9743 | 0.0743 |
 | 3 | 0.9801 | 0.0676 | 0.9857 | 0.0645 |
 
-Validation loss improved every epoch, so the saved model is the one from epoch 3.
+What this shows:
+- **Validation loss improved every epoch, so early stopping never fired.** Training ended at the 3-epoch
+  limit, and the checkpoint kept epoch 3. The model may not be fully converged; more epochs are an open
+  question for [Next steps](#10-next-steps).
+- In epoch 1, validation accuracy (0.9757) is higher than training accuracy (0.8899). That is normal here:
+  training accuracy is averaged over the epoch while the head is still learning, and dropout is active
+  only during training.
+
+**An earlier run was abandoned** (notebook cell 15, not in the scripts): 5 epochs, no callbacks. The
+log shows two finished epochs (validation accuracy 0.9771 then 0.9829, validation loss 0.0861 then 0.0676)
+before epoch 3 started. The next cells report that `history` and `model` no longer existed (the Colab
+session state was lost), and training was re-run with checkpointing. The notebook doesn't record **why
+3 epochs** were chosen for the final run.
 
 ![Training curves](results/figures/training_curves.png)
 
