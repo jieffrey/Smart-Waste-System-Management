@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
-import { StatusBadge } from '@/components/reports/status-badge';
+import { StatusMarker } from '@/components/ui/status-marker';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -29,7 +29,7 @@ export function ReportListItem({ report }: { report: Report }) {
           {formatDate(report.created_at)}
         </ThemedText>
       </View>
-      <StatusBadge status={report.status} />
+      <StatusMarker status={report.status} />
     </View>
   );
 }

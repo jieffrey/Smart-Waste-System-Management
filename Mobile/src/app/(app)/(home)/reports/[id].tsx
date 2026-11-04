@@ -3,7 +3,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Linking, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
-import { StatusBadge } from '@/components/reports/status-badge';
+import { StatusMarker } from '@/components/ui/status-marker';
 import { StatusTimeline } from '@/components/reports/status-timeline';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
@@ -74,7 +74,7 @@ export default function ReportDetailScreen() {
       />
 
       <View style={styles.row}>
-        <StatusBadge status={report.status} />
+        <StatusMarker status={report.status} />
         <ThemedText type="small" themeColor="textSecondary">
           {formatDateTime(report.created_at)}
         </ThemedText>

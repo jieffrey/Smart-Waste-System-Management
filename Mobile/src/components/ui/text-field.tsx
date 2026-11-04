@@ -1,55 +1,62 @@
+import { useState } from 'react';
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { FieldMessage } from '@/components/ui/field-message';
+import { FontFamily, Palette, Spacing } from '@/constants/theme';
 
 interface TextFieldProps extends TextInputProps {
   label: string;
   error?: string;
 }
 
-// A labelled text input that shows a validation message below it.
-export function TextField({ label, error, multiline, style, ...inputProps }: TextFieldProps) {
-  const theme = useTheme();
+// Square input, 1px ink border (2px when focused or invalid). Errors are ink text with an icon, never red.
+export function TextField({ label, error, multiline, style, onFocus, onBlur, ...inputProps }: TextFieldProps) {
+  const [focused, setFocused] = useState(false);
 
   return (
     <View style={styles.field}>
       <ThemedText type="smallBold">{label}</ThemedText>
       <TextInput
-        placeholderTextColor={theme.textSecondary}
+        placeholderTextColor={Palette.gray500}
         multiline={multiline}
-        style={[
-          styles.input,
-          multiline && styles.multiline,
-          { color: theme.text, borderColor: error ? theme.danger : theme.border, backgroundColor: theme.backgroundElement },
-          style,
-        ]}
+        accessibilityLabel={label}
+        onFocus={(event) => {
+          setFocused(true);
+          onFocus?.(event);
+        }}
+        onBlur={(event) => {
+          setFocused(false);
+          onBlur?.(event);
+        }}
+        style={[styles.input, multiline && styles.multiline, (focused || error) && styles.strong, style]}
         {...inputProps}
       />
-      {error ? (
-        <ThemedText type="small" style={{ color: theme.danger }}>
-          {error}
-        </ThemedText>
-      ) : null}
+      {error ? <FieldMessage>{error}</FieldMessage> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   field: {
-    gap: Spacing.one,
+    gap: Spacing.two,
   },
   input: {
     minHeight: 48,
     borderWidth: 1,
-    borderRadius: Spacing.two,
+    borderColor: Palette.ink,
+    backgroundColor: Palette.snow,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
+    fontFamily: FontFamily.regular,
     fontSize: 16,
+    color: Palette.ink,
+  },
+  strong: {
+    borderWidth: 2,
   },
   multiline: {
-    minHeight: 100,
+    minHeight: 112,
     textAlignVertical: 'top',
   },
 });
