@@ -74,7 +74,10 @@ export function AiFlowSankey({ data }: { data: ReturnType<typeof aiFlowSankey> }
   const { nodes, links } = data;
   return (
     <SankeyChart
-      data={{ nodes: nodes.map((node) => ({ name: node.name })), links: links.map(({ source, target, value }) => ({ source, target, value })) }}
+      data={{
+        nodes: nodes.map((node) => ({ name: node.name, category: node.side === "ai" ? ("source" as const) : ("outcome" as const) })),
+        links: links.map(({ source, target, value }) => ({ source, target, value })),
+      }}
       aspectRatio="2 / 1"
       nodeWidth={12}
       nodePadding={20}
