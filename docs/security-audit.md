@@ -637,3 +637,83 @@ The `requirements.txt` comment already explains why keras is pinned, which is go
 
 **Lesson.** Read each advisory to see whether *your* code can trigger it before you panic or ignore it.
 Model files are code: loading an untrusted model is like running an untrusted script.
+
+---
+
+# Web admin findings (Next.js)
+
+What was checked and **held up** (details under "Things done right"):
+- **Cookie flags:** `HttpOnly; SameSite=Lax`, plus `Secure` in production (proven).
+- **CSRF on Server Actions:** a Server Action posted with a foreign `Origin` was refused, with no cookie set (proven).
+- **Open redirects:** none. `?reason=` only picks a message, there's no `next=` parameter, and `//host` paths stay on the site (proven).
+- **XSS:** markup in a report's address and description was rendered as text (proven).
+- **`NEXT_PUBLIC_*`:** only the API URL is in the browser bundle (proven).
+- **`proxy.ts`:** forged cookies get past the proxy but are rejected by the backend (proven in the auth branch).
+
+The proxy only reads the token's payload; it can't verify the signature, because the secret stays on the
+backend. That's fine because the proxy is only a fast first filter: every admin page asks the backend
+(`/api/auth/me`) to verify the token. Keep it that way. **Never** make an access decision based only on
+what the proxy decoded.
+
+<a id="sec-13"></a>
+## SEC-13: Anyone can log an admin out with a link
+
+- **Severity: Low.** Proven, but the worst outcome is an annoyance: the admin has to log in again. No data
+  is exposed or changed.
+- **Evidence:** proven live. `GET /login?reason=expired` sent with a valid admin cookie returned
+  `Set-Cookie: swms_admin_token=; Expires=1970…`, which deletes the session.
+- **Where:** `web/src/proxy.ts:13`
+
+**What's wrong.** To handle sessions that end during a page render, the proxy deletes the cookie whenever
+`/login` is opened with any `?reason=`. A plain link or image tag on any other website can trigger a GET
+request, so any site can log the admin out. ("Logout CSRF".)
+
+**How it could be abused.** A page the admin visits could keep logging them out, which is a nuisance. In
+some apps, a forced logout is the first step of a login phishing trick ("your session expired, sign in
+again" on a look-alike page).
+
+**How to fix it.** Only clear the cookie for `?reason=` when the token is *actually* unusable, and keep
+the real logout as the POST Server Action it already is:
+
+```ts
+// web/src/proxy.ts
+if (pathname === "/login") {
+  if (token !== undefined && !hasValidSession) {
+    const response = NextResponse.next();
+    response.cookies.delete(SESSION_COOKIE); // expired or forged: always safe to clear
+    return response;
+  }
+  if (hasValidSession && !searchParams.has("reason")) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+  return NextResponse.next(); // valid cookie + ?reason: show the page, keep the cookie
+}
+```
+
+For the "backend said 401/403 during a render" case, redirect to a dedicated POST-only route handler
+(for example `/api/session/end`) instead, or let the next Server Action clear the cookie.
+
+**Lesson.** Any GET request can be triggered by another website, so GET requests must never change state:
+not logout, not deletes, not settings.
+
+<a id="sec-18"></a>
+## SEC-18: "Deactivated" is detected from the error message text
+
+- **Severity: Info.** Code review. It fails safely: if the message ever changes, the admin is still logged
+  out; they just see "no longer has admin access" instead of "deactivated".
+- **Where:** `web/src/lib/session.ts:35`
+
+**What's wrong.** The backend uses `403` for two different situations, "account is deactivated" and "you
+are not an admin". The web app tells them apart by looking for the word "deactivated" in the message. If
+someone rewords or translates the message, the wrong explanation appears.
+
+**How to fix it.** Give errors a stable, machine-readable code next to the human message:
+
+```js
+// backend: new HttpError(403, 'Account is deactivated', null, 'ACCOUNT_DEACTIVATED')
+// error body: { error: { code: 'ACCOUNT_DEACTIVATED', message: '...', details: null } }
+// web:        error.code === 'ACCOUNT_DEACTIVATED' ? 'deactivated' : 'forbidden'
+```
+
+**Lesson.** Messages are for people and codes are for programs. Don't write program logic that depends on
+text a person might reword.
