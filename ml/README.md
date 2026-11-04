@@ -391,6 +391,27 @@ plt.savefig(f"{BASE}/results/figures/misclassified.png", dpi=120)
 
 Committing `misclassified.png` (16 small dataset images) would turn these hypotheses into findings.
 
+### 8. Limitations
+
+- **No "not waste / unknown" class.** The model must pick one of three labels for *any* image: a selfie, a
+  street sign or a glass bottle still comes back as `organic`, `paper` or `plastic`, often with high
+  confidence. The admin review step is the safeguard.
+- **One object per photo.** Training images show mostly a single item. A photo of a mixed pile still gets one
+  label, probably the most prominent material, and the model can't say "this is mixed".
+- **Dataset photos are not street photos.** The Kaggle images differ from real reports in lighting,
+  background, distance and clutter. Accuracy on real phone photos from the app has **not been measured**;
+  the 97.72% only holds for images like the test split.
+- **Phone photo pipeline.** The mobile app shrinks photos to at most 1600 px and JPEG-compresses them before
+  upload, and the API applies EXIF rotation, which training didn't. The parity test shows the API matches
+  Colab on dataset images, but the effect of the phone pipeline on accuracy is untested.
+- **Confidence is not a calibrated probability.** `confidence` is the softmax output of the top class. A value
+  of 0.95 doesn't mean "right 95% of the time". Calibration was **not measured** (no reliability curve or
+  ECE). Treat it as a ranking signal, not a guarantee.
+- **Only three materials.** Glass, metal and other waste types in the original dataset were left out, so those
+  items are forced into one of the three classes.
+- **Not checked:** duplicates across splits ([section 1](#1-problem--dataset)), and run-to-run variance (no
+  global seed, single training run).
+
 ### Reproduce
 
 The scripts contain the notebook's code (without the earlier, abandoned 5-epoch experiment). Paths are
