@@ -148,3 +148,89 @@ Numbers anywhere use `font-mono` (Plex Mono, tabular) at the size of their conte
 2. **One dominant number per screen** (display size, red orange). It answers "what needs me now?".
 3. **No equal-box grids.** Regions differ in size by importance; rules separate them.
 4. **Left-aligned, top-to-bottom reading order:** what needs action → trend → patterns → detail.
+
+---
+
+## v2: bold color blocks (polish pass)
+
+The phase-1 UI was correct but read as a grey wireframe next to the login page. v2 keeps the same tokens
+and adds **full color blocks**, used like a Bauhaus/punk poster: a few large flat fields of color, everything
+else snowy white. These rules extend (and where they conflict, replace) the ones above.
+
+### Color blocks
+
+- **At most 3–4 colored blocks per screen.** Everything else stays snow.
+- A block is a full flat field (no border, no shadow, no gradient) with its own text colors from the table
+  below. Never place two blocks of the same color side by side.
+- Inside a block the block's color *is* the background, so the usual "red orange only for the CTA / key number"
+  rule is satisfied by the block itself: a red-orange block carries the screen's most important number.
+
+**Dashboard assignment, by importance:**
+
+| Block | Color | Why this section |
+|---|---|---|
+| Needs action (pending count + CTA) | red orange | The single most urgent thing on the screen, so it gets the loudest color and the top-left spot. Its CTA becomes an **ink** button, because a red-orange button would disappear on red orange |
+| AI accuracy | yellow punk | Trust in the AI is a "watch this" signal, not an alarm. Yellow reads as attention, and ink on yellow has the highest contrast in the palette (15.34:1) |
+| Composition (total reports by category) | cobalt | A calm reference panel: how much of what is coming in. Cobalt is the quietest of the three |
+
+The blocks zig-zag down the page (red left, yellow right, cobalt left), so no two colored blocks touch and the
+eye moves down in reading order: act → trust → patterns. The trend chart stays white and sits next to the red
+block as the second-strongest region.
+
+**Charts inside blocks.** Category colors don't all survive on a colored field: on cobalt, red orange is
+2.02:1 and ink 2.77:1 (below the 3:1 needed for graphics). So the composition donut sits on a **snowy white
+disc** set into the cobalt field, which keeps the category colors true. On yellow, the gauge is drawn in ink
+(15.34:1), and red orange is never used on yellow (2.75:1).
+
+### Contrast of block pairs (computed, WCAG 2.x)
+
+| Foreground | Background | Ratio | Result | Use |
+|---|---|---|---|---|
+| ink | red orange | 5.57 | AA | All text in the red block, including the display number |
+| snow | ink | 18.07 | AAA | Ink CTA button label inside the red block |
+| ink (button fill) | red orange | 5.57 | AA (UI 3:1) | The ink button stands out on red orange |
+| gray-700 | red orange | 2.85 | **Fail** | Never: secondary text on red orange stays ink |
+| ink | yellow | 15.34 | AAA | All text and the gauge in the yellow block |
+| gray-700 | yellow | 7.85 | AAA | Secondary text on yellow |
+| red orange | yellow | 2.75 | **Fail** | Never red orange on yellow |
+| white | cobalt | 6.77 | AA | Text in the cobalt block |
+| snow | cobalt | 6.53 | AA | The donut's snow disc edge, secondary text |
+| red orange | cobalt | 2.02 | **Fail** | Category color not drawn directly on cobalt (hence the snow disc) |
+| ink | cobalt | 2.77 | **Fail** | Category color not drawn directly on cobalt (hence the snow disc) |
+| ink | red orange | 5.57 | AA | Sidebar pending count: ink mono number on a red-orange chip (red-orange text on snow would fail at 12px: 3.24:1) |
+
+### Sidebar
+
+- Light, not black: snow background, a 1px ink rule on the right that runs the **full page height** (the rule
+  belongs to the layout column, the content inside is sticky), never cut off.
+- Wordmark in Archivo at its expanded width.
+- Active item: a yellow punk background with a 3px ink bar on the left. The indicator **slides** between items.
+- The Reports item shows the pending count as an ink mono number on a red-orange chip.
+- The admin's name and "Log out" are pinned to the bottom.
+
+### Charts
+
+- **Data is drawn in the category colors** (red orange, cobalt, ink). Grey is only for gridlines, axes and
+  tracks.
+- Composed chart: reports in = cobalt bars, completed = ink line with a snow outline, so the line stays
+  readable where it crosses a bar.
+- Funnel: solid ink stages, not grey slabs.
+- Sankey: flows the AI got right are drawn in their category color at reduced opacity; corrections at full
+  color.
+- The gauge and the composition donut are one family: the same ring thickness, flat butt ends, and the
+  same center typography (mono number, micro label).
+
+### Typography and section rhythm
+
+- Page titles use Archivo at its **expanded** width and extra-bold weight, like the login headline.
+- The dashboard shows today's date (Asia/Jakarta, mono) above its title.
+- **Not every section gets the same template.** Mono uppercase eyebrows are kept only where they add
+  information (for example "Last 30 days"), not as decoration. Colored blocks are dominant, the trend
+  chart comes next, everything else is quieter (a heading, no subtitle unless it explains something).
+
+### Motion
+
+Using the `motion` package Bklit already brings in (no extra animation library). Short (150–400ms) and
+**off when the user prefers reduced motion** (`MotionConfig reducedMotion="user"` wraps the admin pages):
+count-up on the big numbers on first load, charts draw in once, row hover on tables, the sidebar indicator
+slides between items, and page content fades and slides up slightly when it appears.
