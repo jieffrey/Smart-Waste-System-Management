@@ -1,3 +1,4 @@
+import { t } from '@/constants/strings';
 import { API_URL } from '@/constants/api';
 import type { ApiErrorBody, FieldError } from '@/types/api';
 
@@ -54,18 +55,18 @@ function buildQueryString(query?: Record<string, QueryValue>) {
 // - anything else happened in the app before sending (e.g. a request body fetch can't send)
 function describeRequestError(error: unknown, timedOut: boolean) {
   if (timedOut) {
-    return 'The server took too long to respond. Please try again.';
+    return t.errors.timeout;
   }
   const message = error instanceof Error ? error.message : '';
   if (error instanceof TypeError || /^fetch failed/i.test(message) || /network request failed/i.test(message)) {
-    return "Can't reach the server. Check your internet connection and the API address.";
+    return t.errors.network;
   }
-  return "Couldn't send the request. Please try again.";
+  return t.errors.sendFailed;
 }
 
 export async function apiRequest<T>(path: string, { method = 'GET', query, body, formData }: RequestOptions = {}) {
   if (!API_URL) {
-    throw new ApiError(0, 'The API address is not set. Add EXPO_PUBLIC_API_URL to Mobile/.env and restart Expo.');
+    throw new ApiError(0, t.errors.noApiUrl);
   }
 
   const headers: Record<string, string> = { Accept: 'application/json' };
@@ -116,7 +117,7 @@ export async function apiRequest<T>(path: string, { method = 'GET', query, body,
     }
     throw new ApiError(
       response.status,
-      errorBody?.error?.message ?? `Request failed (${response.status})`,
+      errorBody?.error?.message ?? t.errors.requestFailed(response.status),
       errorBody?.error?.details ?? null
     );
   }

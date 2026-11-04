@@ -1,3 +1,4 @@
+import { t, translateBackendMessage } from '@/constants/strings';
 import * as SecureStore from 'expo-secure-store';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 
@@ -6,8 +7,8 @@ import * as authService from '@/services/auth';
 import type { User } from '@/types/api';
 
 const TOKEN_KEY = 'swms.token';
-const ADMIN_MESSAGE = 'This app is for reporting waste. Admins use the web dashboard.';
-const EXPIRED_MESSAGE = 'Your session has expired. Please log in again.';
+const ADMIN_MESSAGE = t.session.adminOnly;
+const EXPIRED_MESSAGE = t.session.expired;
 
 // loading:    reading the saved token / checking it with the server
 // signed-out: no valid session (show login)
@@ -98,7 +99,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         return;
       }
       // 403 = account deactivated (show the server's message); anything else = invalid/expired token
-      await signOut(error instanceof ApiError && error.status === 403 ? error.message : EXPIRED_MESSAGE);
+      await signOut(error instanceof ApiError && error.status === 403 ? translateBackendMessage(error.message) : EXPIRED_MESSAGE);
     }
   }, [signOut]);
 
