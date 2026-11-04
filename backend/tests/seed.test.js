@@ -15,9 +15,9 @@ const unusedEmail = `test+seed-unused-${runId}@example.com`;
 const adminPassword = 'seed-admin-password';
 const userPassword = 'seed-user-password';
 
-function testAccounts({ userPasswordOverride } = {}) {
+function testAccounts({ adminPasswordOverride, userPasswordOverride } = {}) {
   return [
-    { role: 'admin', full_name: 'Seed Admin', email: adminEmail, password: adminPassword },
+    { role: 'admin', full_name: 'Seed Admin', email: adminEmail, password: adminPasswordOverride ?? adminPassword },
     { role: 'user', full_name: 'Seed User', email: userEmail, password: userPasswordOverride ?? userPassword },
   ];
 }
@@ -84,7 +84,9 @@ test('the first run creates the admin and the user with hashed passwords', async
 });
 
 test('running again creates no duplicates and never changes an existing password', async () => {
-  const results = await seed(testAccounts({ userPasswordOverride: 'a-different-password' }));
+  const results = await seed(
+    testAccounts({ adminPasswordOverride: 'a-different-admin-password', userPasswordOverride: 'a-different-password' })
+  );
 
   assert.deepEqual(
     results.map(({ result }) => result),
@@ -93,7 +95,10 @@ test('running again creates no duplicates and never changes an existing password
   assert.equal((await findUser(adminEmail)).length, 1);
   assert.equal((await findUser(userEmail)).length, 1);
 
-  // The original password still works; the new value was ignored.
+  // The original passwords still work; the new values were ignored (SEC-01: an admin's real password
+  // set on a shared database is never reset back to a demo value by re-running the seed).
+  assert.equal((await loginUser({ email: adminEmail, password: adminPassword })).user.role, 'admin');
+  await assert.rejects(loginUser({ email: adminEmail, password: 'a-different-admin-password' }), { status: 401 });
   await loginUser({ email: userEmail, password: userPassword });
   await assert.rejects(loginUser({ email: userEmail, password: 'a-different-password' }), { status: 401 });
 });

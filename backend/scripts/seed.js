@@ -1,10 +1,12 @@
-// Creates the demo admin and demo user below. Safe to run many times: an existing account is never
-// duplicated and its password is never changed; only its role and active status are made correct.
+// LOCAL DEVELOPMENT ONLY. Creates the demo admin and demo user below. Safe to run many times: an
+// existing account is never duplicated and its password is never changed; only its role and active
+// status are made correct.
 //
 // Run from backend/:  npm run seed
 //
-// WARNING: these are public demo credentials. Change the admin password (or override it with
-// SEED_ADMIN_PASSWORD) before any public deployment.
+// WARNING: these are public demo credentials (they are in this repository). On any shared or deployed
+// database, give the admin a real password with `npm run set-admin-password`. Re-running this seed
+// never resets it back to the demo value.
 
 const { pool, query } = require('../src/db/pool');
 const { hashPassword } = require('../src/modules/auth/auth.service');
