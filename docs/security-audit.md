@@ -40,12 +40,12 @@ database, no rate limiting, and an ML endpoint that a big image could exhaust.
 |---|---|---|---|---|---|
 | [SEC-01](#sec-01) | **High** | Published demo admin password works against the real database | Repo / backend | A07, A02 | Proven live |
 | [SEC-02](#sec-02) | Medium | No rate limiting on login, registration or report creation | Backend | A07, API4 | Proven live |
-| [SEC-03](#sec-03) | Medium | ML API can be made to use gigabytes of memory with one small image | ML | A10, API4 | Code review |
+| [SEC-03](#sec-03) | Medium | ML API can be made to use gigabytes of memory with one small image (fixed: `security/fix-ml-image-limits`) | ML | A10, API4 | Code review |
 | [SEC-04](#sec-04) | Low | Weak password policy (`12345678` is accepted) | Backend | A07 | Proven live |
 | [SEC-05](#sec-05) | Low | Account enumeration through login timing and the register error | Backend | A07 | Proven live |
 | [SEC-06](#sec-06) | Low | Uploaded photos are stored and served byte-for-byte (EXIF location kept) | Backend | A02, API3 | Proven live |
 | [SEC-07](#sec-07) | Low | Missing HTTP security headers (backend and web) | Backend / web | A02 | Proven live |
-| [SEC-08](#sec-08) | Low | Upload limits are checked late; multipart fields are unlimited | Backend / ML | API4 | Partly proven |
+| [SEC-08](#sec-08) | Low | Upload limits are checked late; multipart fields are unlimited (fixed: `security/fix-ml-image-limits`) | Backend / ML | API4 | Partly proven |
 | [SEC-09](#sec-09) | Low | ML `/predict` has no authentication; `/docs` is public | ML | A01, API2 | Proven live |
 | [SEC-10](#sec-10) | Low | No security event logging; category/note changes leave no history | Backend | A09 | Code review |
 | [SEC-11](#sec-11) | Low | 24-hour tokens that can't be revoked; no `iss`/`aud` claims | Backend / web | A07 | Proven live |
@@ -334,6 +334,10 @@ Add them when you create the project.
 <a id="sec-08"></a>
 ## SEC-08: Upload limits are checked late; multipart fields are unlimited
 
+- **Status: fixed in `security/fix-ml-image-limits`.** The ML API refuses bodies over 5 MB from `Content-Length` before
+  reading them, and stops chunked uploads as they pass the limit (live: a 20 MB upload now gets `413`
+  after **0** body bytes, previously 20,000,197). The backend limits multipart text fields to 10 fields
+  of 8 KB each. Tested in `ml/tests/test_limits.py` and `backend/tests/upload-limits.test.js`.
 - **Severity: Low.** The file-size limits work, but a client can still make the server receive or hold
   much more data than it allows. Requires an account (backend) or direct access (ML).
 - **Evidence:** partly proven live. A 20 MB upload got `413` from both services, but the client was allowed
@@ -521,6 +525,11 @@ system can always recover (keep at least one working admin, or have a "break gla
 <a id="sec-03"></a>
 ## SEC-03: ML API can be made to use gigabytes of memory with one small image
 
+- **Status: fixed in `security/fix-ml-image-limits`.** Dimensions are read from the header and checked before decoding (max
+  24 million pixels), `Image.MAX_IMAGE_PIXELS` is set explicitly with its warning turned into an error, and
+  broken files get a clean 400/415. Preprocessing is unchanged (the Colab parity tests still pass).
+  Proven by `ml/tests/test_limits.py`; live, a 65-byte PNG claiming 30,000 × 30,000 now gets `400`.
+  Through the backend this still shows as `503` until SEC-14 is fixed.
 - **Severity: Medium.** Anyone can register an account and upload a photo, and the backend forwards it to
   the ML API, so any account can trigger this. Impact is a crash or an out-of-memory kill of the
   classifier (reports can't be created). **Not proven live:** I didn't send it, because running it would
