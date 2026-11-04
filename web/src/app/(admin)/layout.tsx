@@ -3,10 +3,12 @@ import { Sidebar } from "@/components/layout/Sidebar";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col md:flex-row">
+    <div className="flex min-h-screen flex-col bg-snow md:flex-row">
       <Sidebar />
-      <main className="flex-1 p-6">
-        <Suspense fallback={<p className="text-small text-zinc-500">Loading…</p>}>{children}</Suspense>
+      <main className="min-w-0 flex-1 px-4 py-8 md:px-12 md:py-12">
+        <div className="mx-auto max-w-[1200px]">
+          <Suspense fallback={<p className="text-small text-gray-600">Loading…</p>}>{children}</Suspense>
+        </div>
       </main>
     </div>
   );

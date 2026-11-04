@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/dashboard", label: "Dashboard" },
@@ -15,9 +16,10 @@ export function NavLinks() {
   return <NavLinkList pathname={usePathname()} />;
 }
 
+// Active item: a red-orange bar (the "selected" color) and bold ink text. Horizontal on small screens.
 export function NavLinkList({ pathname }: { pathname: string | null }) {
   return (
-    <nav className="flex flex-col gap-1">
+    <nav aria-label="Main" className="flex gap-6 md:flex-col md:gap-0">
       {LINKS.map(({ href, label }) => {
         const active = pathname !== null && (pathname === href || pathname.startsWith(`${href}/`));
         return (
@@ -25,7 +27,11 @@ export function NavLinkList({ pathname }: { pathname: string | null }) {
             key={href}
             href={href}
             aria-current={active ? "page" : undefined}
-            className={`rounded px-3 py-2 text-small ${active ? "bg-zinc-900 text-white" : "text-zinc-700 hover:bg-zinc-100"}`}
+            className={cn(
+              "relative py-1 text-body text-ink md:py-2 md:pl-4",
+              "before:absolute before:bg-signal before:content-[''] max-md:before:inset-x-0 max-md:before:-bottom-4 max-md:before:h-1 md:before:inset-y-1 md:before:left-0 md:before:w-1",
+              active ? "font-bold before:visible" : "before:invisible hover:underline"
+            )}
           >
             {label}
           </Link>

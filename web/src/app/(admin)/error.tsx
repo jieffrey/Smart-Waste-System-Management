@@ -1,13 +1,19 @@
 "use client";
 
-// Last-resort error screen for the admin pages (the sidebar stays visible).
+import { AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+// Last-resort error screen for the admin pages (the sidebar stays visible). Ink + icon, never red.
 export default function AdminError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
-    <div role="alert" className="space-y-3 rounded-lg border border-red-200 bg-red-50 p-4 text-small text-red-800">
-      <p className="font-medium">Something went wrong while loading this page.</p>
-      <button type="button" onClick={reset} className="rounded border border-red-300 bg-white px-3 py-1.5 hover:bg-red-100">
-        Try again
-      </button>
+    <div role="alert" className="flex gap-3 border-t border-ink py-6 text-ink">
+      <AlertTriangle className="mt-1 size-5 shrink-0" aria-hidden="true" />
+      <div className="space-y-4">
+        <p className="text-heading font-semibold">Something went wrong while loading this page.</p>
+        <Button type="button" onClick={reset}>
+          Try again
+        </Button>
+      </div>
     </div>
   );
 }
