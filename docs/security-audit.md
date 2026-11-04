@@ -477,6 +477,11 @@ short-lived, and if logout must really end a session, check something on the ser
 <a id="sec-14"></a>
 ## SEC-14: Error-handling gaps: big JSON gives 500, a bad image gives 503
 
+- **Status: partly fixed in `security/fix-ml-error-mapping` (the bad-image half).** ML `400`/`413`/`415` now
+  become `422` with "The photo couldn't be processed. Try another photo." on the `image` field. Only network errors,
+  timeouts, ML `5xx` and other unexpected statuses give `503` ("AI service unavailable"). The ML API's own error text
+  is never passed on. Tested in `ml.service.test.js` and `reports.test.js`; the mobile app shows the message under
+  the photo. The big-JSON-gives-500 half is **still open**.
 - **Severity: Low.** Proven. Nothing leaks (bodies stay generic), but the status codes are wrong, which
   confuses clients and hides attacks in the logs.
 - **Evidence:** proven live.
