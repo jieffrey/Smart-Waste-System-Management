@@ -2,12 +2,22 @@ const { mlApiUrl, mlApiKey, mlApiTimeoutMs } = require('../../config/env');
 const HttpError = require('../../utils/http-error');
 
 const CATEGORIES = ['organic', 'paper', 'plastic'];
-const UNAVAILABLE_MESSAGE = 'Classification service is unavailable, please try again';
+const UNAVAILABLE_MESSAGE = 'AI service unavailable, please try again later';
+const IMAGE_REJECTED_MESSAGE = "The photo couldn't be processed. Try another photo.";
+// What the ML API answers when the image itself is the problem: 400 corrupt/empty/too many pixels,
+// 413 file too large, 415 not a JPEG/PNG/WebP. Any other status (e.g. 401 wrong API key) is our fault.
+const IMAGE_REJECTED_STATUSES = [400, 413, 415];
 
 function unavailable(reason) {
   // The reason is only logged; the client always gets the same 503 message.
   console.error(`ML API unavailable: ${reason}`);
   return new HttpError(503, UNAVAILABLE_MESSAGE, null);
+}
+
+function imageRejected(status) {
+  // The ML API's own error text is never passed on: the client gets one fixed message, on the image field.
+  console.warn(`ML API rejected the image (status ${status})`);
+  return new HttpError(422, IMAGE_REJECTED_MESSAGE, [{ field: 'image', message: IMAGE_REJECTED_MESSAGE }]);
 }
 
 function isValidPrediction(body) {
@@ -25,7 +35,10 @@ function isValidPrediction(body) {
 }
 
 // Sends the image to POST {ML_API_URL}/predict and returns { category, confidence, modelVersion }.
-// Throws a 503 HttpError if the ML API is not configured, down, too slow, or returns an error/invalid result.
+// Throws:
+// - 422 (field "image") when the ML API says the image can't be used (400/413/415)
+// - 503 when the ML API is not configured, unreachable, too slow, answers 5xx/another status, or
+//   returns an invalid result
 async function classifyImage(buffer, mimeType) {
   if (!mlApiUrl) {
     throw unavailable('ML_API_URL is not set');
@@ -36,21 +49,31 @@ async function classifyImage(buffer, mimeType) {
 
   const headers = mlApiKey ? { 'X-API-Key': mlApiKey } : {};
 
-  let body;
+  let response;
   try {
-    const response = await fetch(`${mlApiUrl}/predict`, {
+    response = await fetch(`${mlApiUrl}/predict`, {
       method: 'POST',
       headers,
       body: form,
       signal: AbortSignal.timeout(mlApiTimeoutMs),
     });
+  } catch (err) {
+    throw unavailable(err.message); // network error or timeout
+  }
 
-    if (!response.ok) {
-      throw new Error(`responded with status ${response.status}`);
+  if (!response.ok) {
+    await response.body?.cancel().catch(() => {}); // the error body is not needed (and never forwarded)
+    if (IMAGE_REJECTED_STATUSES.includes(response.status)) {
+      throw imageRejected(response.status);
     }
+    throw unavailable(`responded with status ${response.status}`);
+  }
+
+  let body;
+  try {
     body = await response.json();
   } catch (err) {
-    throw unavailable(err.message);
+    throw unavailable(`unreadable response (${err.message})`); // not JSON, or the timeout hit mid-body
   }
 
   if (!isValidPrediction(body)) {
