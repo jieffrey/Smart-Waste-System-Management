@@ -176,7 +176,7 @@ Two caveats:
   memorise the training images. Transfer learning reuses features (edges, textures, shapes)
   that MobileNetV2 already learned on ImageNet, so only a small new head has to learn from our data.
 - **Few parameters to learn.** With the base frozen, the model has **3,843 trainable** parameters out of
-  **2,261,827** (notebook `model.summary()`). That is why three epochs were enough to reach the results below.
+  **2,261,827** (notebook `model.summary()`), which is one reason a few epochs could already reach the results below.
 - **Small and fast to serve.** The saved model is **9,667,404 bytes** (`models/swms_mobilenetv2_best.keras`,
   about 9.7 MB, *computed*). MobileNetV2 was designed for mobile and embedded devices, which suits a
   classification API running on CPU behind the backend. Inference latency was **not measured**.
@@ -394,10 +394,10 @@ Committing `misclassified.png` (16 small dataset images) would turn these hypoth
 ### 8. Limitations
 
 - **No "not waste / unknown" class.** The model must pick one of three labels for *any* image: a selfie, a
-  street sign or a glass bottle still comes back as `organic`, `paper` or `plastic`, often with high
-  confidence. The admin review step is the safeguard.
-- **One object per photo.** Training images show mostly a single item. A photo of a mixed pile still gets one
-  label, probably the most prominent material, and the model can't say "this is mixed".
+  street sign or a glass bottle still comes back as `organic`, `paper` or `plastic`, and nothing in the output
+  says "this isn't waste". The admin review step is the safeguard.
+- **One label per photo.** Every training image has exactly one label. A photo with several materials (a mixed
+  pile) still gets a single answer, and the model can't say "this is mixed".
 - **Dataset photos are not street photos.** The Kaggle images differ from real reports in lighting,
   background, distance and clutter. Accuracy on real phone photos from the app has **not been measured**;
   the 97.72% only holds for images like the test split.
@@ -407,8 +407,8 @@ Committing `misclassified.png` (16 small dataset images) would turn these hypoth
 - **Confidence is not a calibrated probability.** `confidence` is the softmax output of the top class. A value
   of 0.95 doesn't mean "right 95% of the time". Calibration was **not measured** (no reliability curve or
   ECE). Treat it as a ranking signal, not a guarantee.
-- **Only three materials.** Glass, metal and other waste types in the original dataset were left out, so those
-  items are forced into one of the three classes.
+- **Only three materials.** The dataset's other class folders were not used, so items of any other material are
+  forced into one of the three classes.
 - **Not checked:** duplicates across splits ([section 1](#1-problem--dataset)), and run-to-run variance (no
   global seed, single training run).
 
