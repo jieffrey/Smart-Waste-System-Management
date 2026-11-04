@@ -4,7 +4,7 @@ import { CATEGORY_LABELS } from "@/lib/labels";
 import { reportDetailHref, type ReportFilters } from "@/lib/report-filters";
 import type { AdminReport } from "@/types/api";
 import { ReportThumbnail } from "./ReportThumbnail";
-import { StatusBadge } from "./StatusBadge";
+import { StatusMarker } from "@/components/ui/StatusMarker";
 
 function location(report: AdminReport) {
   return report.address || `${report.latitude.toFixed(5)}, ${report.longitude.toFixed(5)}`;
@@ -46,7 +46,7 @@ export function ReportsTable({ reports, filters }: { reports: AdminReport[]; fil
                 {report.ai_confidence === null ? <span className="text-zinc-400">—</span> : formatPercent(report.ai_confidence)}
               </td>
               <td className="px-3 py-2">
-                <StatusBadge status={report.status} />
+                <StatusMarker status={report.status} />
               </td>
               <td className="max-w-56 truncate px-3 py-2" title={location(report)}>
                 {location(report)}

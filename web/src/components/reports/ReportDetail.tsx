@@ -2,7 +2,7 @@ import { formatDateTime } from "@/lib/format";
 import type { AdminReportDetail } from "@/types/api";
 import { AiClassification } from "./AiClassification";
 import { ReportPhoto } from "./ReportPhoto";
-import { StatusBadge } from "./StatusBadge";
+import { StatusMarker } from "@/components/ui/StatusMarker";
 import { StatusTimeline } from "./StatusTimeline";
 
 function googleMapsUrl(latitude: number, longitude: number) {
@@ -22,7 +22,7 @@ export function ReportDetail({ report, children }: { report: AdminReportDetail; 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
-        <StatusBadge status={report.status} />
+        <StatusMarker status={report.status} />
         <p className="text-small text-zinc-500">
           Reported {formatDateTime(report.created_at)} WIB · Updated {formatDateTime(report.updated_at)} WIB
         </p>

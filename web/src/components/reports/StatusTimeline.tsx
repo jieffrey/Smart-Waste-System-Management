@@ -1,7 +1,7 @@
 import { formatDateTime } from "@/lib/format";
 import { STATUS_LABELS } from "@/lib/labels";
 import type { StatusHistoryEntry } from "@/types/api";
-import { StatusBadge } from "./StatusBadge";
+import { StatusMarker } from "@/components/ui/StatusMarker";
 
 // Status changes, newest first: old -> new, who changed it, when, and the note.
 export function StatusTimeline({ history }: { history: StatusHistoryEntry[] }) {
@@ -28,7 +28,7 @@ export function StatusTimeline({ history }: { history: StatusHistoryEntry[] }) {
                     <span className="sr-only">changed to</span>
                   </>
                 )}
-                <StatusBadge status={entry.new_status} />
+                <StatusMarker status={entry.new_status} />
               </div>
               <p className="mt-1 text-zinc-500">
                 {entry.changed_by_name} · {formatDateTime(entry.created_at)} WIB
