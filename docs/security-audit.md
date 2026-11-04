@@ -38,7 +38,7 @@ database, no rate limiting, and an ML endpoint that a big image could exhaust.
 
 | ID | Severity | Title | Area | OWASP 2025 / API 2023 | Evidence |
 |---|---|---|---|---|---|
-| [SEC-01](#sec-01) | **High** | Published demo admin password works against the real database (fixed: `security/fix-demo-admin-password`) | Repo / backend | A07, A02 | Proven live |
+| [SEC-01](#sec-01) | **High** | Published demo admin password works against the real database | Repo / backend | A07, A02 | Proven live |
 | [SEC-02](#sec-02) | Medium | No rate limiting on login, registration or report creation | Backend | A07, API4 | Proven live |
 | [SEC-03](#sec-03) | Medium | ML API can be made to use gigabytes of memory with one small image | ML | A10, API4 | Code review |
 | [SEC-04](#sec-04) | Low | Weak password policy (`12345678` is accepted) | Backend | A07 | Proven live |
@@ -57,6 +57,8 @@ database, no rate limiting, and an ML endpoint that a big image could exhaust.
 | [SEC-17](#sec-17) | Info | `npm audit`: moderate issues in dev tooling only | Web / Mobile | A03 | `npm audit` |
 | [SEC-18](#sec-18) | Info | "Deactivated" is detected from the error message text | Web | A10 | Code review |
 | [SEC-19](#sec-19) | Info | Small hardening notes (bcrypt cost, secret strength, gitignore, proxy) | Several | A02, A04 | Code review |
+
+Fix status is shown at the top of each finding ("Status: fixed in ...").
 
 Suggested fix order: SEC-01, then SEC-02 together with SEC-04, then SEC-03 and SEC-08 (they share a fix
 area), then the Low items as time allows.
