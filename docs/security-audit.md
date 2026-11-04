@@ -767,3 +767,67 @@ Never turn on `usesCleartextTraffic` / `NSAllowsArbitraryLoads` to "make it work
 
 **Lesson.** Encryption in transit isn't optional once real users and real networks are involved. Make the
 secure setting the only one a release build accepts.
+
+---
+
+# Repository-wide findings (secrets, dependencies, configuration)
+
+**Secret scan of the full git history (all branches): clean.**
+- **Files:** the only env-style files ever committed are the three `.env.example` templates. No `.env`,
+  key, certificate, keystore or credentials file appears in any commit.
+- **Content:** searching every added line in history for connection strings with passwords, Neon
+  `npg_` tokens, JWT secrets, private keys, AWS/GitHub/OpenAI/Slack/Google key formats and API-key
+  assignments found only false positives (base64 images inside a notebook).
+- **Passwords in code:** only test fixtures and the documented demo accounts (see SEC-01).
+
+**Dependency scans** (2026-11-04):
+
+| Project | Tool | Result |
+|---|---|---|
+| `backend/` | `npm audit` | **0** vulnerabilities |
+| `web/` | `npm audit` | 16 moderate, all in ESLint tooling (SEC-17) |
+| `Mobile/` | `npm audit` | 21 moderate, all in ESLint/Expo CLI tooling (SEC-17) |
+| `ml/` | `pip-audit` (installed venv) | 15 entries, all in `keras 3.13.2` (SEC-16) |
+
+<a id="sec-17"></a>
+## SEC-17: `npm audit`: moderate issues in dev tooling only
+
+- **Severity: Info.** None of the affected packages is in the code that runs for users: no Next.js server
+  or client bundle, and no Expo app runtime. They run on a developer's machine during linting or builds.
+- **Where:** `web/package.json` (`eslint`, `eslint-config-next`), `Mobile/package.json` (`eslint-config-expo`,
+  `expo`/`@expo/cli` tooling)
+
+**What's wrong.** The advisories are `minimatch` ReDoS (GHSA-g3hv-75wg-m249) and `glob` (GHSA-3g3m-2fjr-6pw4),
+pulled in by ESLint plugins and the Expo CLI. `npm audit fix --force` would *downgrade* to ancient major
+versions (`eslint@4`, `expo@51`), which is worse.
+
+**How to fix it.** Don't force-fix. Update `eslint-config-next` and the Expo SDK when new versions ship,
+and re-run `npm audit`. To keep the signal clean, check runtime dependencies separately:
+
+```bash
+npm audit --omit=dev
+```
+
+**Lesson.** Treat audit output like a to-do list you check, not an alarm. Ask "does this code run in
+production, and can attacker input reach it?" A forced fix that downgrades major versions usually adds risk.
+
+<a id="sec-19"></a>
+## SEC-19: Small hardening notes
+
+- **Severity: Info.** Code review. None is a vulnerability; each makes the project a bit sturdier.
+
+1. **bcrypt cost 10** (`backend/src/modules/auth/auth.service.js:7`). Still acceptable (OWASP's minimum).
+   Consider 12 when you next touch auth. Login gets about 4× slower, which is fine for a login, and
+   guessing gets 4× more expensive.
+2. **`JWT_SECRET` is only length-checked** (`backend/src/config/env.js:8`). A 32-character secret like
+   `aaaaaaaa…` passes. Generate it the way `.env.example` says (`crypto.randomBytes(48)`); a startup check
+   for obviously repeated characters is optional.
+3. **`Mobile/.gitignore` only ignores `.env*.local`** (`Mobile/.gitignore:34`). `Mobile/.env` is
+   protected only because the root `.gitignore` ignores `.env`. If `Mobile/` were ever copied into its own
+   repo, `.env` would no longer be ignored. Add `.env` to `Mobile/.gitignore` too.
+4. **`proxy.ts` decodes the JWT without verifying it** (`web/src/lib/token.ts`). That's by design (see the
+   web section): it's a fast filter, and the backend is the real check. Keep a comment there so nobody
+   later trusts its result for access decisions.
+
+**Lesson.** Defense in depth is many small, cheap layers. Each one only has to catch what the others miss.
+
