@@ -352,6 +352,10 @@ Add them when you create the project.
 <a id="sec-08"></a>
 ## SEC-08: Upload limits are checked late; multipart fields are unlimited
 
+- **Status: fixed in `security/fix-ml-image-limits`.** The ML API refuses bodies over 5 MB from `Content-Length` before
+  reading them, and stops chunked uploads as they pass the limit (live: a 20 MB upload now gets `413`
+  after **0** body bytes, previously 20,000,197). The backend limits multipart text fields to 10 fields
+  of 8 KB each. Tested in `ml/tests/test_limits.py` and `backend/tests/upload-limits.test.js`.
 - **Severity: Low.** The file-size limits work, but a client can still make the server receive or hold
   much more data than it allows. Requires an account (backend) or direct access (ML).
 - **Evidence:** partly proven live. A 20 MB upload got `413` from both services, but the client was allowed
@@ -539,6 +543,11 @@ system can always recover (keep at least one working admin, or have a "break gla
 <a id="sec-03"></a>
 ## SEC-03: ML API can be made to use gigabytes of memory with one small image
 
+- **Status: fixed in `security/fix-ml-image-limits`.** Dimensions are read from the header and checked before decoding (max
+  24 million pixels), `Image.MAX_IMAGE_PIXELS` is set explicitly with its warning turned into an error, and
+  broken files get a clean 400/415. Preprocessing is unchanged (the Colab parity tests still pass).
+  Proven by `ml/tests/test_limits.py`; live, a 65-byte PNG claiming 30,000 × 30,000 now gets `400`.
+  Through the backend this still shows as `503` until SEC-14 is fixed.
 - **Severity: Medium.** Anyone can register an account and upload a photo, and the backend forwards it to
   the ML API, so any account can trigger this. Impact is a crash or an out-of-memory kill of the
   classifier (reports can't be created). **Not proven live:** I didn't send it, because running it would

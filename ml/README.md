@@ -83,8 +83,18 @@ curl http://localhost:8000/health
 ### `POST /predict`
 
 Send the image as `multipart/form-data` in a field named `file`.
-Accepted: **JPEG, PNG, WebP**, up to **5 MB**. The type is checked by decoding the image,
-not by trusting the file name or content type.
+Accepted: **JPEG, PNG, WebP**, up to **5 MB** and **24 million pixels** (about 6000 × 4000). The type is
+checked by decoding the image, not by trusting the file name or content type.
+
+Limits are checked as early as possible, so a hostile upload costs little:
+
+- **Body size:** a request body over 5 MB (plus room for the multipart headers) is refused with `413`
+  from its `Content-Length` before any of it is read. A chunked upload without `Content-Length` is
+  stopped as soon as it passes the limit.
+- **Dimensions:** the width and height are read from the image header and checked *before* decoding,
+  so a small file that claims huge dimensions (a "decompression bomb") is refused with `400`. Pillow's
+  own protection (`Image.MAX_IMAGE_PIXELS`) is set to the same limit as a backstop.
+- **Broken files:** truncated, corrupt or non-image files get a `400`/`415`, never a `500`.
 
 ```bash
 curl -F "file=@tests/samples/plastic_101.jpg" http://localhost:8000/predict
@@ -113,7 +123,7 @@ All errors use the same format as the Express backend:
 | Status | When |
 |---|---|
 | `400` | No `file` field, empty file, corrupt/truncated image, or image dimensions too large |
-| `413` | File larger than 5 MB |
+| `413` | Request body (file) larger than 5 MB |
 | `415` | Not a JPEG, PNG or WebP image (e.g. a text file or GIF) |
 | `404` / `405` | Unknown route or wrong HTTP method |
 | `500` | Unexpected server error (no internal details are returned) |
