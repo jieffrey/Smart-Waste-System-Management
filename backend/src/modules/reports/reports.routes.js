@@ -3,6 +3,7 @@ const { Router } = require('express');
 const validate = require('../../middlewares/validate');
 const { authenticate, authorizeRole } = require('../../middlewares/auth');
 const { uploadImage } = require('../../middlewares/upload');
+const { reportLimiter } = require('../../middlewares/limiters');
 const { createReportSchema, listMyReportsSchema } = require('./reports.schema');
 const reportsController = require('./reports.controller');
 
@@ -12,6 +13,7 @@ router.post(
   '/',
   authenticate,
   authorizeRole('user'),
+  reportLimiter, // before the upload is read, so a limited request costs almost nothing
   uploadImage,
   validate(createReportSchema),
   reportsController.createReport

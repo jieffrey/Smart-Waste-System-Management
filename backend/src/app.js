@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { webOrigins } = require('./config/env');
+const { webOrigins, trustProxy } = require('./config/env');
 const healthRoutes = require('./modules/health/health.routes');
 const authRoutes = require('./modules/auth/auth.routes');
 const reportRoutes = require('./modules/reports/reports.routes');
@@ -11,6 +11,10 @@ const { UPLOAD_URL_PREFIX, serveImages } = require('./modules/uploads/uploads.se
 const { notFound, errorHandler } = require('./middlewares/error-handler');
 
 const app = express();
+
+if (trustProxy > 0) {
+  app.set('trust proxy', trustProxy);
+}
 
 // Lets the admin web app (a different origin) call the API from the browser. The mobile app does not need CORS.
 if (webOrigins.length > 0) {
