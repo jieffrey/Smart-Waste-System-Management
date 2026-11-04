@@ -375,16 +375,22 @@ completed, rejected → final (no more changes of any kind)
     "by_status": { "pending": 5, "in_progress": 3, "completed": 3, "rejected": 1 },
     "by_category": { "organic": 4, "paper": 3, "plastic": 5 }
   },
-  "reports_per_day": [{ "date": "2026-10-05", "count": 0 }, "… 30 days, oldest first, today last …"],
-  "ai_accuracy": { "reviewed": 6, "matching": 5, "accuracy": 0.8333 }
+  "reports_per_day": [{ "date": "2026-10-05", "count": 0, "completed_count": 0 }, "… 30 days, oldest first, today last …"],
+  "ai_accuracy": { "reviewed": 6, "matching": 5, "accuracy": 0.8333 },
+  "ai_flow": [{ "ai_category": "organic", "category": "organic", "count": 4 }, "… all 9 pairs …"]
 }
 ```
 
-- `reports_per_day`: the last 30 days including today, counted in **Asia/Jakarta**; days without
-  reports have `count: 0`.
+- `reports_per_day`: the last 30 days including today, counted in **Asia/Jakarta**. `count` is the reports
+  created that day; `completed_count` is the reports whose status became `completed` that day (from the
+  status history). Days without any have `0`.
 - `ai_accuracy`: over reports with status `in_progress` or `completed` that have an AI prediction —
   `matching` is how many still have `category == ai_predicted_category` (i.e. the admin did not
   correct it). `accuracy` = `matching / reviewed` (4 decimals), or `null` when `reviewed` is 0.
+- `ai_flow`: for every report with an AI prediction (any status), how many go from each
+  `ai_category` (what the AI said) to each current `category`. Always all 9 pairs, in the order
+  organic, paper, plastic (AI) × organic, paper, plastic (current), with `count: 0` when none. Pairs
+  where the two differ are admin corrections. Used for the dashboard's Sankey chart.
 
 ### List users — `GET /api/admin/users`
 
