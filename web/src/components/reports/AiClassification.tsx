@@ -13,9 +13,9 @@ export function AiClassification({ category, ai_predicted_category, ai_confidenc
       <h2 className="font-medium">Classification</h2>
 
       {ai_predicted_category === null ? (
-        <p className="mt-2 text-sm text-zinc-500">No AI prediction for this report.</p>
+        <p className="mt-2 text-small text-zinc-500">No AI prediction for this report.</p>
       ) : (
-        <dl className="mt-2 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm">
+        <dl className="mt-2 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-small">
           <dt className="text-zinc-500">AI prediction</dt>
           <dd>
             {CATEGORY_LABELS[ai_predicted_category]}
@@ -33,7 +33,7 @@ export function AiClassification({ category, ai_predicted_category, ai_confidenc
       )}
 
       {corrected && (
-        <p className="mt-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <p className="mt-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-small text-amber-900">
           AI predicted <strong>{CATEGORY_LABELS[ai_predicted_category]}</strong>, corrected to{" "}
           <strong>{CATEGORY_LABELS[category]}</strong> by an admin.
         </p>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buttonVariants } from "./button";
 
 type Props = {
   page: number;
@@ -8,30 +9,35 @@ type Props = {
   hrefForPage: (page: number) => string;
 };
 
-const linkClass = "rounded border border-zinc-300 bg-white px-3 py-1.5 hover:bg-zinc-100";
-const disabledClass = "rounded border border-zinc-200 px-3 py-1.5 text-zinc-400";
-
-// Previous/Next links plus "Page X of Y · N items". A server component, so hrefForPage can be a function.
+// "Page 2 / 9 · 173 reports" in mono, with Previous/Next as secondary buttons.
+// A server component, so hrefForPage can be a function.
 export function Pagination({ page, totalPages, total, noun, hrefForPage }: Props) {
+  const button = buttonVariants({ variant: "secondary", size: "sm" });
+  const disabled = `${button} pointer-events-none opacity-40`;
+
   return (
-    <nav aria-label="Pagination" className="flex items-center justify-between text-sm">
-      <p className="text-zinc-600">
-        Page {page} of {totalPages} · {total} {total === 1 ? noun.one : noun.many}
+    <nav aria-label="Pagination" className="flex items-center justify-between gap-4 border-t border-ink pt-4">
+      <p className="font-mono text-small text-gray-600">
+        Page {page} / {totalPages} · {total} {total === 1 ? noun.one : noun.many}
       </p>
       <div className="flex gap-2">
         {page > 1 ? (
-          <Link href={hrefForPage(page - 1)} className={linkClass}>
+          <Link href={hrefForPage(page - 1)} className={button}>
             Previous
           </Link>
         ) : (
-          <span className={disabledClass}>Previous</span>
+          <span aria-disabled="true" className={disabled}>
+            Previous
+          </span>
         )}
         {page < totalPages ? (
-          <Link href={hrefForPage(page + 1)} className={linkClass}>
+          <Link href={hrefForPage(page + 1)} className={button}>
             Next
           </Link>
         ) : (
-          <span className={disabledClass}>Next</span>
+          <span aria-disabled="true" className={disabled}>
+            Next
+          </span>
         )}
       </div>
     </nav>

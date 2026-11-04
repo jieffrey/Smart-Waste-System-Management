@@ -1,7 +1,7 @@
 import { formatDateTime } from "@/lib/format";
 import { STATUS_LABELS } from "@/lib/labels";
 import type { StatusHistoryEntry } from "@/types/api";
-import { StatusBadge } from "./StatusBadge";
+import { StatusMarker } from "@/components/ui/StatusMarker";
 
 // Status changes, newest first: old -> new, who changed it, when, and the note.
 export function StatusTimeline({ history }: { history: StatusHistoryEntry[] }) {
@@ -11,11 +11,11 @@ export function StatusTimeline({ history }: { history: StatusHistoryEntry[] }) {
     <section className="rounded-lg border border-zinc-200 bg-white p-4">
       <h2 className="font-medium">Status history</h2>
       {newestFirst.length === 0 ? (
-        <p className="mt-2 text-sm text-zinc-500">No status changes yet.</p>
+        <p className="mt-2 text-small text-zinc-500">No status changes yet.</p>
       ) : (
         <ol className="mt-3 space-y-3">
           {newestFirst.map((entry, index) => (
-            <li key={`${entry.created_at}-${index}`} className="border-l-2 border-zinc-200 pl-3 text-sm">
+            <li key={`${entry.created_at}-${index}`} className="border-l-2 border-zinc-200 pl-3 text-small">
               <div className="flex flex-wrap items-center gap-2">
                 {entry.old_status === null ? (
                   <span className="text-zinc-600">Reported as</span>
@@ -28,7 +28,7 @@ export function StatusTimeline({ history }: { history: StatusHistoryEntry[] }) {
                     <span className="sr-only">changed to</span>
                   </>
                 )}
-                <StatusBadge status={entry.new_status} />
+                <StatusMarker status={entry.new_status} />
               </div>
               <p className="mt-1 text-zinc-500">
                 {entry.changed_by_name} · {formatDateTime(entry.created_at)} WIB

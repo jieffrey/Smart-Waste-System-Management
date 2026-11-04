@@ -24,13 +24,13 @@ export function UserActiveToggle({ userId, userName, isActive }: { userId: strin
         <form action={formAction} className="flex flex-wrap items-center gap-2">
           <input type="hidden" name="user_id" value={userId} />
           <input type="hidden" name="is_active" value={String(!isActive)} />
-          <span className="text-xs text-zinc-600">
+          <span className="text-micro text-zinc-600">
             {action} {userName}?{isActive && " They will be signed out."}
           </span>
           <button
             type="submit"
             disabled={pending}
-            className={`rounded px-2 py-1 text-xs font-medium text-white disabled:opacity-60 ${
+            className={`rounded px-2 py-1 text-micro font-medium text-white disabled:opacity-60 ${
               isActive ? "bg-red-700" : "bg-green-700"
             }`}
           >
@@ -40,7 +40,7 @@ export function UserActiveToggle({ userId, userName, isActive }: { userId: strin
             type="button"
             onClick={() => setConfirming(false)}
             disabled={pending}
-            className="rounded border border-zinc-300 bg-white px-2 py-1 text-xs hover:bg-zinc-100"
+            className="rounded border border-zinc-300 bg-white px-2 py-1 text-micro hover:bg-zinc-100"
           >
             Cancel
           </button>
@@ -49,13 +49,13 @@ export function UserActiveToggle({ userId, userName, isActive }: { userId: strin
         <button
           type="button"
           onClick={() => setConfirming(true)}
-          className="rounded border border-zinc-300 bg-white px-2 py-1 text-xs hover:bg-zinc-100"
+          className="rounded border border-zinc-300 bg-white px-2 py-1 text-micro hover:bg-zinc-100"
         >
           {action}
         </button>
       )}
       {state.result === "error" && state.message && (
-        <p role="alert" className="text-xs text-red-700">
+        <p role="alert" className="text-micro text-red-700">
           {state.message}
         </p>
       )}

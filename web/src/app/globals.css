@@ -1,11 +1,251 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+/* Light mode only. `dark:` utilities in vendored chart code only apply under a `.dark` class, which is never set. */
+@custom-variant dark (&:is(.dark *));
 
-@theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/*
+ * SWMS design tokens: the single source for colors, type scale, fonts and shape.
+ * See docs/design-system.md for the rules and the WCAG contrast table. Light mode only.
+ */
+
+@theme {
+  /* Base palette */
+  --color-snow: #fbfbf8;
+  --color-ink: #121212;
+  --color-signal: #ff4a1c; /* red orange: primary CTA, the key number, active state. Never errors. */
+  --color-highlight: #e8f23a; /* yellow punk: only behind ink text, or as text on ink */
+  --color-cobalt: #2b4bd8;
+
+  /* Neutral scale: ink mixed into snow (replaces Tailwind's gray) */
+  --color-gray-50: #f2f2ef;
+  --color-gray-100: #e8e8e6;
+  --color-gray-200: #d6d6d3;
+  --color-gray-300: #babab8;
+  --color-gray-400: #929291;
+  --color-gray-500: #747473;
+  --color-gray-600: #5d5d5c;
+  --color-gray-700: #454545;
+  --color-gray-800: #2e2e2e;
+
+  /* Waste categories (mapped to class names in src/lib/categories.ts) */
+  --color-cat-organic: #ff4a1c;
+  --color-cat-paper: #121212;
+  --color-cat-plastic: #2b4bd8;
+
+  /* Type scale: these 6 sizes only */
+  --text-*: initial;
+  --text-micro: 0.75rem;
+  --text-micro--line-height: 1rem;
+  --text-small: 0.875rem;
+  --text-small--line-height: 1.25rem;
+  --text-body: 1rem;
+  --text-body--line-height: 1.5rem;
+  --text-heading: 1.25rem;
+  --text-heading--line-height: 1.625rem;
+  --text-title: 2rem;
+  --text-title--line-height: 2.25rem;
+  --text-display: 4rem;
+  --text-display--line-height: 3.75rem;
 }
 
-body {
-  background: #f4f4f5;
-  color: #18181b;
+@theme inline {
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  /* shadcn's semantic colors, pointing at our palette */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Hard edges: every shadcn radius resolves to 0 */
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius);
+  --radius-xl: var(--radius);
+  --radius-2xl: var(--radius);
+  --radius-3xl: var(--radius);
+  --radius-4xl: var(--radius);
+  --color-chart-line-primary: var(--chart-line-primary);
+  --color-chart-line-secondary: var(--chart-line-secondary);
+  --color-chart-brush-border: var(--chart-brush-border);
+  --color-chart-tooltip-background: var(--chart-tooltip-background);
+  --color-chart-tooltip-foreground: var(--chart-tooltip-foreground);
+  --color-chart-tooltip-muted: var(--chart-tooltip-muted);
+  --color-chart-scale-02: var(--chart-scale-02);
+  --color-chart-scale-03: var(--chart-scale-03);
+  --color-chart-scale-04: var(--chart-scale-04);
+  --color-chart-scale-05: var(--chart-scale-05);
+  --color-chart-segment-line: var(--chart-segment-line);
+  --color-chart-segment-background: var(--chart-segment-background);
+  --color-chart-marker-badge-foreground: var(--chart-marker-badge-foreground);
+  --color-chart-marker-badge-background: var(--chart-marker-badge-background);
+  --color-chart-indicator-secondary-color: var(--chart-indicator-secondary-color);
+  --color-chart-indicator-color: var(--chart-indicator-color);
+  --color-chart-scale-pattern-color: var(--chart-scale-pattern-color);
+  --chart-scale-05: var(--chart-scale-05);
+  --chart-scale-04: var(--chart-scale-04);
+  --chart-scale-03: var(--chart-scale-03);
+  --chart-scale-02: var(--chart-scale-02);
+  --color-chart-scale-01: var(--chart-scale-01);
+  --color-chart-scale-mix: var(--chart-scale-mix);
+  --color-chart-label: var(--chart-label);
+  --color-chart-marker-foreground: var(--chart-marker-foreground);
+  --color-chart-marker-border: var(--chart-marker-border);
+  --color-chart-marker-background: var(--chart-marker-background);
+  --chart-tooltip-muted: var(--chart-tooltip-muted);
+  --chart-tooltip-foreground: var(--chart-tooltip-foreground);
+  --chart-tooltip-background: var(--chart-tooltip-background);
+  --chart-brush-border: var(--chart-brush-border);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-crosshair: var(--chart-crosshair);
+  --chart-line-secondary: var(--chart-line-secondary);
+  --chart-line-primary: var(--chart-line-primary);
+  --color-chart-foreground-muted: var(--chart-foreground-muted);
+  --color-chart-foreground: var(--chart-foreground);
+  --color-chart-background: var(--chart-background);
+  --color-chart-negative: var(--chart-negative);
+  --color-chart-positive: var(--chart-positive);
+}
+
+:root {
+  --radius: 0rem;
+  --background: #fbfbf8;
+  --foreground: #121212;
+  --card: #fbfbf8;
+  --card-foreground: #121212;
+  --popover: #fbfbf8;
+  --popover-foreground: #121212;
+  --primary: #ff4a1c; /* label is ink: 5.57:1 */
+  --primary-foreground: #121212;
+  --secondary: #fbfbf8;
+  --secondary-foreground: #121212;
+  --muted: #e8e8e6;
+  --muted-foreground: #5d5d5c;
+  --accent: #e8f23a; /* highlighter: always with ink text */
+  --accent-foreground: #121212;
+  --destructive: #121212; /* errors are ink + icon, never red */
+  --border: #121212;
+  --input: #121212;
+  --ring: #121212;
+  --chart-1: #ff4a1c; /* organic */
+  --chart-2: #121212; /* paper */
+  --chart-3: #2b4bd8; /* plastic */
+  --chart-4: #929291;
+  --chart-5: #e8f23a;
+  --sidebar: #fbfbf8;
+  --sidebar-foreground: #121212;
+  --sidebar-primary: #ff4a1c;
+  --sidebar-primary-foreground: #121212;
+  --sidebar-accent: #f2f2ef;
+  --sidebar-accent-foreground: #121212;
+  --sidebar-border: #121212;
+  --sidebar-ring: #121212;
+  /* Bklit chart variables, mapped to the palette: no off-palette colors, no dark mode */
+  --chart-positive: #121212;
+  --chart-negative: #454545;
+  --chart-background: #fbfbf8;
+  --chart-foreground: #121212;
+  --chart-foreground-muted: #5d5d5c;
+  --chart-line-primary: var(--chart-1);
+  --chart-line-secondary: var(--chart-2);
+  --chart-crosshair: #121212;
+  --chart-grid: #d6d6d3;
+  --chart-brush-border: var(--chart-grid);
+  --chart-tooltip-background: #fbfbf8;
+  --chart-tooltip-foreground: #121212;
+  --chart-tooltip-muted: #5d5d5c;
+  --chart-marker-background: #fbfbf8;
+  --chart-marker-border: #121212;
+  --chart-marker-foreground: #121212;
+  --chart-label: #5d5d5c;
+  --chart-scale-mix: #fbfbf8;
+  --chart-scale-01: #e8e8e6;
+  --chart-scale-02: color-mix(in oklab, var(--chart-1) 35%, var(--chart-scale-mix));
+  --chart-scale-03: color-mix(in oklab, var(--chart-1) 55%, var(--chart-scale-mix));
+  --chart-scale-04: color-mix(in oklab, var(--chart-1) 78%, var(--chart-scale-mix));
+  --chart-scale-05: var(--chart-1);
+  --chart-scale-pattern-color: #fbfbf8;
+  --chart-indicator-color: #121212;
+  --chart-indicator-secondary-color: #e8e8e6;
+  --chart-marker-badge-background: #121212;
+  --chart-marker-badge-foreground: #fbfbf8;
+  --chart-segment-background: rgb(18 18 18 / 0.05);
+  --chart-segment-line: rgb(18 18 18 / 0.3);
+}
+
+/* Wider Archivo widths for display text (variable font width axis) */
+@utility font-wide {
+  font-stretch: 125%;
+}
+@utility font-semiwide {
+  font-stretch: 112%;
+}
+
+/* The "micro" label style: mono, uppercase, tracked. Used for column headers, field labels, meta. */
+@utility label-micro {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: var(--text-micro);
+  line-height: var(--text-micro--line-height);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Yellow highlighter behind ink text */
+@utility highlight {
+  background-color: var(--color-highlight);
+  color: var(--color-ink);
+  box-decoration-break: clone;
+  padding: 0 0.15em;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
+  }
+  body {
+    @apply bg-background text-foreground text-body;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--color-highlight);
+    color: var(--color-ink);
+  }
 }

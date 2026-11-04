@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { hasActiveUserFilters, usersHref, type UserFilters as Filters } from "@/lib/user-filters";
 
-const inputClass = "rounded border border-zinc-300 bg-white px-2 py-1.5 text-sm";
+const inputClass = "rounded border border-zinc-300 bg-white px-2 py-1.5 text-small";
 
 // Same approach as ReportFilters: all filter state lives in the URL, and any change goes back to page 1.
 export function UserFilters({ filters }: { filters: Filters }) {
@@ -21,7 +21,7 @@ export function UserFilters({ filters }: { filters: Filters }) {
 
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-lg border border-zinc-200 bg-white p-3">
-      <label className="flex flex-col gap-1 text-xs text-zinc-500">
+      <label className="flex flex-col gap-1 text-micro text-zinc-500">
         Search
         <SearchInput
           key={searchKey}
@@ -32,7 +32,7 @@ export function UserFilters({ filters }: { filters: Filters }) {
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-xs text-zinc-500">
+      <label className="flex flex-col gap-1 text-micro text-zinc-500">
         Role
         <select
           value={filters.role ?? ""}
@@ -45,7 +45,7 @@ export function UserFilters({ filters }: { filters: Filters }) {
         </select>
       </label>
 
-      <label className="flex flex-col gap-1 text-xs text-zinc-500">
+      <label className="flex flex-col gap-1 text-micro text-zinc-500">
         Status
         <select
           value={filters.active ?? ""}
@@ -65,12 +65,12 @@ export function UserFilters({ filters }: { filters: Filters }) {
           startTransition(() => router.push("/users"));
         }}
         disabled={!hasActiveUserFilters(filters)}
-        className="rounded border border-zinc-300 bg-white px-3 py-1.5 text-sm hover:bg-zinc-100 disabled:opacity-50"
+        className="rounded border border-zinc-300 bg-white px-3 py-1.5 text-small hover:bg-zinc-100 disabled:opacity-50"
       >
         Reset filters
       </button>
 
-      {pending && <p className="pb-1.5 text-sm text-zinc-500">Updating…</p>}
+      {pending && <p className="pb-1.5 text-small text-zinc-500">Updating…</p>}
     </div>
   );
 }

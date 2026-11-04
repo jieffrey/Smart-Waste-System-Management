@@ -1,4 +1,6 @@
+import { AlertTriangle } from "lucide-react";
 import { logout } from "@/actions/auth";
+import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import { getCurrentAdmin } from "@/lib/session";
 import type { User } from "@/types/api";
@@ -16,19 +18,22 @@ export async function CurrentAdmin() {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3 border-t border-ink pt-4">
       {admin ? (
-        <div className="text-sm">
-          <p className="font-medium">{admin.full_name}</p>
-          <p className="truncate text-zinc-500">{admin.email}</p>
+        <div>
+          <p className="text-small font-semibold text-ink">{admin.full_name}</p>
+          <p className="truncate font-mono text-micro text-gray-600">{admin.email}</p>
         </div>
       ) : (
-        <p className="text-sm text-red-700">Couldn&apos;t load your account.</p>
+        <p className="flex items-center gap-2 text-small text-ink">
+          <AlertTriangle className="size-4" aria-hidden="true" />
+          Couldn&apos;t load your account.
+        </p>
       )}
       <form action={logout}>
-        <button type="submit" className="w-full rounded border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-100">
+        <Button type="submit" variant="ghost" size="sm" className="px-0">
           Log out
-        </button>
+        </Button>
       </form>
     </div>
   );

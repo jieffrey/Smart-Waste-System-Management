@@ -18,8 +18,8 @@ import {
 export default function UsersPage({ searchParams }: PageProps<"/users">) {
   return (
     <section className="space-y-4">
-      <h1 className="text-xl font-semibold">Users</h1>
-      <Suspense fallback={<p className="text-sm text-zinc-500">Loading users…</p>}>
+      <h1 className="text-title font-semibold">Users</h1>
+      <Suspense fallback={<p className="text-small text-zinc-500">Loading users…</p>}>
         <UsersContent searchParams={searchParams} />
       </Suspense>
     </section>
@@ -33,7 +33,7 @@ async function UsersContent({ searchParams }: { searchParams: PageProps<"/users"
     <div className="space-y-4">
       <UserFilters filters={filters} />
       {/* Keyed by the URL, so changing a filter shows the loading state for the results only. */}
-      <Suspense key={usersHref(filters)} fallback={<p className="text-sm text-zinc-500">Loading users…</p>}>
+      <Suspense key={usersHref(filters)} fallback={<p className="text-small text-zinc-500">Loading users…</p>}>
         <UsersResults filters={filters} />
       </Suspense>
     </div>
@@ -63,7 +63,7 @@ async function UsersResults({ filters }: { filters: Filters }) {
 
   if (pagination.total === 0) {
     return (
-      <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center text-sm text-zinc-500">
+      <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center text-small text-zinc-500">
         {hasActiveUserFilters(filters) ? "No users match these filters." : "No users yet."}
       </div>
     );

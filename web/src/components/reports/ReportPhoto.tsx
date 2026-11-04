@@ -10,7 +10,7 @@ export function ReportPhoto({ imageUrl }: { imageUrl: string | null }) {
 
   if (!src || failed) {
     return (
-      <div className="flex aspect-[4/3] w-full items-center justify-center rounded-lg bg-zinc-100 text-sm text-zinc-500">
+      <div className="flex aspect-[4/3] w-full items-center justify-center rounded-lg bg-zinc-100 text-small text-zinc-500">
         Photo unavailable
       </div>
     );
