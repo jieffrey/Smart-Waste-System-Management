@@ -61,8 +61,9 @@ async function DashboardContent() {
           <NeedsAction stats={stats} />
         </div>
         <DashSection
-          className="border-t-2 lg:col-span-8"
-          kicker="Trend · last 30 days"
+          weight="strong"
+          className="lg:col-span-8"
+          kicker="Last 30 days"
           title="Reports in vs. completed"
           takeaway={
             keepingUp
@@ -86,9 +87,7 @@ async function DashboardContent() {
       <div className="grid gap-10 lg:grid-cols-12">
         <DashSection
           className="lg:col-span-7"
-          kicker="Handling speed"
-          title="Handling flow"
-          takeaway="How many reports reached each step."
+          title="How far reports get"
         >
           <HandlingFunnel stages={funnel.stages} />
           <p className="mt-3 border-t border-gray-200 pt-3 text-small text-gray-700">
@@ -139,8 +138,7 @@ async function DashboardContent() {
 
         <DashSection
           className="lg:col-span-8"
-          kicker="AI routing"
-          title="AI category → final category"
+          title="Where the AI gets corrected"
           takeaway={
             flow.total === 0
               ? undefined

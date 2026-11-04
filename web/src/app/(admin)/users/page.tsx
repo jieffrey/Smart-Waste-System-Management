@@ -20,7 +20,7 @@ import {
 export default function UsersPage({ searchParams }: PageProps<"/users">) {
   return (
     <section className="space-y-8">
-      <PageHeader kicker="People" title="Users" description="Residents who report waste, and the admins who dispatch it." />
+      <PageHeader title="Users" description="Residents who report waste, and the admins who dispatch it." />
       <Suspense fallback={<p className="text-small text-gray-600">Loading users…</p>}>
         <UsersContent searchParams={searchParams} />
       </Suspense>
