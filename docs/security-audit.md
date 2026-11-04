@@ -831,3 +831,138 @@ production, and can attacker input reach it?" A forced fix that downgrades major
 
 **Lesson.** Defense in depth is many small, cheap layers. Each one only has to catch what the others miss.
 
+---
+
+# Things done right (keep doing these)
+
+These protections were **verified**, most of them live. They're the reason there are no Critical findings.
+
+**Injection (A05)**
+- **Every SQL query uses `$1, $2 …` placeholders**, never string concatenation (`backend/src/db/pool.js:16`
+  states the rule). A search for `' OR 1=1 --` returned 0 results instead of everything.
+- **LIKE wildcards are escaped** (`backend/src/utils/like-pattern.js`). A search for `%` matched 0 of 2
+  reports instead of all of them. Most projects miss this one.
+
+**Authentication (A07)**
+- **The JWT algorithm is pinned** (`algorithms: ['HS256']`). Live checks: an `alg: none` token claiming
+  admin got `401`, and a token whose payload was edited to `role: admin` got `401`.
+- **`JWT_SECRET` must be at least 32 characters** or the server refuses to start.
+- **The token payload is minimal** (`sub`, `role`, `iat`, `exp`), with no email or personal data.
+- **The user is reloaded from the database on every request.** Deactivation and role changes take effect
+  immediately, and the role used for permission checks comes from the database, not from the token.
+- **bcrypt is used, with a 72-character maximum**, which avoids bcrypt's silent truncation of longer
+  passwords. Login only says "deactivated" *after* a correct password, so that message doesn't reveal accounts.
+
+**Access control (A01 / API1 / API5)**
+- **Admin routers apply `authenticate` and `authorizeRole('admin')` to the whole router**, so a new admin
+  route can't forget the check. Live: a user token got `403` on every admin route, and no token got `401`.
+- **Object ownership is part of the SQL `WHERE`** (`user_id = $2 OR role = 'admin'`), and the API answers
+  `404` rather than `403`, so report IDs can't be probed. Live: user B got `404` on the demo user's report,
+  and the owner got `200`.
+- **Users never see who changed their report** (`changed_by` is left out of the user view).
+
+**Mass assignment and validation (API3)**
+- **zod schemas allowlist fields and drop unknown keys.** Live:
+  - Creating a report with extra `status`, `category`, `user_id`, `admin_note` and `ai_confidence` fields
+    stored none of them.
+  - An admin PATCH containing only `ai_predicted_category` and `user_id` was rejected.
+  - A PATCH sending `role: admin` was rejected.
+- **The category comes from the ML model**, and AI fields can never be edited.
+- **Status changes follow server-side rules** with a `SELECT … FOR UPDATE` row lock, and final states are locked.
+- **Lists are bounded:** `limit` is capped at 50 and searches at 100 characters (API4).
+
+**File upload**
+- **The file type comes from the file's first bytes**, not from the filename or the client's content type.
+  Live: SVG was refused, and SVG renamed to `.jpg` with `image/jpeg` was refused.
+- **Files get random UUID names with an extension chosen by the server.** The client's filename
+  (`../../evil.html` in the test) is ignored. Deletes use `path.basename`, and `express.static` is safe
+  against path traversal.
+- **The upload is held in memory until it's validated**, `authenticate` runs **before** multipart parsing
+  (anonymous users can't upload anything), and classification runs **before** saving, so a failed
+  classification leaves no file or row. Live: with the ML API down, report creation got `503` and the
+  report count was unchanged.
+
+**Error handling and configuration (A02 / A10)**
+- **Errors have one consistent shape** with generic messages. Live: no stack traces, SQL or file paths
+  leaked for malformed JSON, unknown routes, bad UUIDs or ML outages. The ML failure reason is logged, not returned.
+- **CORS uses an allowlist.** Live: a foreign `Origin` got no `Access-Control-Allow-Origin` header, and
+  the configured origin was allowed.
+- **No `.env` has ever been committed**, the templates document every variable, and the ML API binds to
+  `127.0.0.1` by default.
+
+**Web admin**
+- **The token never reaches browser JavaScript:** the Next server calls the backend, and the session is an
+  `HttpOnly; SameSite=Lax` cookie that expires with the token.
+- **Server Actions** come with Next's built-in Origin check (live: a foreign Origin was refused). Non-admin
+  accounts are rejected **before** any cookie is set, and `server-only` keeps server code out of the bundle.
+- **No `dangerouslySetInnerHTML`.** React escaping was verified live with markup in report fields, and the
+  only public environment variable is the API URL.
+
+**Mobile, ML, dependencies and tests**
+- **Mobile:** the token is in SecureStore, photos are re-encoded before upload, and logging is dev-only.
+- **ML:** a format allowlist after decoding, a full decode to catch corrupt files, a generic 500 handler,
+  pinned dependency versions with a reason, and Keras `safe_mode` loading (the default).
+- **Dependencies:** the backend has **zero** known vulnerabilities, and lockfiles are committed.
+- **Tests:** 98 backend tests, including authorization tests (`authorize-role.test.js`, `admin-*.test.js`).
+
+---
+
+# What was NOT covered
+
+Following the "be honest about coverage" rule:
+
+- **The real `JWT_SECRET` value.** I don't read `backend/.env`; only the length check in code was reviewed.
+  Make sure it was generated randomly (SEC-19).
+- **Memory denial-of-service tests weren't run live:** the decompression bomb (SEC-03) and many-fields
+  multipart (SEC-08). Both are from code review and library defaults, because running them would mean
+  exhausting this machine's memory.
+- **Brute force at scale:** only 10 login attempts were made (by agreement), which proves there's no limit
+  but doesn't measure how fast guessing could go.
+- **Deployment and infrastructure:** nothing is deployed yet, so HTTPS/TLS, the reverse proxy, host
+  hardening, Neon network rules, **database role privileges** (whether the app connects as the owner role),
+  backups and secret management on the host were not reviewed.
+- **Mobile release build:** no APK/IPA was built or decompiled, and nothing ran on a device. The deep-link
+  scheme (`mobile`) wasn't explored.
+- **Web pages not built yet:** `/reports/[id]` (including the status/category/note Server Action) and
+  `/users`. Re-check authorization, input validation and `revalidatePath` when they're added.
+- **Logging and alerting (A09):** there's no logging pipeline to review, only the code (SEC-10).
+- **Race conditions:** reviewed in code (`FOR UPDATE`), not load-tested.
+- **Supply chain beyond the audits:** there's no CI, so GitHub repository settings, branch protection,
+  Actions permissions and lockfile integrity checks weren't reviewed.
+- **ML training scripts, notebooks and the dataset:** offline tooling that never handles user input, so
+  it was out of scope.
+- **Timebox:** the audit finished within the ~1.5 hour timebox. The gaps above are scope limits, not time cuts.
+
+---
+
+# Test data created during this audit
+
+Every record has `SECURITY-TEST` in a visible field. Nothing else was changed: every admin `PATCH`
+attempt above failed validation, and the web login checks created no database rows.
+
+| Type | ID | Visible marker |
+|---|---|---|
+| User (role `user`) | `be6002b7-f12a-4cfe-b4da-93bd625b322a` | name `SECURITY-TEST User B`, email `security-test-b@example.com` |
+| Report | `97b77372-e7dd-4305-a609-74d1e2fa0823` | description `SECURITY-TEST mass-assignment + EXIF + polyglot`. Image `backend/uploads/e1ce1413-7797-4fd2-8116-263a6cbf5132.jpg` |
+| Report | `39a62a7d-2a1a-44f3-9028-6e0fa8de407e` | description and address start with `SECURITY-TEST`. Image `backend/uploads/e5309096-ee2d-4d48-a3c8-60fce39e68a3.jpg` |
+| Status history | one `pending` row per report above | removed automatically with the report (`ON DELETE CASCADE`) |
+
+Clean-up SQL (**not run**; review it, then run it in the Neon SQL editor):
+
+```sql
+BEGIN;
+
+-- The two SECURITY-TEST reports. Their report_status_history rows are deleted by ON DELETE CASCADE.
+DELETE FROM waste_reports
+WHERE id IN ('97b77372-e7dd-4305-a609-74d1e2fa0823', '39a62a7d-2a1a-44f3-9028-6e0fa8de407e')
+  AND user_id = 'be6002b7-f12a-4cfe-b4da-93bd625b322a';
+
+-- The SECURITY-TEST user (must come after the reports: users are ON DELETE RESTRICT).
+DELETE FROM users
+WHERE id = 'be6002b7-f12a-4cfe-b4da-93bd625b322a'
+  AND email = 'security-test-b@example.com';
+
+COMMIT;
+```
+
+Then delete the two image files listed above from `backend/uploads/`.
