@@ -4,8 +4,12 @@
 //   'error'   -> 500
 //   'invalid' -> 200 with an invalid prediction
 //   'slow'    -> 200, but only after state.delayMs (to trigger the client timeout)
+//   'status'  -> state.status with an ML-style error body containing RAW_ML_ERROR_TEXT
 
 const http = require('node:http');
+
+// Raw ML error text: tests check that it never reaches the backend's clients.
+const RAW_ML_ERROR_TEXT = 'Image dimensions are too large (raw ML detail)';
 
 const DEFAULT_PREDICTION = {
   category: 'plastic',
@@ -20,7 +24,7 @@ function sendJson(res, status, body) {
 }
 
 function startFakeMlApi() {
-  const state = { mode: 'success', prediction: DEFAULT_PREDICTION, delayMs: 1000, requests: [] };
+  const state = { mode: 'success', prediction: DEFAULT_PREDICTION, delayMs: 1000, status: 400, requests: [] };
 
   const server = http.createServer((req, res) => {
     const chunks = [];
@@ -30,6 +34,9 @@ function startFakeMlApi() {
 
       if (state.mode === 'error') {
         return sendJson(res, 500, { error: { message: 'Internal server error' } });
+      }
+      if (state.mode === 'status') {
+        return sendJson(res, state.status, { error: { message: RAW_ML_ERROR_TEXT } });
       }
       if (state.mode === 'invalid') {
         return sendJson(res, 200, { category: 'metal', confidence: 2 });
@@ -56,4 +63,4 @@ function startFakeMlApi() {
   });
 }
 
-module.exports = { startFakeMlApi, DEFAULT_PREDICTION };
+module.exports = { startFakeMlApi, DEFAULT_PREDICTION, RAW_ML_ERROR_TEXT };
