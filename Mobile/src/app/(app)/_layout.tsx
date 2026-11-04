@@ -1,30 +1,19 @@
-import { NativeTabs } from 'expo-router/native-tabs';
+import { Tabs } from 'expo-router/js-tabs';
 
-import { useTheme } from '@/hooks/use-theme';
+import { TabBar } from '@/components/ui/tab-bar';
+import { t } from '@/constants/strings';
+import { Palette } from '@/constants/theme';
 
-// Signed-in area: three tabs. "My reports" has its own stack for the report detail screen.
+// Signed-in area: three tabs with our own tab bar ("Lapor" is the dominant one). "Laporan saya" has its own
+// stack for the report detail screen.
 export default function AppTabsLayout() {
-  const theme = useTheme();
-
   return (
-    <NativeTabs
-      backgroundColor={theme.background}
-      indicatorColor={theme.backgroundElement}
-      labelStyle={{ selected: { color: theme.text } }}>
-      <NativeTabs.Trigger name="(home)">
-        <NativeTabs.Trigger.Label>My reports</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="list.bullet" md="list" />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="new">
-        <NativeTabs.Trigger.Label>New report</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="camera.fill" md="add_a_photo" />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="account">
-        <NativeTabs.Trigger.Label>Account</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="person.crop.circle" md="person" />
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <Tabs
+      tabBar={(props) => <TabBar {...props} />}
+      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: Palette.snow } }}>
+      <Tabs.Screen name="(home)" options={{ title: t.tabs.myReports }} />
+      <Tabs.Screen name="new" options={{ title: t.tabs.report }} />
+      <Tabs.Screen name="account" options={{ title: t.tabs.account }} />
+    </Tabs>
   );
 }
