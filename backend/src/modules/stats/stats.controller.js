@@ -1,8 +1,8 @@
 const statsService = require('./stats.service');
 
 async function getStats(req, res) {
-  const { totals, reports_per_day, ai_accuracy } = await statsService.getStats();
-  res.status(200).json({ totals, reports_per_day, ai_accuracy });
+  const { totals, reports_per_day, ai_accuracy, ai_flow } = await statsService.getStats();
+  res.status(200).json({ totals, reports_per_day, ai_accuracy, ai_flow });
 }
 
 module.exports = { getStats };
