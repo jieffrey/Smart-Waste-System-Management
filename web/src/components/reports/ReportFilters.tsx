@@ -15,12 +15,18 @@ export function ReportFilters({ filters }: { filters: Filters }) {
   const [pending, startTransition] = useTransition();
 
   // The search box keeps its own text while typing; the URL is updated after a pause.
-  const [search, setSearch] = useState(filters.q ?? "");
-  const [syncedQ, setSyncedQ] = useState(filters.q ?? "");
-  // The URL changed from outside the search box (back button, reset): show its value.
-  if ((filters.q ?? "") !== syncedQ) {
-    setSyncedQ(filters.q ?? "");
-    setSearch(filters.q ?? "");
+  const urlQ = filters.q ?? "";
+  const [search, setSearch] = useState(urlQ);
+  const [lastUrlQ, setLastUrlQ] = useState(urlQ);
+  const [pushedQ, setPushedQ] = useState(urlQ);
+  // When the URL's q changes because of something other than our own search (back button, reset),
+  // show the URL's value. When it's the value we just pushed, keep what the user has typed since.
+  if (urlQ !== lastUrlQ) {
+    setLastUrlQ(urlQ);
+    if (urlQ !== pushedQ) {
+      setSearch(urlQ);
+      setPushedQ(urlQ);
+    }
   }
 
   function navigate(changes: Partial<Filters>) {
@@ -35,7 +41,7 @@ export function ReportFilters({ filters }: { filters: Filters }) {
       return;
     }
     const timer = setTimeout(() => {
-      setSyncedQ(q); // the URL is about to match; don't overwrite what the user is typing
+      setPushedQ(q);
       startTransition(() => {
         router.push(reportsHref({ ...filters, q: q || undefined, page: 1 }));
       });
@@ -113,7 +119,11 @@ export function ReportFilters({ filters }: { filters: Filters }) {
 
       <button
         type="button"
-        onClick={() => startTransition(() => router.push("/reports"))}
+        onClick={() => {
+          setSearch("");
+          setPushedQ("");
+          startTransition(() => router.push("/reports"));
+        }}
         disabled={!hasActiveFilters(filters)}
         className="rounded border border-zinc-300 bg-white px-3 py-1.5 text-sm hover:bg-zinc-100 disabled:opacity-50"
       >
