@@ -1,23 +1,25 @@
 import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Linking, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { StatusMarker } from '@/components/ui/status-marker';
 import { StatusTimeline } from '@/components/reports/status-timeline';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
+import { CategoryLabel } from '@/components/ui/category-label';
+import { Rule } from '@/components/ui/rule';
 import { ErrorState, LoadingState } from '@/components/ui/state-view';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { StatusMarker } from '@/components/ui/status-marker';
+import { CATEGORY_LABELS, t } from '@/constants/strings';
+import { FontFamily, Palette, Spacing } from '@/constants/theme';
 import { getErrorMessage } from '@/lib/errors';
 import { getReport } from '@/services/reports';
 import type { ReportDetail } from '@/types/api';
-import { CATEGORY_LABELS, formatConfidence, formatDateTime } from '@/utils/format';
+import { formatConfidence, formatDateTime } from '@/utils/format';
 import { resolveImageUrl } from '@/utils/image-url';
+import { coordinatesLabel, shortLocation } from '@/utils/short-location';
 
 export default function ReportDetailScreen() {
-  const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [phase, setPhase] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -50,7 +52,7 @@ export default function ReportDetailScreen() {
   }
 
   if (phase === 'loading') {
-    return <LoadingState message="Loading report…" />;
+    return <LoadingState message={t.detail.loading} />;
   }
   if (phase === 'error' || !report) {
     return <ErrorState message={error} onRetry={retry} />;
@@ -60,59 +62,65 @@ export default function ReportDetailScreen() {
     report.ai_predicted_category !== null && report.ai_predicted_category !== report.category;
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${report.latitude},${report.longitude}`;
 
+  // Reading order: photo -> status (the most prominent element) -> admin note -> timeline -> category and AI
+  // -> location -> description.
   return (
     <ScrollView
-      style={{ backgroundColor: theme.background }}
+      style={styles.screen}
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.primary} />}>
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={Palette.ink} colors={[Palette.ink]} />}>
       <Image
         source={{ uri: resolveImageUrl(report.image_url) }}
-        style={[styles.photo, { backgroundColor: theme.backgroundSelected }]}
+        style={styles.photo}
         contentFit="cover"
-        accessibilityLabel="Report photo"
+        accessibilityLabel={t.detail.photoLabel}
       />
 
-      <View style={styles.row}>
-        <StatusMarker status={report.status} />
-        <ThemedText type="small" themeColor="textSecondary">
-          {formatDateTime(report.created_at)}
+      <View style={styles.statusBlock}>
+        <ThemedText type="micro" themeColor="textSecondary">
+          {t.detail.statusLabel}
+        </ThemedText>
+        <StatusMarker status={report.status} size="large" />
+        <ThemedText type="mono" themeColor="textSecondary">
+          {t.detail.reportedOn(formatDateTime(report.created_at))}
         </ThemedText>
       </View>
 
-      <Section title="Category">
-        <ThemedText>
-          {CATEGORY_LABELS[report.category]}
-          {categoryWasCorrected && report.ai_predicted_category
-            ? ` (AI suggested: ${CATEGORY_LABELS[report.ai_predicted_category]})`
-            : ''}
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          AI confidence: {formatConfidence(report.ai_confidence)}
-          {report.ai_model_version ? ` · model ${report.ai_model_version}` : ''}
-        </ThemedText>
-      </Section>
-
-      <Section title="Description">
-        <ThemedText>{report.description}</ThemedText>
-      </Section>
-
       {report.admin_note ? (
-        <Section title="Note from the admin">
-          <ThemedText>{report.admin_note}</ThemedText>
-        </Section>
+        <View style={styles.note}>
+          <ThemedText type="micro">{t.detail.adminNote}</ThemedText>
+          <Text style={styles.noteText}>
+            <Text style={styles.highlight}> {report.admin_note} </Text>
+          </Text>
+        </View>
       ) : null}
 
-      <Section title="Location">
-        {report.address ? <ThemedText>{report.address}</ThemedText> : null}
-        <ThemedText type="small" themeColor="textSecondary">
-          {report.latitude.toFixed(6)}, {report.longitude.toFixed(6)}
-        </ThemedText>
-        <Button title="Open in Maps" onPress={() => Linking.openURL(mapsUrl)} variant="secondary" />
+      <Section title={t.detail.timeline}>
+        <StatusTimeline history={report.status_history} />
       </Section>
 
-      <Section title="Status history">
-        <StatusTimeline history={report.status_history} />
+      <Section title={t.detail.category}>
+        <CategoryLabel category={report.category} />
+        {categoryWasCorrected && report.ai_predicted_category ? (
+          <ThemedText type="small">{t.detail.aiSuggested(CATEGORY_LABELS[report.ai_predicted_category])}</ThemedText>
+        ) : null}
+        <ThemedText type="mono" themeColor="textSecondary">
+          {t.detail.aiConfidence(formatConfidence(report.ai_confidence))}
+        </ThemedText>
+      </Section>
+
+      <Section title={t.detail.location}>
+        <ThemedText type="heading">{shortLocation(report.address, report.latitude, report.longitude)}</ThemedText>
+        {report.address ? <ThemedText type="small">{report.address}</ThemedText> : null}
+        <ThemedText type="mono" themeColor="textSecondary">
+          {coordinatesLabel(report.latitude, report.longitude)}
+        </ThemedText>
+        <Button title={t.detail.openMaps} onPress={() => Linking.openURL(mapsUrl)} variant="text" />
+      </Section>
+
+      <Section title={t.detail.description}>
+        <ThemedText>{report.description}</ThemedText>
       </Section>
     </ScrollView>
   );
@@ -121,28 +129,49 @@ export default function ReportDetailScreen() {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View style={styles.section}>
-      <ThemedText type="smallBold">{title}</ThemedText>
+      <Rule />
+      <ThemedText type="micro" themeColor="textSecondary">
+        {title}
+      </ThemedText>
       {children}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    backgroundColor: Palette.snow,
+  },
   content: {
     padding: Spacing.three,
-    gap: Spacing.three,
+    paddingBottom: Spacing.five,
+    gap: Spacing.four,
   },
   photo: {
-    width: '100%',
     aspectRatio: 4 / 3,
-    borderRadius: Spacing.two,
+    backgroundColor: Palette.gray100,
+    marginHorizontal: -Spacing.three, // edge to edge
+    marginTop: -Spacing.three,
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  statusBlock: {
+    gap: Spacing.two,
+    borderTopWidth: 2,
+    borderTopColor: Palette.ink,
+    paddingTop: Spacing.three,
+  },
+  note: {
+    gap: Spacing.two,
+  },
+  noteText: {
+    fontFamily: FontFamily.semibold,
+    fontSize: 18,
+    lineHeight: 30,
+    color: Palette.ink,
+  },
+  highlight: {
+    backgroundColor: Palette.highlight, // ink on yellow, 15.34:1
   },
   section: {
-    gap: Spacing.one,
+    gap: Spacing.two,
   },
 });

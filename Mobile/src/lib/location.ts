@@ -1,5 +1,7 @@
 import * as Location from 'expo-location';
 
+import { t } from '@/constants/strings';
+
 export interface Coordinates {
   latitude: number;
   longitude: number;
@@ -43,9 +45,6 @@ export async function readCurrentLocation(): Promise<LocationResult> {
 
     return { kind: 'ok', coords, address };
   } catch {
-    return {
-      kind: 'error',
-      message: "Couldn't get your location. Make sure location services are on and try again.",
-    };
+    return { kind: 'error', message: t.newReport.locationError };
   }
 }

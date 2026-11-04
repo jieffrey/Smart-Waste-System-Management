@@ -1,22 +1,26 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { AiResult } from '@/components/reports/ai-result';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
+import { FieldMessage } from '@/components/ui/field-message';
+import { Rule } from '@/components/ui/rule';
 import { Screen } from '@/components/ui/screen';
 import { TextField } from '@/components/ui/text-field';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/constants/strings';
+import { FontFamily, Palette, Spacing } from '@/constants/theme';
 import { ApiError } from '@/lib/api';
 import { getErrorMessage, getFieldErrors } from '@/lib/errors';
 import { readCurrentLocation, type Coordinates, type LocationResult } from '@/lib/location';
 import { prepareImage } from '@/lib/prepare-image';
 import { createReport } from '@/services/reports';
 import type { Report } from '@/types/api';
-import { CATEGORY_LABELS, formatConfidence } from '@/utils/format';
+import { coordinatesLabel, shortLocation } from '@/utils/short-location';
 
 const MAX_DESCRIPTION_LENGTH = 1000;
 
@@ -33,7 +37,6 @@ type LocationState =
   | { status: 'error'; message: string };
 
 export default function NewReportScreen() {
-  const theme = useTheme();
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [photoMessage, setPhotoMessage] = useState<string | null>(null);
   const [location, setLocation] = useState<LocationState>({ status: 'locating' });
@@ -53,7 +56,7 @@ export default function NewReportScreen() {
     } else if (result.kind === 'denied') {
       setLocation({ status: 'denied', canAskAgain: result.canAskAgain });
     } else {
-      setLocation({ status: 'error', message: result.message });
+      setLocation({ status: 'error', message: t.newReport.locationError });
     }
   }, []);
 
@@ -74,11 +77,7 @@ export default function NewReportScreen() {
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      setPhotoMessage(
-        source === 'camera'
-          ? 'Camera access is needed to take a photo. You can allow it in the settings.'
-          : 'Photo access is needed to choose a picture. You can allow it in the settings.'
-      );
+      setPhotoMessage(source === 'camera' ? t.newReport.cameraDenied : t.newReport.galleryDenied);
       return;
     }
 
@@ -113,7 +112,7 @@ export default function NewReportScreen() {
     } catch (err) {
       // The form keeps everything the user entered, so they can simply try again.
       if (err instanceof ApiError && err.status === 503) {
-        setSubmitError('The AI service is unavailable right now. Your report was not saved — please try again.');
+        setSubmitError(t.newReport.aiUnavailable);
       } else {
         const errors = getFieldErrors(err);
         setFieldErrors(errors);
@@ -134,186 +133,252 @@ export default function NewReportScreen() {
     refreshLocation();
   }
 
-  // ---- After a successful submit: show the AI result ----
+  // ---- After a successful submit: the AI result ----
   if (createdReport) {
     return (
       <Screen>
-        <ThemedText type="subtitle">Report submitted</ThemedText>
-        <Image
-          source={{ uri: photo?.uri }}
-          style={[styles.photo, { backgroundColor: theme.backgroundSelected }]}
-          contentFit="cover"
+        <AiResult
+          report={createdReport}
+          onViewReport={() => router.push({ pathname: '/reports/[id]', params: { id: createdReport.id } })}
+          onReportAgain={startNewReport}
         />
-        <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
-          <ThemedText type="smallBold">AI category</ThemedText>
-          <ThemedText type="subtitle">{CATEGORY_LABELS[createdReport.category]}</ThemedText>
-          <ThemedText themeColor="textSecondary">
-            Confidence: {formatConfidence(createdReport.ai_confidence)}
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            Status: pending. You can follow it under My reports.
-          </ThemedText>
-        </View>
-        <Button
-          title="View report"
-          onPress={() => router.push({ pathname: '/reports/[id]', params: { id: createdReport.id } })}
-        />
-        <Button title="Report more waste" onPress={startNewReport} variant="secondary" />
       </Screen>
     );
   }
 
-  // ---- The form ----
-  const missing = [
-    !photo && 'a photo',
-    location.status !== 'ready' && 'your location',
-    !description.trim() && 'a description',
-  ].filter(Boolean);
+  // ---- The form: photo first ----
+  const missing: string[] = [];
+  if (!photo) missing.push(t.newReport.neededPhoto);
+  if (location.status !== 'ready') missing.push(t.newReport.neededLocation);
+  if (!description.trim()) missing.push(t.newReport.neededDescription);
 
   return (
     <Screen>
-      <ThemedText type="subtitle">New report</ThemedText>
-      <ThemedText themeColor="textSecondary">
-        Take a photo of the waste. The AI detects whether it is organic, paper or plastic.
-      </ThemedText>
-
-      {/* Photo */}
-      <ThemedText type="smallBold">Photo</ThemedText>
-      {photo ? (
-        <Image
-          source={{ uri: photo.uri }}
-          style={[styles.photo, { backgroundColor: theme.backgroundSelected }]}
-          contentFit="cover"
-          accessibilityLabel="Selected photo"
-        />
-      ) : null}
-      <View style={styles.row}>
-        <View style={styles.flex}>
-          <Button title={photo ? 'Retake' : 'Take photo'} onPress={() => pickPhoto('camera')} variant="secondary" />
-        </View>
-        <View style={styles.flex}>
-          <Button title="From gallery" onPress={() => pickPhoto('library')} variant="secondary" />
-        </View>
-      </View>
-      {fieldErrors.image ? (
-        <ThemedText type="small" style={{ color: theme.danger }} accessibilityRole="alert">
-          {fieldErrors.image}
+      <View style={styles.header}>
+        <ThemedText type="title" accessibilityRole="header">
+          {t.newReport.title}
         </ThemedText>
-      ) : null}
-      {photoMessage ? (
-        <View style={styles.notice}>
-          <ThemedText type="small" style={{ color: theme.danger }}>
-            {photoMessage}
-          </ThemedText>
-          <Button title="Open settings" onPress={() => Linking.openSettings()} variant="secondary" />
-        </View>
-      ) : null}
+        <ThemedText themeColor="textSecondary">{t.newReport.intro}</ThemedText>
+      </View>
 
-      {/* Location */}
-      <ThemedText type="smallBold">Location</ThemedText>
-      <LocationStatus location={location} onRetry={refreshLocation} />
+      {/* Photo: the hero and the first action (camera); gallery is a secondary text action */}
+      <View style={styles.section}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={photo ? t.newReport.retake : t.newReport.photoTap}
+          onPress={() => pickPhoto('camera')}
+          style={({ pressed }) => [styles.photoArea, fieldErrors.image && styles.photoError, pressed && styles.photoPressed]}>
+          {photo ? (
+            <>
+              <Image
+                source={{ uri: photo.uri }}
+                style={styles.photo}
+                contentFit="cover"
+                accessibilityLabel={t.newReport.selectedPhoto}
+              />
+              <View style={styles.retakeBar}>
+                <MaterialCommunityIcons name="camera-retake-outline" size={18} color={Palette.snow} />
+                <Text style={styles.retakeText}>{t.newReport.retake}</Text>
+              </View>
+            </>
+          ) : (
+            <View style={styles.photoEmpty}>
+              <View style={styles.cameraMark}>
+                <MaterialCommunityIcons name="camera" size={36} color={Palette.ink} />
+              </View>
+              <Text style={styles.photoTap}>{t.newReport.photoTap}</Text>
+              <Text style={styles.photoHint}>{t.newReport.photoHint}</Text>
+            </View>
+          )}
+        </Pressable>
+        <Button title={t.newReport.fromGallery} onPress={() => pickPhoto('library')} variant="text" />
+        {fieldErrors.image ? <FieldMessage>{fieldErrors.image}</FieldMessage> : null}
+        {photoMessage ? (
+          <View style={styles.notice}>
+            <FieldMessage>{photoMessage}</FieldMessage>
+            <Button title={t.common.openSettings} onPress={() => Linking.openSettings()} variant="text" />
+          </View>
+        ) : null}
+      </View>
+
+      {/* Location: short human form, coordinates in small mono, refresh as a small icon action */}
+      <View style={styles.section}>
+        <Rule />
+        <ThemedText type="micro" themeColor="textSecondary">
+          {t.newReport.location}
+        </ThemedText>
+        <LocationStatus location={location} address={address} onRetry={refreshLocation} />
+      </View>
+
       {location.status === 'ready' ? (
         <TextField
-          label="Address (optional)"
+          label={t.newReport.address}
           value={address}
           onChangeText={setAddress}
           error={fieldErrors.address}
-          placeholder="Street, area or landmark"
+          placeholder={t.newReport.addressPlaceholder}
           maxLength={255}
         />
       ) : null}
 
-      {/* Description */}
       <TextField
-        label={`Description (${description.length}/${MAX_DESCRIPTION_LENGTH})`}
+        label={`${t.newReport.description} (${description.length}/${MAX_DESCRIPTION_LENGTH})`}
         value={description}
         onChangeText={setDescription}
         error={fieldErrors.description}
-        placeholder="What and how much waste is there?"
+        placeholder={t.newReport.descriptionPlaceholder}
         multiline
         maxLength={MAX_DESCRIPTION_LENGTH}
       />
 
-      {submitError ? <ThemedText style={{ color: theme.danger }}>{submitError}</ThemedText> : null}
-      {submitting ? (
-        <ThemedText type="small" themeColor="textSecondary">
-          Uploading and classifying your photo… this can take up to 30 seconds.
-        </ThemedText>
-      ) : null}
+      {submitError ? <FieldMessage>{submitError}</FieldMessage> : null}
+      {submitting ? <FieldMessage tone="info">{t.newReport.submitting}</FieldMessage> : null}
 
-      <Button title="Submit report" onPress={submit} loading={submitting} disabled={missing.length > 0} />
+      <Button title={t.newReport.submit} onPress={submit} loading={submitting} disabled={missing.length > 0} />
       {missing.length > 0 && !submitting ? (
         <ThemedText type="small" themeColor="textSecondary">
-          Still needed: {missing.join(', ')}.
+          {t.newReport.stillNeeded(missing)}
         </ThemedText>
       ) : null}
     </Screen>
   );
 }
 
-function LocationStatus({ location, onRetry }: { location: LocationState; onRetry: () => void }) {
-  const theme = useTheme();
-
+function LocationStatus({ location, address, onRetry }: { location: LocationState; address: string; onRetry: () => void }) {
   if (location.status === 'locating') {
     return (
-      <View style={styles.row}>
-        <ActivityIndicator color={theme.primary} />
-        <ThemedText themeColor="textSecondary">Getting your location…</ThemedText>
+      <View style={styles.locationRow}>
+        <ActivityIndicator color={Palette.ink} />
+        <ThemedText themeColor="textSecondary">{t.newReport.locating}</ThemedText>
       </View>
     );
   }
 
   if (location.status === 'ready') {
+    const { latitude, longitude } = location.coords;
     return (
-      <View style={styles.notice}>
-        <ThemedText>
-          {location.coords.latitude.toFixed(6)}, {location.coords.longitude.toFixed(6)}
-        </ThemedText>
-        <Button title="Refresh location" onPress={onRetry} variant="secondary" />
+      <View style={styles.locationRow}>
+        <View style={styles.locationText}>
+          <ThemedText type="heading">{shortLocation(address, latitude, longitude)}</ThemedText>
+          <ThemedText type="mono" themeColor="textSecondary">
+            {coordinatesLabel(latitude, longitude)}
+          </ThemedText>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t.newReport.refreshLocation}
+          onPress={onRetry}
+          hitSlop={8}
+          style={({ pressed }) => [styles.iconButton, pressed && styles.iconPressed]}>
+          <MaterialCommunityIcons name="crosshairs-gps" size={22} color={Palette.ink} />
+        </Pressable>
       </View>
     );
   }
 
-  const message =
-    location.status === 'denied'
-      ? 'Location access is needed to record where the waste is. A report cannot be sent without it.'
-      : location.message;
+  const message = location.status === 'denied' ? t.newReport.locationDenied : location.message;
   const canOnlyUseSettings = location.status === 'denied' && !location.canAskAgain;
 
   return (
     <View style={styles.notice}>
-      <ThemedText type="small" style={{ color: theme.danger }}>
-        {message}
-      </ThemedText>
+      <FieldMessage>{message}</FieldMessage>
       {canOnlyUseSettings ? (
-        <Button title="Open settings" onPress={() => Linking.openSettings()} variant="secondary" />
+        <Button title={t.common.openSettings} onPress={() => Linking.openSettings()} variant="text" />
       ) : (
-        <Button title="Try again" onPress={onRetry} variant="secondary" />
+        <Button title={t.common.tryAgain} onPress={onRetry} variant="text" />
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  photo: {
+  header: {
+    gap: Spacing.one,
+  },
+  section: {
+    gap: Spacing.two,
+  },
+  photoArea: {
     width: '100%',
     aspectRatio: 4 / 3,
-    borderRadius: Spacing.two,
+    borderWidth: 2,
+    borderColor: Palette.ink,
+    backgroundColor: Palette.gray100,
+    overflow: 'hidden',
   },
-  row: {
+  photoError: {
+    borderWidth: 3,
+  },
+  photoPressed: {
+    opacity: 0.85,
+  },
+  photo: {
+    flex: 1,
+  },
+  photoEmpty: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+    padding: Spacing.three,
+  },
+  cameraMark: {
+    width: 72,
+    height: 72,
+    backgroundColor: Palette.signal, // ink icon on red orange: the main action
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.one,
+  },
+  photoTap: {
+    fontFamily: FontFamily.bold,
+    fontSize: 20,
+    lineHeight: 26,
+    color: Palette.ink,
+  },
+  photoHint: {
+    fontFamily: FontFamily.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: Palette.gray600, // 5.37:1 on gray-100
+  },
+  retakeBar: {
+    position: 'absolute',
+    left: 0,
+    bottom: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
+    backgroundColor: Palette.ink,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
   },
-  flex: {
-    flex: 1,
+  retakeText: {
+    fontFamily: FontFamily.semibold,
+    fontSize: 14,
+    color: Palette.snow,
   },
   notice: {
-    gap: Spacing.two,
-  },
-  card: {
-    padding: Spacing.three,
-    borderRadius: Spacing.two,
     gap: Spacing.one,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  locationText: {
+    flex: 1,
+    gap: Spacing.half,
+  },
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderWidth: 1,
+    borderColor: Palette.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconPressed: {
+    backgroundColor: Palette.gray100,
   },
 });

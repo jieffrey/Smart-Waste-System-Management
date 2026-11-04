@@ -4,33 +4,52 @@ import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Rule } from '@/components/ui/rule';
 import { Screen } from '@/components/ui/screen';
+import { Wordmark } from '@/components/ui/wordmark';
 import { t } from '@/constants/strings';
 import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { useSession } from '@/store/session';
 
+function Row({ label, value }: { label: string; value?: string }) {
+  return (
+    <View style={styles.row}>
+      <ThemedText type="micro" themeColor="textSecondary">
+        {label}
+      </ThemedText>
+      <ThemedText type="heading">{value}</ThemedText>
+    </View>
+  );
+}
+
 export default function AccountScreen() {
-  const theme = useTheme();
   const { user, signOut } = useSession();
   const [signingOut, setSigningOut] = useState(false);
-
   const [confirming, setConfirming] = useState(false);
 
   return (
     <Screen>
-      <ThemedText type="subtitle">Account</ThemedText>
+      <ThemedText type="title" accessibilityRole="header">
+        {t.account.title}
+      </ThemedText>
+      <Rule weight="strong" />
 
-      <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
-        <ThemedText type="smallBold">Name</ThemedText>
-        <ThemedText>{user?.full_name}</ThemedText>
-        <ThemedText type="smallBold" style={styles.label}>
-          Email
-        </ThemedText>
-        <ThemedText>{user?.email}</ThemedText>
+      <Row label={t.account.name} value={user?.full_name} />
+      <Rule weight="faint" />
+      <Row label={t.account.email} value={user?.email} />
+      <Rule weight="faint" />
+
+      <Button
+        title={t.account.logOut}
+        onPress={() => setConfirming(true)}
+        variant="secondary"
+        loading={signingOut}
+        style={styles.logOut}
+      />
+
+      <View style={styles.footer}>
+        <Wordmark />
       </View>
-
-      <Button title={t.account.logOut} onPress={() => setConfirming(true)} variant="secondary" loading={signingOut} />
 
       <ConfirmDialog
         visible={confirming}
@@ -49,12 +68,15 @@ export default function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: Spacing.three,
-    borderRadius: Spacing.two,
-    gap: Spacing.half,
+  row: {
+    gap: Spacing.one,
+    paddingVertical: Spacing.one,
   },
-  label: {
-    marginTop: Spacing.two,
+  logOut: {
+    marginTop: Spacing.three,
+  },
+  footer: {
+    marginTop: Spacing.five,
+    opacity: 0.9,
   },
 });

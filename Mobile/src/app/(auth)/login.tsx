@@ -1,16 +1,20 @@
 import { Link } from 'expo-router';
 import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 
+import { AuthHero } from '@/components/auth/auth-hero';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
+import { FieldMessage } from '@/components/ui/field-message';
+import { Rule } from '@/components/ui/rule';
 import { Screen } from '@/components/ui/screen';
 import { TextField } from '@/components/ui/text-field';
-import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/constants/strings';
+import { Spacing } from '@/constants/theme';
 import { getErrorMessage, getFieldErrors } from '@/lib/errors';
 import { useSession } from '@/store/session';
 
 export default function LoginScreen() {
-  const theme = useTheme();
   const { signIn, notice } = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,37 +40,62 @@ export default function LoginScreen() {
 
   return (
     <Screen>
-      <ThemedText type="subtitle">SWMS</ThemedText>
-      <ThemedText themeColor="textSecondary">Log in to report waste and follow your reports.</ThemedText>
+      <AuthHero headline={t.auth.headline} highlight={t.auth.headlineHighlight} subline={t.auth.subline} />
 
-      {message ? <ThemedText style={{ color: theme.danger }}>{message}</ThemedText> : null}
+      <View style={styles.form}>
+        <ThemedText type="title" accessibilityRole="header">
+          {t.auth.loginTitle}
+        </ThemedText>
+        <Rule weight="strong" />
 
-      <TextField
-        label="Email"
-        value={email}
-        onChangeText={setEmail}
-        error={fieldErrors.email}
-        autoCapitalize="none"
-        autoComplete="email"
-        keyboardType="email-address"
-        textContentType="emailAddress"
-      />
-      <TextField
-        label="Password"
-        value={password}
-        onChangeText={setPassword}
-        error={fieldErrors.password}
-        secureTextEntry
-        autoComplete="password"
-        textContentType="password"
-        onSubmitEditing={handleSubmit}
-      />
+        {message ? <FieldMessage>{message}</FieldMessage> : null}
 
-      <Button title="Log in" onPress={handleSubmit} loading={submitting} disabled={!email || !password} />
+        <TextField
+          label={t.auth.email}
+          value={email}
+          onChangeText={setEmail}
+          error={fieldErrors.email}
+          autoCapitalize="none"
+          autoComplete="email"
+          keyboardType="email-address"
+          textContentType="emailAddress"
+        />
+        <TextField
+          label={t.auth.password}
+          value={password}
+          onChangeText={setPassword}
+          error={fieldErrors.password}
+          secureTextEntry
+          autoComplete="password"
+          textContentType="password"
+          onSubmitEditing={handleSubmit}
+        />
 
-      <Link href="/register" style={{ color: theme.primary }}>
-        No account yet? Create one
-      </Link>
+        <Button title={t.auth.logIn} onPress={handleSubmit} loading={submitting} disabled={!email || !password} />
+
+        <View style={styles.switchRow}>
+          <ThemedText themeColor="textSecondary">{t.auth.noAccount}</ThemedText>
+          <Link href="/register" style={styles.link}>
+            <ThemedText type="link">{t.auth.createOne}</ThemedText>
+          </Link>
+        </View>
+      </View>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  form: {
+    gap: Spacing.three,
+    marginTop: Spacing.two,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: Spacing.one,
+  },
+  link: {
+    paddingVertical: Spacing.two,
+  },
+});

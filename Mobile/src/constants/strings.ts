@@ -35,7 +35,8 @@ export const t = {
   },
 
   auth: {
-    headline: 'Lihat sampah? Foto, kirim, beres.',
+    headline: 'Lihat sampah? Foto, kirim,',
+    headlineHighlight: 'beres.',
     subline: 'AI memilah jenis sampahnya, petugas yang turun tangan, dan kamu bisa memantau sampai selesai.',
     loginTitle: 'Masuk',
     email: 'Email',
@@ -66,6 +67,8 @@ export const t = {
     emptyAction: 'Buat laporan pertama',
     emptyFiltered: (status: string) => `Tidak ada laporan berstatus ${status.toLowerCase()}.`,
     reportDetailTitle: 'Detail laporan',
+    count: (n: number) => `${n} laporan`,
+    back: 'Kembali',
   },
 
   filter: {
@@ -79,6 +82,8 @@ export const t = {
     intro: 'Foto sampahnya. AI langsung mengenali: organik, kertas, atau plastik.',
     photoTap: 'Ketuk untuk memotret',
     photoHint: 'Foto jelas, satu tumpukan saja',
+    photoLabel: 'Foto',
+    selectedPhoto: 'Foto yang dipilih',
     retake: 'Foto ulang',
     fromGallery: 'Pilih dari galeri',
     cameraDenied: 'Izinkan akses kamera untuk memotret. Kamu bisa mengubahnya di pengaturan.',
@@ -129,6 +134,7 @@ export const t = {
   },
 
   journey: {
+    sent: 'Terkirim',
     pending: 'Menunggu',
     in_progress: 'Diproses',
     completed: 'Selesai',
