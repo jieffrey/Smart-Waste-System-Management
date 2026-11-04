@@ -235,3 +235,42 @@ Using the `motion` package Bklit already brings in (no extra animation library).
 **off when the user prefers reduced motion** (`MotionConfig reducedMotion="user"` wraps the admin pages):
 count-up on the big numbers on first load, charts draw in once, row hover on tables, the sidebar indicator
 slides between items, and page content fades and slides up slightly when it appears.
+
+---
+
+## Mobile (Expo + React Native Paper)
+
+The mobile app uses the same tokens (`Mobile/src/constants/theme.ts`) and a fully overridden Paper MD3 theme
+(`Mobile/src/constants/paper-theme.ts`): our palette, `roundness: 0`, every elevation level flat snow (no shadows,
+no tinted surfaces), Archivo and IBM Plex Mono for every Paper text variant. **Light mode only**: `app.json`
+forces `userInterfaceStyle: "light"`, the navigation and Paper themes are light-only, and the status bar uses dark
+icons, so the app looks the same whatever the phone's dark-mode setting is.
+
+- **Fonts:** `@expo-google-fonts/archivo` ships weights only, no expanded width. Display titles therefore use
+  **Archivo Black (900) with tight negative tracking** instead of the web's expanded width. Numbers, dates, IDs
+  and coordinates use IBM Plex Mono.
+- **Type scale (6 sizes):** display 44, title 28, heading 20, body 16, small 14, micro 12 (mono, uppercase).
+- **Language:** all user-facing text is Bahasa Indonesia, in one file (`Mobile/src/constants/strings.ts`).
+  Known backend error messages are translated there too; unknown ones pass through unchanged.
+- **Status** uses the same squares as the web (empty / half / filled with check / crossed + struck label).
+  Status labels: Menunggu, Diproses, Selesai, Ditolak. Categories: Organik (red orange), Kertas (ink), Plastik
+  (cobalt).
+- **Dialogs** are Paper's `Dialog`, restyled: square, 2px ink frame, no elevation, sentence-case actions from our
+  Button (never uppercase Material text buttons).
+
+### Mobile contrast pairs (computed, WCAG 2.x)
+
+| Foreground | Background | Ratio | Result | Use |
+|---|---|---|---|---|
+| ink | snow | 18.07 | AAA | All body text |
+| gray-600 | snow | 6.36 | AA | Secondary text |
+| gray-500 | snow | 4.51 | AA | Input placeholders only |
+| ink | red orange | 5.57 | AA | Primary button label, the "Lapor" tab, the organic result block |
+| gray-700 | gray-100 | 7.81 | AAA | Disabled button label (stays readable) |
+| snow | ink | 18.07 | AAA | Ink button, the paper result block |
+| gray-300 | ink | 9.64 | AAA | Secondary text on the ink result block |
+| ink | yellow | 15.34 | AAA | Selected filter option, admin note highlight |
+| white | cobalt | 6.77 | AA | The plastic result block (all text white, including small mono) |
+| gray-300 | cobalt | 3.48 | **Fail** for small text | Not used: secondary text on cobalt stays white |
+| ink | gray-100 | 15.27 | AAA | Text on photo placeholders |
+| gray-600 | gray-100 | 5.37 | AA | Hints on photo placeholders |
