@@ -18,7 +18,7 @@ exposed publicly.
 **Dataset:** the training data and the 3 sample images in `tests/samples/` (taken from the test split)
 come from the Kaggle [Garbage Classification V2](https://www.kaggle.com/datasets/sumn2u/garbage-classification-v2)
 dataset (version 8). Its `biological` class is used as **organic**. See
-[Training & Evaluation](#training--evaluation).
+[ML Development Process](#ml-development-process).
 
 **Preprocessing is inside the model.** The model already contains MobileNetV2's preprocessing
 (`x / 127.5 − 1`), so the API sends **raw 0–255 RGB pixels**. Do not divide by 255 or call
@@ -242,7 +242,7 @@ Exactly as in the final notebook run (cells 19–23) and [`src/training/train.py
 | Epochs | **3** |
 | Callbacks | `ModelCheckpoint(monitor="val_loss", save_best_only=True)` and `EarlyStopping(monitor="val_loss", patience=2, restore_best_weights=True)` |
 | Seeds | `seed=42` for shuffling the training set; **no global seed**, so a rerun is not bit-for-bit identical |
-| Environment | Colab GPU runtime, TensorFlow 2.21.0 (printed in the notebook) |
+| Environment | Google Colab, GPU T4, Python 3.13.16 (recorded in `requirements-train.txt`); TensorFlow 2.21.0 (printed in the notebook); the API runs the saved model on Python 3.12 with the same TensorFlow 2.21.0 and Keras 3.13.2 |
 
 Per-epoch history ([`results/metrics/training_history.csv`](results/metrics/training_history.csv)):
 
@@ -476,8 +476,9 @@ SEC-03 and SEC-08):
 
 None of these results exist yet; this section describes the plan and how it will be judged.
 
-### Reproduce
+## Reproduce the training
 
+The full run, with outputs, is in [`notebooks/garbage_classification.ipynb`](notebooks/garbage_classification.ipynb).
 The scripts contain the notebook's code (without the earlier, abandoned 5-epoch experiment). Paths are
 the Colab/Google Drive paths used in the notebook and are set as constants at the top of each script —
 change them to run elsewhere. A GPU is recommended for training.
