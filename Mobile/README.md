@@ -72,8 +72,8 @@ address on the Wi-Fi network:
 The IP can change when you reconnect to Wi-Fi — if the app suddenly can't reach the server, check it
 again.
 
-**The backend must listen on port 4000:** set `PORT=4000` in `backend/.env` (the backend's default is
-3000) and start it with `npm run dev` in `backend/`.
+**The backend must listen on port 4000:** it does by default (unless `PORT` in
+`backend/.env` says otherwise). Start it with `npm run dev` in `backend/`.
 
 **Check from your phone first:** open `http://<your IP>:4000/api/health` in the phone's browser. You
 should see `{"status":"ok"}`. If it doesn't load, it's a network or firewall problem, not the app.

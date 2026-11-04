@@ -13,7 +13,7 @@ module.exports = {
   databaseUrl,
   jwtSecret,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '24h',
-  port: Number(process.env.PORT) || 3000,
+  port: Number(process.env.PORT) || 4000,
   dbPoolMax: Number(process.env.DB_POOL_MAX) || 10,
   // ML API (optional): without ML_API_URL the server still starts, but report creation returns 503
   mlApiUrl: process.env.ML_API_URL ? process.env.ML_API_URL.replace(/\/+$/, '') : null,
