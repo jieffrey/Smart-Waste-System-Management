@@ -1,7 +1,9 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { AlertTriangle } from "lucide-react";
 import { setUserActive, type UserActiveState } from "@/actions/users";
+import { Button } from "@/components/ui/button";
 
 const initialState: UserActiveState = { result: "idle", message: null };
 
@@ -19,43 +21,29 @@ export function UserActiveToggle({ userId, userName, isActive }: { userId: strin
   }
 
   return (
-    <div className="space-y-1">
+    <div className="flex flex-col items-end gap-1">
       {confirming ? (
-        <form action={formAction} className="flex flex-wrap items-center gap-2">
+        <form action={formAction} className="flex flex-wrap items-center justify-end gap-2">
           <input type="hidden" name="user_id" value={userId} />
           <input type="hidden" name="is_active" value={String(!isActive)} />
-          <span className="text-micro text-zinc-600">
+          <span className="text-small text-ink">
             {action} {userName}?{isActive && " They will be signed out."}
           </span>
-          <button
-            type="submit"
-            disabled={pending}
-            className={`rounded px-2 py-1 text-micro font-medium text-white disabled:opacity-60 ${
-              isActive ? "bg-red-700" : "bg-green-700"
-            }`}
-          >
+          <Button type="submit" size="sm" disabled={pending} className="bg-ink text-snow hover:bg-gray-800">
             {pending ? "Saving…" : `Yes, ${action.toLowerCase()}`}
-          </button>
-          <button
-            type="button"
-            onClick={() => setConfirming(false)}
-            disabled={pending}
-            className="rounded border border-zinc-300 bg-white px-2 py-1 text-micro hover:bg-zinc-100"
-          >
+          </Button>
+          <Button type="button" size="sm" variant="ghost" onClick={() => setConfirming(false)} disabled={pending}>
             Cancel
-          </button>
+          </Button>
         </form>
       ) : (
-        <button
-          type="button"
-          onClick={() => setConfirming(true)}
-          className="rounded border border-zinc-300 bg-white px-2 py-1 text-micro hover:bg-zinc-100"
-        >
+        <Button type="button" size="sm" onClick={() => setConfirming(true)}>
           {action}
-        </button>
+        </Button>
       )}
       {state.result === "error" && state.message && (
-        <p role="alert" className="text-micro text-red-700">
+        <p role="alert" className="flex items-center gap-1.5 text-small text-ink">
+          <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />
           {state.message}
         </p>
       )}

@@ -2,10 +2,23 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { fieldClass } from "@/components/ui/input";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { SearchInput } from "@/components/ui/SearchInput";
+import { cn } from "@/lib/utils";
 import { hasActiveUserFilters, usersHref, type UserFilters as Filters } from "@/lib/user-filters";
 
-const inputClass = "rounded border border-zinc-300 bg-white px-2 py-1.5 text-small";
+const compactField = cn(fieldClass, "h-8 text-small");
+
+function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
+  return (
+    <label className={cn("flex min-w-0 flex-col gap-1", className)}>
+      <span className="label-micro text-gray-600">{label}</span>
+      {children}
+    </label>
+  );
+}
 
 // Same approach as ReportFilters: all filter state lives in the URL, and any change goes back to page 1.
 export function UserFilters({ filters }: { filters: Filters }) {
@@ -20,57 +33,57 @@ export function UserFilters({ filters }: { filters: Filters }) {
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-lg border border-zinc-200 bg-white p-3">
-      <label className="flex flex-col gap-1 text-micro text-zinc-500">
-        Search
+    <div className="grid grid-cols-2 items-end gap-3 lg:grid-cols-[minmax(12rem,22rem)_9rem_10rem_auto]">
+      <Field label="Search" className="col-span-2 lg:col-span-1">
         <SearchInput
           key={searchKey}
           value={filters.q ?? ""}
           onSearch={(q) => navigate({ q: q || undefined })}
           placeholder="Name or email"
-          className={`${inputClass} w-56`}
+          className={compactField}
         />
-      </label>
+      </Field>
 
-      <label className="flex flex-col gap-1 text-micro text-zinc-500">
-        Role
-        <select
+      <Field label="Role">
+        <NativeSelect
+          size="sm"
           value={filters.role ?? ""}
           onChange={(event) => navigate({ role: (event.target.value || undefined) as Filters["role"] })}
-          className={inputClass}
         >
-          <option value="">All roles</option>
-          <option value="user">User</option>
-          <option value="admin">Admin</option>
-        </select>
-      </label>
+          <NativeSelectOption value="">All</NativeSelectOption>
+          <NativeSelectOption value="user">User</NativeSelectOption>
+          <NativeSelectOption value="admin">Admin</NativeSelectOption>
+        </NativeSelect>
+      </Field>
 
-      <label className="flex flex-col gap-1 text-micro text-zinc-500">
-        Status
-        <select
+      <Field label="Status">
+        <NativeSelect
+          size="sm"
           value={filters.active ?? ""}
           onChange={(event) => navigate({ active: (event.target.value || undefined) as Filters["active"] })}
-          className={inputClass}
         >
-          <option value="">All</option>
-          <option value="true">Active</option>
-          <option value="false">Deactivated</option>
-        </select>
-      </label>
+          <NativeSelectOption value="">All</NativeSelectOption>
+          <NativeSelectOption value="true">Active</NativeSelectOption>
+          <NativeSelectOption value="false">Deactivated</NativeSelectOption>
+        </NativeSelect>
+      </Field>
 
-      <button
-        type="button"
-        onClick={() => {
-          setSearchKey((key) => key + 1);
-          startTransition(() => router.push("/users"));
-        }}
-        disabled={!hasActiveUserFilters(filters)}
-        className="rounded border border-zinc-300 bg-white px-3 py-1.5 text-small hover:bg-zinc-100 disabled:opacity-50"
-      >
-        Reset filters
-      </button>
-
-      {pending && <p className="pb-1.5 text-small text-zinc-500">Updating…</p>}
+      <div className="col-span-2 flex items-center gap-3 lg:col-span-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="px-0"
+          onClick={() => {
+            setSearchKey((key) => key + 1);
+            startTransition(() => router.push("/users"));
+          }}
+          disabled={!hasActiveUserFilters(filters)}
+        >
+          Reset filters
+        </Button>
+        {pending && <span className="font-mono text-micro text-gray-600">Updating…</span>}
+      </div>
     </div>
   );
 }
