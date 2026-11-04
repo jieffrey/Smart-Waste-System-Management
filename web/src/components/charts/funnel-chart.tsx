@@ -247,7 +247,8 @@ function HSegment({
 
   const rings = Array.from({ length: layers }, (_, l) => {
     const scale = 1 - (l / layers) * 0.35;
-    const opacity = 0.18 + (l / (layers - 1 || 1)) * 0.65;
+    // A single layer is drawn solid (upstream gives it 0.18 opacity, which turns any color into a pale slab).
+    const opacity = layers === 1 ? 1 : 0.18 + (l / (layers - 1 || 1)) * 0.65;
     return {
       d: hSegmentPath(normStart, normEnd, segW, fullH, scale, straight),
       opacity,
@@ -458,7 +459,8 @@ function VSegment({
 
   const rings = Array.from({ length: layers }, (_, l) => {
     const scale = 1 - (l / layers) * 0.35;
-    const opacity = 0.18 + (l / (layers - 1 || 1)) * 0.65;
+    // A single layer is drawn solid (upstream gives it 0.18 opacity, which turns any color into a pale slab).
+    const opacity = layers === 1 ? 1 : 0.18 + (l / (layers - 1 || 1)) * 0.65;
     return {
       d: vSegmentPath(normStart, normEnd, segH, fullW, scale, straight),
       opacity,
