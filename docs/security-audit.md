@@ -40,12 +40,12 @@ database, no rate limiting, and an ML endpoint that a big image could exhaust.
 |---|---|---|---|---|---|
 | [SEC-01](#sec-01) | **High** | Published demo admin password works against the real database | Repo / backend | A07, A02 | Proven live |
 | [SEC-02](#sec-02) | Medium | No rate limiting on login, registration or report creation | Backend | A07, API4 | Proven live |
-| [SEC-03](#sec-03) | Medium | ML API can be made to use gigabytes of memory with one small image (fixed: `security/fix-ml-image-limits`) | ML | A10, API4 | Code review |
+| [SEC-03](#sec-03) | Medium | ML API can be made to use gigabytes of memory with one small image | ML | A10, API4 | Code review |
 | [SEC-04](#sec-04) | Low | Weak password policy (`12345678` is accepted) | Backend | A07 | Proven live |
 | [SEC-05](#sec-05) | Low | Account enumeration through login timing and the register error | Backend | A07 | Proven live |
 | [SEC-06](#sec-06) | Low | Uploaded photos are stored and served byte-for-byte (EXIF location kept) | Backend | A02, API3 | Proven live |
 | [SEC-07](#sec-07) | Low | Missing HTTP security headers (backend and web) | Backend / web | A02 | Proven live |
-| [SEC-08](#sec-08) | Low | Upload limits are checked late; multipart fields are unlimited (fixed: `security/fix-ml-image-limits`) | Backend / ML | API4 | Partly proven |
+| [SEC-08](#sec-08) | Low | Upload limits are checked late; multipart fields are unlimited | Backend / ML | API4 | Partly proven |
 | [SEC-09](#sec-09) | Low | ML `/predict` has no authentication; `/docs` is public | ML | A01, API2 | Proven live |
 | [SEC-10](#sec-10) | Low | No security event logging; category/note changes leave no history | Backend | A09 | Code review |
 | [SEC-11](#sec-11) | Low | 24-hour tokens that can't be revoked; no `iss`/`aud` claims | Backend / web | A07 | Proven live |
