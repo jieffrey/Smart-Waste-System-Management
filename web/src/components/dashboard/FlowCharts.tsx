@@ -29,7 +29,7 @@ export function HandlingFunnel({ stages }: { stages: { label: string; value: num
   );
 }
 
-// AI accuracy as a notched gauge: ink notches on a gray track. The number sits in the center.
+// AI accuracy as a notched gauge, drawn in ink on the yellow block (15.34:1); the track is ink at low opacity.
 export function AiAccuracyGauge({ percent }: { percent: number }) {
   return (
     <Gauge
@@ -38,9 +38,9 @@ export function AiAccuracyGauge({ percent }: { percent: number }) {
       notchCornerRadius={0}
       uniformWidth
       activeFill="#121212"
-      inactiveFill="#D6D6D3"
+      inactiveFill="#121212"
       activeFillOpacity={1}
-      inactiveFillOpacity={1}
+      inactiveFillOpacity={0.14}
       centerValue={percent}
       suffix="%"
       defaultLabel="AI kept"

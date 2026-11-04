@@ -3,7 +3,9 @@ import { DashSection } from "@/components/dashboard/DashSection";
 import { AiAccuracyGauge, AiFlowSankey, CategoryRing, HandlingFunnel } from "@/components/dashboard/FlowCharts";
 import { NeedsAction } from "@/components/dashboard/NeedsAction";
 import { InVsCompletedChart } from "@/components/dashboard/TrendCharts";
-import { CategoryLabel } from "@/components/ui/CategoryLabel";
+import { ColorBlock } from "@/components/dashboard/ColorBlock";
+import { CATEGORY_COLORS } from "@/lib/categories";
+import { CATEGORY_LABELS } from "@/lib/labels";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { getStats } from "@/lib/admin-data";
@@ -87,27 +89,46 @@ async function DashboardContent() {
           </p>
         </DashSection>
 
-        <DashSection
-          className="lg:col-span-5"
-          kicker="AI trust"
-          title="AI accuracy"
-          takeaway="Reviewed reports (in progress or completed) where the admin kept the AI's category."
-        >
+        {/* Yellow block: AI trust (ink on yellow, 15.34:1) */}
+        <ColorBlock color="highlight" aria-label="AI accuracy" className="lg:col-span-5">
+          <h2 className="text-heading font-semibold">How far can the AI be trusted?</h2>
+          <p className="mt-1 text-small text-gray-700">
+            Reviewed reports (in progress or completed) where the admin kept the AI&apos;s category.
+          </p>
           {accuracy === null ? (
-            <p className="py-12 text-heading font-semibold text-ink">No reviewed reports yet</p>
+            <p className="py-12 text-heading font-semibold">No reviewed reports yet</p>
           ) : (
             <>
               <AiAccuracyGauge percent={Number((accuracy * 100).toFixed(1))} />
-              <p className="mt-2 text-center font-mono text-small text-gray-700">
+              <p className="mt-2 text-center font-mono text-small">
                 {matching} / {reviewed} kept · {formatPercent(accuracy)}
               </p>
             </>
           )}
-        </DashSection>
+        </ColorBlock>
       </div>
 
-      {/* 3. Patterns: where the AI gets corrected, and what kind of waste comes in */}
+      {/* 3. Patterns: what kind of waste comes in (cobalt block), and where the AI gets corrected */}
       <div className="grid gap-10 lg:grid-cols-12">
+        <ColorBlock color="cobalt" aria-label="What kind of waste" className="lg:col-span-4">
+          <h2 className="text-heading font-semibold">What kind of waste</h2>
+          {/* Category colors fail on cobalt (2.02 and 2.77:1), so the donut sits on a snow disc. */}
+          <div className="mx-auto mt-6 aspect-square max-w-64 rounded-full bg-snow p-3">
+            <CategoryRing byCategory={stats.totals.by_category} total={stats.totals.reports} />
+          </div>
+          <ul className="mt-6 divide-y divide-white/40 border-t border-white/60">
+            {REPORT_CATEGORIES.map((category) => (
+              <li key={category} className="flex items-center justify-between py-2 text-small">
+                <span className="inline-flex items-center gap-2">
+                  <span className={`size-3 border border-white ${CATEGORY_COLORS[category].swatchClass}`} aria-hidden="true" />
+                  {CATEGORY_LABELS[category]}
+                </span>
+                <span className="font-mono">{stats.totals.by_category[category]}</span>
+              </li>
+            ))}
+          </ul>
+        </ColorBlock>
+
         <DashSection
           className="lg:col-span-8"
           kicker="AI routing"
@@ -123,18 +144,6 @@ async function DashboardContent() {
           ) : (
             <AiFlowSankey data={flow} />
           )}
-        </DashSection>
-
-        <DashSection className="lg:col-span-4" kicker="Composition" title="What kind of waste">
-          <CategoryRing byCategory={stats.totals.by_category} total={stats.totals.reports} />
-          <ul className="mt-4 divide-y divide-gray-200 border-t border-gray-200">
-            {REPORT_CATEGORIES.map((category) => (
-              <li key={category} className="flex items-center justify-between py-2">
-                <CategoryLabel category={category} />
-                <span className="font-mono text-small text-ink">{stats.totals.by_category[category]}</span>
-              </li>
-            ))}
-          </ul>
         </DashSection>
       </div>
 

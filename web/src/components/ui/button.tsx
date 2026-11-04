@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 // primary   = red orange fill + ink label (5.57:1). Use it ONCE per view, for the main action.
 // secondary = 1px ink outline (the default, so a primary is always a deliberate choice).
 // ghost     = text only, underlined on hover.
+// ink       = ink fill + snow label (18:1). The CTA inside a red-orange block, where a red button would vanish.
 const buttonVariants = cva(
   "inline-flex shrink-0 items-center justify-center gap-2 rounded-none font-sans font-semibold whitespace-nowrap transition-colors outline-none select-none disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
@@ -14,6 +15,7 @@ const buttonVariants = cva(
         primary: "border border-signal bg-signal text-ink hover:border-ink hover:bg-ink hover:text-signal",
         secondary: "border border-ink bg-snow text-ink hover:bg-ink hover:text-snow",
         ghost: "border border-transparent text-ink underline-offset-4 hover:underline",
+        ink: "border border-ink bg-ink text-snow hover:bg-snow hover:text-ink",
       },
       size: {
         default: "h-10 px-4 text-small",
