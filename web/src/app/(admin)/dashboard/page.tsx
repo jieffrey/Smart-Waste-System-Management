@@ -4,6 +4,7 @@ import { AiAccuracyGauge, AiFlowSankey, CategoryRing, HandlingFunnel } from "@/c
 import { NeedsAction } from "@/components/dashboard/NeedsAction";
 import { InVsCompletedChart } from "@/components/dashboard/TrendCharts";
 import { ColorBlock } from "@/components/dashboard/ColorBlock";
+import { TodayJakarta } from "@/components/dashboard/TodayJakarta";
 import { CATEGORY_COLORS } from "@/lib/categories";
 import { CATEGORY_LABELS } from "@/lib/labels";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -18,7 +19,14 @@ import type { Stats } from "@/types/api";
 export default function DashboardPage() {
   return (
     <div className="space-y-10">
-      <PageHeader kicker="Overview" title="Dashboard" />
+      <PageHeader
+        kicker={
+          <Suspense fallback={<span>&nbsp;</span>}>
+            <TodayJakarta />
+          </Suspense>
+        }
+        title="Dashboard"
+      />
       <Suspense fallback={<p className="text-small text-gray-600">Loading statistics…</p>}>
         <DashboardContent />
       </Suspense>
