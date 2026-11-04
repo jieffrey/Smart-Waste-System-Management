@@ -169,6 +169,25 @@ Two caveats:
 - The dataset was **not checked for duplicates or near-duplicates** across splits. If it has them, test
   results could be optimistic. Not measured.
 
+### 2. Why transfer learning with MobileNetV2
+
+- **The dataset is small for training a CNN from scratch.** 3,260 training images, of which only 697 are
+  `organic`. A convolutional network trained from random weights on that much data would mostly
+  memorise the training images. Transfer learning reuses features (edges, textures, shapes)
+  that MobileNetV2 already learned on ImageNet, so only a small new head has to learn from our data.
+- **Few parameters to learn.** With the base frozen, the model has **3,843 trainable** parameters out of
+  **2,261,827** (notebook `model.summary()`). That is why three epochs were enough to reach the results below.
+- **Small and fast to serve.** The saved model is **9,667,404 bytes** (`models/swms_mobilenetv2_best.keras`,
+  about 9.7 MB, *computed*). MobileNetV2 was designed for mobile and embedded devices, which suits a
+  classification API running on CPU behind the backend. Inference latency was **not measured**.
+- **Alternatives considered, not trained:**
+  - **Training from scratch** was ruled out for the data-size reason above.
+  - **Larger backbones** (for example ResNet or bigger EfficientNet variants) would make the model file
+    and the CPU inference heavier for a 3-class problem the small model already handles well.
+
+  **No comparison runs were done** for either option, so there are no numbers for them in this
+  repository. This choice is a reasoned starting point, not a measured winner.
+
 ### Training
 
 - MobileNetV2 with ImageNet weights, **frozen**; new head: `GlobalAveragePooling2D` → `Dropout(0.2)` →
