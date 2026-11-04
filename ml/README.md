@@ -128,27 +128,46 @@ All errors use the same format as the Express backend:
 | `404` / `405` | Unknown route or wrong HTTP method |
 | `500` | Unexpected server error (no internal details are returned) |
 
-## Training & Evaluation
+## ML Development Process
 
-The model was trained in Google Colab (Python 3.13, GPU T4). The API runs on Python 3.12; both use
-**tensorflow 2.21.0** and **keras 3.13.2**, so the saved model is compatible. The full run, with outputs, is in
-[`notebooks/garbage_classification.ipynb`](notebooks/garbage_classification.ipynb). The same code is
-also split into three plain scripts (see [Reproduce](#reproduce)). All numbers below come from
-the notebook output and the files in [`results/`](results/).
+How the classifier was built, what the numbers mean, and where it falls short. **Every number in this
+section comes from a file in this repository**: the notebook output
+([`notebooks/garbage_classification.ipynb`](notebooks/garbage_classification.ipynb)), the files in
+[`results/`](results/), the split script, or the test samples. Numbers marked *computed* are simple
+arithmetic on those values. When a number isn't available, the text says so instead of estimating it.
 
-### Dataset split
+### 1. Problem & dataset
 
-From Kaggle [Garbage Classification V2](https://www.kaggle.com/datasets/sumn2u/garbage-classification-v2)
-(version 8), only the `biological` (→ `organic`), `paper` and `plastic` classes are used: 997 + 1,680 + 1,984
-= 4,661 images, all of which opened without errors. Each class is split 70 / 15 / 15
-(`train_test_split`, `random_state=42`):
+**Task:** given one photo of waste, predict one of three classes: `organic`, `paper` or `plastic`. The
+prediction is used as the report's starting category, and an admin can correct it.
 
-| Class | Train | Validation | Test | Total |
-|---|---|---|---|---|
-| `organic` | 697 | 150 | 150 | 997 |
-| `paper` | 1,175 | 252 | 253 | 1,680 |
-| `plastic` | 1,388 | 298 | 298 | 1,984 |
-| **Total** | **3,260** | **700** | **701** | **4,661** |
+**Source:** Kaggle [Garbage Classification V2](https://www.kaggle.com/datasets/sumn2u/garbage-classification-v2)
+by sumn2u, **version 8**, downloaded with the Kaggle API in Colab. Only three of its class folders are used:
+`biological` (renamed to `organic`), `paper` and `plastic`. The images are not committed (`ml/dataset/` is
+gitignored); the three images in `tests/samples/` come from the test split.
+
+**Size:** 4,661 images, and all 4,661 opened without errors (the notebook checks every file with Pillow:
+0 broken files per class).
+
+| Class | Train | Validation | Test | Total | Share of all images (*computed*) |
+|---|---|---|---|---|---|
+| `organic` | 697 | 150 | 150 | 997 | 21.4% |
+| `paper` | 1,175 | 252 | 253 | 1,680 | 36.0% |
+| `plastic` | 1,388 | 298 | 298 | 1,984 | 42.6% |
+| **Total** | **3,260** | **700** | **701** | **4,661** | 100% |
+
+**How the split was made:** [`scripts/split_dataset.py`](scripts/split_dataset.py) (the notebook's code).
+**Each class is split on its own** with scikit-learn's `train_test_split`, `shuffle=True`, `random_state=42`:
+first 70% train / 30% rest, then the rest 50/50 into validation and test. Because every class is split
+separately, each split keeps the same class proportions: the split is **stratified by construction**,
+although the `stratify=` argument isn't used. *Computed*, `organic` is 21.4% of train, 21.4% of validation
+and 21.4% of test.
+
+Two caveats:
+- The script lists files with `os.listdir`, whose order depends on the file system. The **counts** per split
+  are always the same, but on another machine *which* files land in which split can differ.
+- The dataset was **not checked for duplicates or near-duplicates** across splits. If it has them, test
+  results could be optimistic. Not measured.
 
 ### Training
 
