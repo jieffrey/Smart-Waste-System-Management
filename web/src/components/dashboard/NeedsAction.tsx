@@ -3,7 +3,6 @@ import { buttonVariants } from "@/components/ui/button";
 import { weekSummary } from "@/lib/dashboard";
 import type { Stats } from "@/types/api";
 import { ColorBlock } from "./ColorBlock";
-import { VolumeArea } from "./TrendCharts";
 
 function Delta({ now, before }: { now: number; before: number }) {
   const diff = now - before;
@@ -53,11 +52,6 @@ export function NeedsAction({ stats }: { stats: Stats }) {
       <Link href="/reports?status=pending" className={`${buttonVariants({ variant: "ink" })} mt-6 w-full`}>
         Review pending reports
       </Link>
-
-      <div className="mt-8">
-        <p className="label-micro">New reports per day · 30 days</p>
-        <VolumeArea days={stats.reports_per_day} />
-      </div>
     </ColorBlock>
   );
 }

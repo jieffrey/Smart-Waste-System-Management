@@ -1,8 +1,6 @@
 "use client";
 
 import { curveLinear } from "d3-shape";
-import { Area } from "@/components/charts/area";
-import { AreaChart } from "@/components/charts/area-chart";
 import { ComposedChart } from "@/components/charts/composed-chart";
 import { Grid } from "@/components/charts/grid";
 import { Line } from "@/components/charts/line";
@@ -20,27 +18,6 @@ function toRows(days: Days) {
     const [year, month, date] = day.date.split("-").map(Number);
     return { date: new Date(year, month - 1, date), reports: day.count, completed: day.completed_count };
   });
-}
-
-// Small 30-day volume strip under the key number: flat ink fill, no gradient, no edge fade.
-export function VolumeArea({ days }: { days: Days }) {
-  return (
-    <AreaChart data={toRows(days)} aspectRatio="3 / 1" margin={{ top: 8, right: 0, bottom: 24, left: 0 }}>
-      <Area
-        dataKey="reports"
-        fill="#121212"
-        stroke="#121212"
-        fillOpacity={0.12}
-        gradientToOpacity={0.12}
-        strokeWidth={1.5}
-        curve={curveLinear}
-        fadeEdges={false}
-        showHighlight={false}
-      />
-      <XAxis numTicks={3} />
-      <ChartTooltip showDatePill={false} dotHaloScale={0} dotRadiusFraction={0} />
-    </AreaChart>
-  );
 }
 
 // The main trend: reports coming in (cobalt bars at 75%) against reports completed (ink line), per day.

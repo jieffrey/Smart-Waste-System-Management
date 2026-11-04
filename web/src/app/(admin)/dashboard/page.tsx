@@ -153,15 +153,9 @@ async function DashboardContent() {
         </DashSection>
       </div>
 
-      {/* 4. Reserved: the region map comes in a later phase. */}
-      <section aria-label="Region map (planned)" className="border-t border-ink pt-4">
-        <p className="label-micro text-gray-600">Planned · next phase</p>
-        <div className="mt-4 flex h-48 items-center justify-center border border-dashed border-gray-400 bg-gray-50">
-          <p className="max-w-sm text-center text-small text-gray-700">
-            Region map slot: where reports come from, by area. Reserved in the layout, not built yet.
-          </p>
-        </div>
-      </section>
+      {/* 4. Region map (next phase): add a full-width row here, e.g.
+          <section aria-label="Reports by area" className="border-t border-ink pt-4">…</section>
+          The grid above needs no change; it is hidden until it exists. */}
     </div>
   );
 }
