@@ -9,13 +9,17 @@ const LINKS = [
   { href: "/users", label: "Users" },
 ] as const;
 
+// Highlights the current section. usePathname() is request data, so Sidebar renders this inside <Suspense>
+// with <NavLinkList pathname={null} /> (same links, nothing highlighted) as the fallback.
 export function NavLinks() {
-  const pathname = usePathname();
+  return <NavLinkList pathname={usePathname()} />;
+}
 
+export function NavLinkList({ pathname }: { pathname: string | null }) {
   return (
     <nav className="flex flex-col gap-1">
       {LINKS.map(({ href, label }) => {
-        const active = pathname === href || pathname.startsWith(`${href}/`);
+        const active = pathname !== null && (pathname === href || pathname.startsWith(`${href}/`));
         return (
           <Link
             key={href}

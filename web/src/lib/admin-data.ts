@@ -1,7 +1,7 @@
 import "server-only";
 import { adminRequest } from "./session";
 import { REPORTS_PAGE_SIZE, type ReportFilters } from "./report-filters";
-import type { AdminReport, Pagination, Stats } from "@/types/api";
+import type { AdminReport, AdminReportDetail, Pagination, Stats } from "@/types/api";
 
 // Server-side reads of admin data. Each call goes to the backend (no caching) as the logged-in admin.
 
@@ -13,4 +13,8 @@ export function listReports({ page, status, category, from, to, q }: ReportFilte
   return adminRequest<{ reports: AdminReport[]; pagination: Pagination }>("/api/admin/reports", {
     query: { page, limit: REPORTS_PAGE_SIZE, status, category, from, to, q },
   });
+}
+
+export function getReport(id: string) {
+  return adminRequest<{ report: AdminReportDetail }>(`/api/admin/reports/${encodeURIComponent(id)}`);
 }
