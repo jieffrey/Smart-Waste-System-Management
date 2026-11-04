@@ -1,23 +1,26 @@
-import { Link, useFocusEffect } from 'expo-router';
+import { Link, router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ReportListItem } from '@/components/reports/report-list-item';
 import { StatusFilter } from '@/components/reports/status-filter';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
+import { FieldMessage } from '@/components/ui/field-message';
+import { fadeIn } from '@/components/ui/motion';
+import { Rule } from '@/components/ui/rule';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/state-view';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { STATUS_LABELS, t } from '@/constants/strings';
+import { Palette, Spacing } from '@/constants/theme';
 import { getErrorMessage } from '@/lib/errors';
 import { listMyReports } from '@/services/reports';
 import type { Report, ReportStatus } from '@/types/api';
-import { STATUS_LABELS } from '@/utils/format';
 
 const PAGE_SIZE = 20;
 
 export default function MyReportsScreen() {
-  const theme = useTheme();
   const [statusFilter, setStatusFilter] = useState<ReportStatus | undefined>(undefined);
   const [reports, setReports] = useState<Report[]>([]);
   const [total, setTotal] = useState(0);
@@ -99,7 +102,7 @@ export default function MyReportsScreen() {
 
   let content;
   if (phase === 'loading') {
-    content = <LoadingState message="Loading your reports…" />;
+    content = <LoadingState message={t.myReports.loading} />;
   } else if (phase === 'error') {
     content = <ErrorState message={error} onRetry={retry} />;
   } else {
@@ -107,34 +110,39 @@ export default function MyReportsScreen() {
       <FlatList
         data={reports}
         keyExtractor={(report) => report.id}
-        renderItem={({ item }) => (
-          <Link href={{ pathname: '/reports/[id]', params: { id: item.id } }} asChild>
-            <Pressable accessibilityRole="button" style={({ pressed }) => pressed && styles.pressed}>
-              <ReportListItem report={item} />
-            </Pressable>
-          </Link>
+        renderItem={({ item, index }) => (
+          // Rows fade in once when they first appear (no movement with "reduce motion" on).
+          <Animated.View entering={fadeIn(Math.min(index, 8) * 40)}>
+            <Link href={{ pathname: '/reports/[id]', params: { id: item.id } }} asChild>
+              <Pressable accessibilityRole="button" style={({ pressed }) => [styles.rowPress, pressed && styles.pressed]}>
+                <ReportListItem report={item} />
+              </Pressable>
+            </Link>
+          </Animated.View>
         )}
+        ItemSeparatorComponent={() => <Rule weight="faint" />}
         contentContainerStyle={styles.list}
-        contentInsetAdjustmentBehavior="automatic"
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={Palette.ink} colors={[Palette.ink]} />}
         ListEmptyComponent={
           statusFilter ? (
-            <EmptyState title={`No ${STATUS_LABELS[statusFilter].toLowerCase()} reports`} />
+            <EmptyState title={t.myReports.emptyFiltered(STATUS_LABELS[statusFilter])} />
           ) : (
-            <EmptyState title="No reports yet" message="Use the New report tab to report waste." />
+            <EmptyState
+              title={t.myReports.emptyTitle}
+              message={t.myReports.emptyMessage}
+              action={{ title: t.myReports.emptyAction, onPress: () => router.navigate('/new') }}
+            />
           )
         }
         ListFooterComponent={
           loadingMore ? (
-            <ActivityIndicator color={theme.primary} style={styles.footer} />
+            <ActivityIndicator color={Palette.ink} style={styles.footer} />
           ) : loadMoreError ? (
             <View style={styles.footer}>
-              <ThemedText type="small" style={{ color: theme.danger }}>
-                {loadMoreError}
-              </ThemedText>
-              <Button title="Load more" onPress={loadMore} variant="secondary" />
+              <FieldMessage>{loadMoreError}</FieldMessage>
+              <Button title={t.common.loadMore} onPress={loadMore} variant="secondary" />
             </View>
           ) : undefined
         }
@@ -143,29 +151,51 @@ export default function MyReportsScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View>
-        <StatusFilter value={statusFilter} onChange={changeFilter} />
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+      <View style={styles.header}>
+        <ThemedText type="title" accessibilityRole="header">
+          {t.myReports.title}
+        </ThemedText>
+        {phase === 'ready' && total > 0 ? (
+          <ThemedText type="mono" themeColor="textSecondary">
+            {t.myReports.count(total)}
+          </ThemedText>
+        ) : null}
       </View>
+      <Rule weight="strong" />
+      <StatusFilter value={statusFilter} onChange={changeFilter} />
       {content}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Palette.snow,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.three,
+    paddingBottom: Spacing.two,
   },
   list: {
     flexGrow: 1,
-    padding: Spacing.three,
-    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+  },
+  rowPress: {
+    marginHorizontal: -Spacing.three,
+    paddingHorizontal: Spacing.three,
   },
   footer: {
     paddingVertical: Spacing.three,
     gap: Spacing.two,
   },
   pressed: {
-    opacity: 0.7,
+    backgroundColor: Palette.gray50,
   },
 });

@@ -1,33 +1,31 @@
 import { Image } from 'expo-image';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { CategoryLabel } from '@/components/ui/category-label';
 import { StatusMarker } from '@/components/ui/status-marker';
-import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/constants/strings';
+import { FontFamily, Palette, Spacing } from '@/constants/theme';
 import type { Report } from '@/types/api';
-import { CATEGORY_LABELS, formatDate } from '@/utils/format';
+import { formatDate } from '@/utils/format';
 import { resolveImageUrl } from '@/utils/image-url';
+import { shortLocation } from '@/utils/short-location';
 
+// One report as a row (rules between rows, no card): thumbnail, category, short location, date in mono, status.
 export function ReportListItem({ report }: { report: Report }) {
-  const theme = useTheme();
-
   return (
-    <View style={[styles.row, { backgroundColor: theme.backgroundElement }]}>
+    <View style={styles.row}>
       <Image
         source={{ uri: resolveImageUrl(report.image_url) }}
-        style={[styles.thumbnail, { backgroundColor: theme.backgroundSelected }]}
+        style={styles.thumbnail}
         contentFit="cover"
-        accessibilityLabel="Report photo"
+        accessibilityLabel={t.detail.photoLabel}
       />
       <View style={styles.text}>
-        <ThemedText type="smallBold">{CATEGORY_LABELS[report.category]}</ThemedText>
-        <ThemedText type="small" numberOfLines={1}>
-          {report.description}
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {formatDate(report.created_at)}
-        </ThemedText>
+        <CategoryLabel category={report.category} />
+        <Text style={styles.place} numberOfLines={1}>
+          {shortLocation(report.address, report.latitude, report.longitude)}
+        </Text>
+        <Text style={styles.date}>{formatDate(report.created_at)}</Text>
       </View>
       <StatusMarker status={report.status} />
     </View>
@@ -39,16 +37,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
-    padding: Spacing.two,
-    borderRadius: Spacing.two,
+    paddingVertical: Spacing.three,
   },
   thumbnail: {
     width: 64,
     height: 64,
-    borderRadius: Spacing.two,
+    backgroundColor: Palette.gray100,
   },
   text: {
     flex: 1,
-    gap: Spacing.half,
+    gap: 2,
+  },
+  place: {
+    fontFamily: FontFamily.semibold,
+    fontSize: 16,
+    lineHeight: 22,
+    color: Palette.ink,
+  },
+  date: {
+    fontFamily: FontFamily.mono,
+    fontSize: 12,
+    lineHeight: 16,
+    color: Palette.gray600,
   },
 });
