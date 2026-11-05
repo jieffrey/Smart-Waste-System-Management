@@ -12,7 +12,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from src.api.limits import BodySizeLimitMiddleware
 from src.api.schema import ErrorBody, ErrorDetail, ErrorResponse, HealthResponse, PredictionResponse
 from src.api.security import ApiKeyMiddleware, api_key_from_env, docs_disabled_from_env, docs_settings
-from src.inference.predictor import MODEL_VERSION, load_model, predict
+from src.inference.predictor import MODEL_VERSION, RUNTIME, load_model, predict
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
 # Room for the multipart boundary and part headers around the 5 MB file.
@@ -115,7 +115,7 @@ def open_image(data: bytes) -> Image.Image:
 
 @app.get("/health", response_model=HealthResponse)
 def health():
-    return {"status": "ok", "model_loaded": model is not None, "model_version": MODEL_VERSION}
+    return {"status": "ok", "model_loaded": model is not None, "model_version": MODEL_VERSION, "runtime": RUNTIME}
 
 
 # A plain `def` (not async) lets FastAPI run inference in a worker thread without blocking other requests.

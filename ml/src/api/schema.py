@@ -20,6 +20,7 @@ class HealthResponse(BaseModel):
     status: str
     model_loaded: bool
     model_version: str
+    runtime: Literal["tf", "lite"]
 
 
 class ErrorDetail(BaseModel):
