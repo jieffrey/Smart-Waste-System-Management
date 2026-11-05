@@ -54,6 +54,7 @@ change existing tables — don't run it against a database that already has the 
 | `npm run db:check` | Check the database connection and tables |
 | `npm run seed` | **Local development only:** create the demo admin and user (loads `.env`; safe to run again) |
 | `npm run set-admin-password` | Set a new password for an existing admin, typed at a hidden prompt (loads `.env`) |
+| `npm run seed-demo -- --dry-run` | Preview the **production demo data** (see [Production demo data](#production-demo-data-seed-demojs)); a real run needs `--confirm <database host>` |
 
 ### Demo accounts (`npm run seed`): local setup only
 
@@ -92,6 +93,42 @@ duplicated and **its password is never changed** — only its role is set to the
 made active again. Both accounts are checked with the registration rules first (name 2–100
 characters, a valid email, password 8–72 characters); if anything is invalid, the script lists every
 problem (never showing the values) and writes nothing.
+
+### Production demo data (`seed-demo.js`)
+
+[`scripts/seed-demo.js`](scripts/seed-demo.js) fills a deployed database with realistic demo data. It is separate
+from the local `npm run seed`. It creates:
+- **5 residents** (`@demo.swms.invalid`, a reserved domain that can never be a real mailbox), all with the
+  password from `DEMO_RESIDENT_PASSWORD`;
+- **48 reports** from [`scripts/demo/manifest.json`](scripts/demo/manifest.json):
+  - 16 per category, created over the last 30 days (Asia/Jakarta), in Jakarta Selatan;
+  - 14 `pending`, 12 `in_progress`, 15 `completed` and 7 `rejected`, with admin notes;
+- **status history** that follows the allowed transitions; changes after the first are signed by the admin.
+
+**The photos** are 48 test-split images from the Kaggle dataset (MIT), resized to ≤1024 px and stripped of all
+metadata, in [`scripts/demo/photos/`](scripts/demo/photos/) with their
+[attribution](scripts/demo/photos/ATTRIBUTION.md). `DEMO_PHOTOS_DIR` can point at another folder with the same
+file names. Each photo is **classified by the real ML API** while seeding, so the AI fields are honest. Then, like
+an admin would, reviewed reports (`in_progress`/`completed`) where the AI was wrong get the true category and a note
+(*"Kategori dikoreksi dari … ke …"*). Pending and rejected reports keep the AI's category. Photos are stored with
+the configured `STORAGE_DRIVER`.
+
+**Safe by design:**
+- **Re-runs:** each report's id is a UUID v5 of its manifest key, so a re-run skips existing reports (no new
+  uploads) and creates only what's missing. Existing residents keep their password.
+- **Admins:** the admin (`DEMO_ADMIN_EMAIL`) is only **read**. No admin row is ever written, and the script refuses
+  to run if the admin doesn't exist or a resident email belongs to a non-`user` account.
+- **Confirmation:** a real run needs `--confirm <host>` equal to the host in `DATABASE_URL` (the error message
+  shows it). `--dry-run` writes nothing.
+- **Failures:** each report is one transaction; if it fails, the uploaded photo is deleted. Nothing is ever deleted
+  otherwise.
+
+```bash
+# from backend/, with the production env file (DATABASE_URL, ML_API_URL/ML_API_KEY, STORAGE_DRIVER/CLOUDINARY_*,
+# DEMO_ADMIN_EMAIL, DEMO_RESIDENT_PASSWORD)
+node --env-file=.env.production scripts/seed-demo.js --dry-run
+node --env-file=.env.production scripts/seed-demo.js --confirm ep-xxxx-pooler.ap-southeast-1.aws.neon.tech
+```
 
 ### Set an admin password (`npm run set-admin-password`)
 

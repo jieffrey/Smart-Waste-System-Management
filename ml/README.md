@@ -17,7 +17,7 @@ exposed publicly.
 
 **Dataset:** the training data and the 3 sample images in `tests/samples/` (taken from the test split)
 come from the Kaggle [Garbage Classification V2](https://www.kaggle.com/datasets/sumn2u/garbage-classification-v2)
-dataset (version 8). Its `biological` class is used as **organic**. See
+dataset by sumn2u (version 8, MIT license). Its `biological` class is used as **organic**. See
 [ML Development Process](#ml-development-process).
 
 **Preprocessing is inside the model.** The model already contains MobileNetV2's preprocessing
@@ -142,9 +142,12 @@ arithmetic on those values. When a number isn't available, the text says so inst
 prediction is used as the report's starting category, and an admin can correct it.
 
 **Source:** Kaggle [Garbage Classification V2](https://www.kaggle.com/datasets/sumn2u/garbage-classification-v2)
-by sumn2u, **version 8**, downloaded with the Kaggle API in Colab. Only three of its class folders are used:
-`biological` (renamed to `organic`), `paper` and `plastic`. The images are not committed (`ml/dataset/` is
-gitignored); the three images in `tests/samples/` come from the test split.
+by sumn2u, **version 8**, downloaded with the Kaggle API in Colab, licensed **MIT** (as labelled on its Kaggle
+page). Only three of its class folders are used: `biological` (renamed to `organic`), `paper` and `plastic`. The
+training images are not committed (`ml/dataset/` is gitignored). The three images in `tests/samples/` come from the
+test split, and so do the 48 resized, metadata-free demo photos in
+[`backend/scripts/demo/photos/`](../backend/scripts/demo/photos/) (with an
+[attribution and the MIT text](../backend/scripts/demo/photos/ATTRIBUTION.md)).
 
 **Size:** 4,661 images, and all 4,661 opened without errors (the notebook checks every file with Pillow:
 0 broken files per class).
