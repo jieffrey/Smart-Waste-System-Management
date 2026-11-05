@@ -9,6 +9,16 @@ if (!jwtSecret || jwtSecret.length < 32) {
   throw new Error('JWT_SECRET must be set to a random string of at least 32 characters.');
 }
 
+// Where report photos are stored: 'local' (backend/uploads, for dev and tests) or 'cloudinary' (production).
+const STORAGE_DRIVERS = ['local', 'cloudinary'];
+const storageDriver = (process.env.STORAGE_DRIVER || 'local').trim().toLowerCase();
+if (!STORAGE_DRIVERS.includes(storageDriver)) {
+  throw new Error(`STORAGE_DRIVER must be one of: ${STORAGE_DRIVERS.join(', ')}.`);
+}
+if (storageDriver === 'cloudinary' && !process.env.CLOUDINARY_URL) {
+  throw new Error('CLOUDINARY_URL must be set when STORAGE_DRIVER=cloudinary.');
+}
+
 module.exports = {
   databaseUrl,
   jwtSecret,
@@ -27,4 +37,8 @@ module.exports = {
     .split(',')
     .map((origin) => origin.trim().replace(/\/+$/, ''))
     .filter(Boolean),
+  storageDriver,
+  // Cloudinary folder for report photos (only used with STORAGE_DRIVER=cloudinary). The SDK reads
+  // CLOUDINARY_URL (cloudinary://<api_key>:<api_secret>@<cloud_name>) by itself.
+  cloudinaryFolder: (process.env.CLOUDINARY_FOLDER || 'swms').trim().replace(/^\/+|\/+$/g, ''),
 };
