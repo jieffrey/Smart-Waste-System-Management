@@ -1,6 +1,6 @@
 const { pool, query } = require('../../db/pool');
 const { classifyImage } = require('../ml/ml.service');
-const { saveImage, deleteImage } = require('../uploads/uploads.service');
+const uploads = require('../uploads/uploads.service');
 const HttpError = require('../../utils/http-error');
 const { reportIdSchema } = require('./reports.schema');
 
@@ -10,15 +10,28 @@ const REPORT_COLUMNS = `id, user_id, description, category, status, image_url,
   ai_predicted_category, ai_confidence::float8 AS ai_confidence, ai_model_version,
   admin_note, created_at, updated_at`;
 
+// A failed cleanup is logged, never thrown: the caller needs the original error.
+async function deleteImageQuietly(imageUrl) {
+  try {
+    await uploads.deleteImage(imageUrl);
+  } catch (err) {
+    console.error(`Could not delete orphaned image ${imageUrl}: ${err.message}`);
+  }
+}
+
 async function createReport(userId, { description, latitude, longitude, address }, image) {
   // 1. Classify first. If the ML API fails this throws 503 and nothing has been saved yet.
   const prediction = await classifyImage(image.buffer, image.mimeType);
 
-  // 2. Save the image, then the report and its first status-history row in one transaction.
-  const imageUrl = await saveImage(image.buffer, image.extension);
-  const client = await pool.connect();
+  // 2. Strip metadata (EXIF/GPS) and store the cleaned image (local disk or Cloudinary).
+  const cleanImage = await uploads.sanitizeImage(image);
+  const imageUrl = await uploads.saveImage(cleanImage.buffer, cleanImage.extension);
 
+  // 3. The report and its first status-history row in one transaction. If anything fails from here on
+  //    (including getting a connection), the stored image is deleted again.
+  let client;
   try {
+    client = await pool.connect();
     await client.query('BEGIN');
 
     const { rows } = await client.query(
@@ -50,11 +63,13 @@ async function createReport(userId, { description, latitude, longitude, address 
     await client.query('COMMIT');
     return report;
   } catch (err) {
-    await client.query('ROLLBACK');
-    await deleteImage(imageUrl); // don't leave an orphaned image behind
+    if (client) {
+      await client.query('ROLLBACK').catch(() => {}); // a broken connection must not skip the cleanup
+    }
+    await deleteImageQuietly(imageUrl); // don't leave an orphaned image behind
     throw err;
   } finally {
-    client.release();
+    client?.release();
   }
 }
 
