@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "SWMS",
-    "slug": "Mobile",
+    "slug": "swms",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -12,6 +12,8 @@
       "userInterfaceStyle": "light"
     },
     "android": {
+      "package": "com.jieffrey.swms",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#FBFBF8",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
