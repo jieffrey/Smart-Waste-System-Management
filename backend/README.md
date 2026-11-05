@@ -38,7 +38,7 @@ change existing tables — don't run it against a database that already has the 
 | `DB_POOL_MAX` | no | Max database connections (default `10`) |
 | `ML_API_URL` | no* | Base URL of the ML API, e.g. `http://localhost:8000`. *Without it the server still starts (with a warning), but creating a report returns `503`. |
 | `ML_API_KEY` | no | Sent to the ML API as the `X-API-Key` header, only when set (e.g. for a hosted ML API) |
-| `ML_API_TIMEOUT_MS` | no | ML API request timeout in milliseconds (default `30000`) |
+| `ML_API_TIMEOUT_MS` | no | ML API request timeout in milliseconds: default `30000`, allowed `100`–`40000`. The server refuses to start outside that range, so the timeout stays below the mobile app's 45 s upload timeout |
 | `TRUST_PROXY` | no | Number of reverse proxies in front of the API (e.g. `1` on Render/Railway). Needed so rate limits see each client's IP instead of the proxy's. Leave unset when clients connect directly. See [Rate limits](#rate-limits). |
 | `WEB_ORIGIN` | no | Browser origins allowed to call the API (CORS), comma-separated, e.g. `http://localhost:3001,https://admin.example.com`. Empty = no CORS headers. See [CORS](#cors). |
 | `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | no | Optional override of the demo admin for `npm run seed` (local setup). See [Demo accounts](#demo-accounts-npm-run-seed-local-setup-only). |
