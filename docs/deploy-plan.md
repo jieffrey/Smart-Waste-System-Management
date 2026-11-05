@@ -1,21 +1,26 @@
 # SWMS deploy plan
 
-**Status: proposal, waiting for approval.** Nothing in this document has been built, created or deployed
-yet. No code was changed on this branch. Every code change listed here is a later step, done only after
-approval and on its own branch.
+**Status: approved (revision 2, 2026-11-05).** Code changes are made on separate branches (A–E in
+[section 10](#10-implementation-branches)). No accounts have been created and nothing has been deployed: those
+steps are yours, in the order of [section 8.2](#82-step-by-step-deploy-order-with-a-smoke-test-after-each-step).
 
-Targets: **ML API** on Hugging Face Spaces (Docker), **backend** (Express) on a free/cheap host, **web**
-(Next.js) on Vercel, **database** on Neon, **mobile** as an Android APK from EAS Build.
+Targets: **backend** (Express) **and ML API** (FastAPI) as two services in one **Railway** project (Hobby plan,
+Southeast Asia / Singapore), **web** (Next.js) on **Vercel**, **database** on **Neon**, **photos** on
+**Cloudinary**, **mobile** as an Android APK from **EAS Build**. Railway is the only paid service.
 
-Provider limits below were checked on 2026-11-05 against the providers' own docs where possible (sources at
-the end). Free tiers change often, so each one is marked *verify at sign-up* and should be re-checked in the
-dashboard before relying on it.
+Decisions in this revision:
+1. **Hosting:** backend + ML both on Railway (existing Hobby subscription). No Render, no Hugging Face.
+2. **Low usage:** the always-on ML service serves the model with a **lightweight runtime** instead of TensorFlow
+   (training stays TensorFlow/Keras). Measured numbers are in [3.6](#36-measured-ram-image-size-and-monthly-estimate).
+3. **Android:** package `com.jieffrey.swms`, Expo slug renamed to `swms` before `eas init`.
+4. **Demo photos:** the Kaggle dataset is labelled **MIT**. 48 resized, EXIF-stripped test-split photos are
+   committed under `backend/scripts/demo/photos/` with an `ATTRIBUTION.md`. `DEMO_PHOTOS_DIR` stays as an optional
+   override.
+5. **Web admin login rate limit:** the shared per-IP bucket behind Vercel is accepted and documented
+   ([2.3](#23-trust_proxy-and-the-rate-limiters-behind-railways-edge)).
 
-> **Decision needed before step 3: Hugging Face Docker Spaces are no longer free.** Hugging Face's
-> Spaces docs now say Gradio and Docker Spaces "require a paid plan to create" (PRO for a personal account),
-> and forum threads from mid-2026 report the CLI refusing Docker Spaces on free CPU Basic. Options are in
-> [section 3.1](#31-blocker-docker-spaces-now-need-a-paid-plan). My recommendation: **HF PRO for the review
-> period**, which keeps the planned architecture unchanged.
+Provider facts were checked on 2026-11-05 against the providers' own docs where possible (sources at the end).
+Pricing changes, so re-check numbers in the dashboards.
 
 ---
 
@@ -23,20 +28,19 @@ dashboard before relying on it.
 
 | Area | Today | What matters for deploy |
 |---|---|---|
-| Photo storage | `backend/src/modules/uploads/uploads.service.js` writes `backend/uploads/<uuid>.<ext>` and serves it at `/uploads`. Already the only file that touches storage ("so local storage can later be swapped"). | Free hosts have an ephemeral disk: photos would disappear on every restart, redeploy or (on Render Free) spin-down. |
-| Upload checks | `middlewares/upload.js`: multer memory storage, 5 MB, 1 file, field/part limits (SEC-08); type from magic bytes (JPEG/PNG/WebP) in `detectImageType`. | Keep as is. |
-| EXIF | Stored byte-for-byte, so GPS EXIF is kept (audit **SEC-06**, open). The mobile app re-encodes to JPEG (≤1600 px, `prepare-image.ts`), but the backend must not rely on the client. | Fix as part of the storage work. |
-| Report creation | `reports.service.js`: classify → `saveImage` → transaction (insert report + history) → on error `ROLLBACK` + `deleteImage`. | This order is already exactly what the Cloudinary flow needs. |
-| ML call | `ml.service.js`: `POST {ML_API_URL}/predict`, sends `X-API-Key` if `ML_API_KEY` is set, timeout `ML_API_TIMEOUT_MS` (30 s). 503 on failure, 422 when the image is rejected. | The ML API **doesn't check** the key yet (SEC-09, open); `/docs` is public. |
-| Proxy / rate limits | `TRUST_PROXY` (number of hops) → `app.set('trust proxy', n)`. In-memory fixed-window limiters (login per IP and per email, register per IP, reports per user). | Fine on a single instance; counters reset on restart. See [2.3](#23-trust_proxy-and-the-rate-limiters-behind-the-proxy). |
-| CORS | Only if `WEB_ORIGIN` is set. | The web app calls the backend **only from the Next.js server** (`lib/api.ts` is `server-only`), so production needs **no CORS**. |
-| Web session | httpOnly cookie, `secure: NODE_ENV === "production"`, `sameSite: lax`. | Vercel sets `NODE_ENV=production`, so `Secure` is on over HTTPS automatically. |
-| Image URLs | Web `lib/image.ts` `buildImageUrl` and mobile `utils/image-url.ts` `resolveImageUrl` both use absolute `http(s)://` URLs as is and prefix relative ones with the API URL. Web uses plain `<img>` (no `next/image`). | **No change needed** for Cloudinary URLs. |
-| Mobile | `EXPO_PUBLIC_API_URL` built in; request timeout 45 s ("longer than the backend's 30 s ML timeout"). `app.json` has **no `android.package`** and there is **no `eas.json`**. | Both needed for EAS. The timeout must stay above the backend's ML timeout. |
-| Database | `backend/db/schema.sql`: one transaction, for a **new, empty** database (plain `CREATE`, no `IF NOT EXISTS`). Dev DB is Neon in `ap-southeast-1` (Singapore). | Production gets its own empty database. |
-| Scripts | `seed.js` = local dev only, **public demo credentials** (SEC-01). `set-admin-password.js` = hidden prompt, admin accounts only. | Never run the dev seed against production with defaults. |
-| Tests | `npm test` uses `DATABASE_URL` and **deletes rows** (users/reports it created). | Never run the backend tests against production. |
-| ML model | `ml/models/swms_mobilenetv2_best.keras`, 9,667,404 bytes. | Under 10 MB, but it is binary: track it with Git LFS/Xet in the Space repo. |
+| Photo storage | `backend/src/modules/uploads/uploads.service.js` writes `backend/uploads/<uuid>.<ext>` and serves it at `/uploads`. It is the only file that touches storage. | A Railway container's filesystem is wiped on every redeploy/restart (unless a volume is attached). Photos go to Cloudinary instead ([section 1](#1-photo-storage)). |
+| Upload checks | `middlewares/upload.js`: multer memory storage, 5 MB, 1 file, field/part limits (SEC-08); type from magic bytes (JPEG/PNG/WebP). | Keep as is. |
+| EXIF | Stored byte-for-byte, GPS EXIF kept (audit **SEC-06**, open). | Fixed by the sanitize step (branch B). |
+| Report creation | classify → `saveImage` → transaction → on error `ROLLBACK` + `deleteImage`. | Already the order the Cloudinary flow needs. |
+| ML call | `ml.service.js`: `POST {ML_API_URL}/predict`, sends `X-API-Key` when `ML_API_KEY` is set, timeout 30 s (hard-coded default, env override exists). | The ML API doesn't check the key yet (SEC-09); `/docs` is public. Fixed in branch A. |
+| ML serving | `ml/src/inference/predictor.py` loads the `.keras` file with TensorFlow; resizing uses `tf.image.resize`. | TensorFlow alone is several hundred MB of RAM. Branch A adds a lite runtime. |
+| Proxy / rate limits | `TRUST_PROXY` → `app.set('trust proxy', n)`; in-memory limiters. | Correct on one instance. See [2.3](#23-trust_proxy-and-the-rate-limiters-behind-railways-edge). |
+| CORS | Only if `WEB_ORIGIN` is set. | The web app calls the backend only from the Next.js server, so production needs **no CORS**. |
+| Web session | httpOnly cookie, `secure: NODE_ENV === "production"`, `sameSite: lax`. | Vercel sets `NODE_ENV=production`, so `Secure` is on. |
+| Image URLs | Web `buildImageUrl` and mobile `resolveImageUrl` use absolute URLs as is. Web uses plain `<img>`. | **No change needed** for Cloudinary URLs. |
+| Mobile | `EXPO_PUBLIC_API_URL` built in; request timeout 45 s. No `android.package`, no `eas.json`. | Branch D. |
+| Database | `backend/db/schema.sql`: one transaction, for a new, empty database. Dev DB is Neon `ap-southeast-1`. | Production gets its own Neon project ([section 4](#4-database-neon)). |
+| Scripts / tests | Dev `seed.js` has public demo credentials (SEC-01). `npm test` deletes the rows it creates. | Never run either against production with defaults. |
 
 ---
 
@@ -112,196 +116,152 @@ Reported (not confirmed officially): going over the credits suspends delivery ra
 
 ---
 
-## 2. Backend host
+## 2. Railway project: backend + ML
 
-### 2.1 Comparison
+### 2.1 Layout
 
-| | **Render** (Free web service) | **Railway** (Hobby) | **Fly.io** (pay as you go) |
-|---|---|---|---|
-| Cost | $0 | 30-day trial with $5 credit, then **Hobby: $5/month minimum** usage | No free tier for new orgs; short trial, then usage billing (card required) |
-| Free limits | 750 instance hours/month per workspace (enough for one service 24/7); ephemeral disk, no persistent disk | Usage-based within the plan | Small shared VMs, per-second billing |
-| Sleeping / cold start | **Spins down after 15 min without inbound traffic**; wake-up takes **up to ~1 min** | Doesn't sleep by default (optional "serverless" sleeping) | Optional auto-stop/auto-start; restart in seconds |
-| Node / Bun | Native Node runtime (pin with `engines`/`.node-version`); Bun via build command or Docker | Node and Bun auto-detected (Railpack), or Docker | Docker/`fly launch`; any runtime |
-| Env vars | Dashboard / blueprint; secret files | Dashboard, shared variables | `fly secrets set` |
-| Logs | Live logs in dashboard (short retention on Free) | Live + searchable logs | `fly logs`, dashboard |
-| Region near Indonesia / Neon `ap-southeast-1` | **Singapore** offered for web services (*verify in the region dropdown*; search didn't confirm it for Free) | Southeast Asia (Singapore) region (*verify which regions Hobby gets*) | `sin` (Singapore) |
-| Proxy in front | Yes (Render load balancer) | Yes (Railway edge) | Yes (Fly proxy) |
+One Railway **project** `swms`, one **environment** `production`, two **services** deployed from this GitHub repo
+(monorepo, one root directory each):
 
-### 2.2 Recommendation: **Render Free, Singapore**
+```
+Railway project "swms"  (region: Southeast Asia / Singapore for both services)
+├── backend   root /backend   Railpack (Node)   public domain  → https://<backend>.up.railway.app
+└── ml        root /ml        Dockerfile        NO public domain, private only: ml.railway.internal:8000
+```
 
-- **$0 and no card**, enough for an assessment demo.
-- **Singapore** sits next to Neon `ap-southeast-1`, so the DB round trip stays small (each request makes
-  several queries).
-- **Plain `npm start`** works as is.
-- **The ephemeral disk doesn't matter** once photos go to Cloudinary ([section 1](#1-photo-storage)).
-- **The one real cost is the 15-minute spin-down.** It's handled by the warm-up plan in
-  [3.5](#35-cold-starts-timeout-warm-up-pinging). If that's unacceptable during the review week, switching to
-  **Railway Hobby (~$5/month, no sleeping)** is the same deploy with different env settings.
-- **Single instance:** the in-memory rate limiters are correct on one instance (stated in `rate-limit.js`).
-  Their counters reset on each spin-down/redeploy, which is acceptable here.
+- **Why Singapore:** next to Neon `ap-southeast-1` (every backend request makes several queries) and close to
+  Indonesian users.
+- **Private networking:** services in the same project and environment reach each other at
+  `<service>.railway.internal`. New environments (created after 2025-10-16) resolve that name to IPv4 and IPv6;
+  older ones to IPv6 only. Railway recommends listening on `::` (dual stack), which the ML Dockerfile does. The ML
+  service gets **no public domain**, so `/predict` isn't reachable from the internet at all. The API key stays as a
+  second layer (SEC-09). Private networking isn't available during builds, which doesn't matter here.
+- **No sleeping:** keep **Serverless (app sleeping) off** for both services. Railway doesn't stop them, so there are
+  **no cold starts** and no warm-up pings are needed.
+- **Volumes:** none. Photos live in Cloudinary, so both services are stateless.
 
-Render service settings (later):
-- **Root directory** `backend`, **build** `npm ci`, **start** `npm start`, **health check path** `/api/health`.
-- **Node version:** add `"engines": { "node": ">=22.9" }` to `backend/package.json`. The scripts use
-  `--env-file-if-exists` and the global `fetch`/`FormData`/`Blob`.
-- **Native dependency:** `sharp` ships prebuilt Linux binaries, so it needs no extra build step.
+### 2.2 Service settings
 
-### 2.3 TRUST_PROXY and the rate limiters behind the proxy
+**`ml`** (`ml/railway.json` is committed with these settings; point *Settings → Config-as-code* to `/ml/railway.json`):
 
-`req.ip` drives the per-IP limiters (`login-ip`, `register-ip`). Behind a proxy:
-- **`TRUST_PROXY=0` (unset):** `req.ip` is the proxy's address. **All clients share one bucket**, so 20 failed
-  logins from anyone lock everyone out for 15 minutes.
-- **Too high:** Express takes an address further left in `X-Forwarded-For`, which the client controls. **The
-  limiter can be bypassed** by sending a fake header.
-- **Correct:** the number of proxies Render puts in front. Start with **`TRUST_PROXY=1`** (one Render proxy, which
-  appends the real client IP).
+| Setting | Value |
+|---|---|
+| Source | GitHub repo, branch `main` |
+| Root directory | `/ml` |
+| Builder | Dockerfile (`ml/Dockerfile`, found automatically in the root directory) |
+| Watch paths | `/ml/**` (a backend-only commit doesn't rebuild ML) |
+| Region | Southeast Asia (Singapore) |
+| Networking | **No** public domain. Private domain `ml.railway.internal` (the service name sets it) |
+| Healthcheck path | `/health` |
+| Restart policy | On failure |
+| Replica limits (Settings → Deploy) | Memory limit about 3× the measured peak RSS ([3.6](#36-measured-ram-image-size-and-monthly-estimate)); 1 vCPU |
+| Variables | see [8.1](#81-env-vars-per-service) (`PORT=8000`, `ML_API_KEY`, ...) |
 
-Because the hop count isn't documented clearly, **verify it by behaviour** after the first deploy, with no code
-change:
-1. **Not shared:** from a laptop, 21 failed logins with **different made-up emails** (so the per-email limiter
-   doesn't fire) → the 21st gets **429**. Right after, one failed login from a phone on mobile data → **401, not
-   429**. That proves clients aren't sharing a bucket.
-2. **Not spoofable:** repeat step 1 from the laptop, but each request sends a different
-   `X-Forwarded-For: 203.0.113.<n>` → the 21st must still be **429**. If it isn't, `TRUST_PROXY` is too high.
+**`backend`** (`backend/railway.json` committed; Config-as-code path `/backend/railway.json`):
 
-**Web admin login caveat:** the admin web app logs in **from the Vercel server** (Server Action), so the backend
-sees a Vercel egress IP, not the admin's. Effects:
-- **Per-IP login limit:** shared by everyone using the web login (all through Vercel IPs). A stranger failing 20
-  logins on the web form could block web logins for 15 minutes.
-- **Per-email limit:** still per account, as designed.
+| Setting | Value |
+|---|---|
+| Root directory | `/backend` |
+| Builder | Railpack (auto: Node from `engines`, `npm ci`, start `npm start`) |
+| Watch paths | `/backend/**` |
+| Region | Southeast Asia (Singapore) |
+| Networking | **Generate domain** → `https://<backend>.up.railway.app`. This is the URL for Vercel and the APK |
+| Healthcheck path | `/api/health` |
+| Replica limits | Memory 512 MB, 1 vCPU (Node backend is ~100 MB) |
+| Variables | see [8.1](#81-env-vars-per-service). The ML URL uses a reference variable: `ML_API_URL=http://${{ml.RAILWAY_PRIVATE_DOMAIN}}:${{ml.PORT}}` |
 
-For an assessment with one or two admins this is **acceptable and documented**. The proper fix would be for
-Next.js to forward the client IP with a shared-secret header that the backend trusts; that is a separate
-decision, not part of this plan.
+**Node and Bun:** Railpack picks the Node version from `"engines"` in `backend/package.json` (branch C adds
+`>=22.9`, needed for `--env-file-if-exists` and global `fetch`/`FormData`). Bun would also work but isn't
+needed; the backend is plain Node.
+
+**Logs:** each deployment has build and deploy logs, and the service's *Observability* tab has searchable logs and
+CPU/RAM graphs. That's where to read the real RAM use after deploy (to fine-tune the replica limit and the estimate).
+
+### 2.3 TRUST_PROXY and the rate limiters behind Railway's edge
+
+Public traffic to the backend passes through Railway's edge proxy, which sets `X-Forwarded-For` to the client IP.
+`req.ip` drives the per-IP limiters:
+- `TRUST_PROXY=0` → `req.ip` is the proxy, so **everyone shares one bucket**;
+- too high → `req.ip` comes from client-controlled header values, so **the limit can be bypassed**.
+
+Start with **`TRUST_PROXY=1`** (one proxy hop) and **verify by behaviour** after the first deploy:
+1. **Not shared:** 21 failed logins from a laptop, each with a **different made-up email** (so the per-email
+   limiter doesn't fire) → the 21st gets **429**. Right after, one failed login from a phone on mobile data →
+   **401, not 429**.
+2. **Not spoofable:** repeat from the laptop, sending a different `X-Forwarded-For: 203.0.113.<n>` on each request →
+   the 21st must still be **429**. If it isn't, lower `TRUST_PROXY`.
+
+Private-network calls (backend → ML) don't pass through the edge; the ML API has no IP-based limits.
+
+**Accepted (decision 5):** the admin web app logs in from the **Vercel server** (Server Action), so the backend
+sees a Vercel egress IP. Web logins therefore share per-IP buckets: a stranger failing 20 logins on the web form can
+block web logins for 15 minutes. The per-email limit is unaffected. Documented here and in the README; the fix
+(forwarding the client IP with a shared-secret header) is out of scope.
+
+### 2.4 Usage limit (set by you)
+
+Railway → **Workspace → Usage**:
+1. **Custom email alert** (soft limit) for Compute, e.g. **$6**. You get an email; nothing stops.
+2. **Hard limit** for Compute, e.g. **$10** (Railway's minimum hard limit is $10). At the hard limit **all workloads
+   go offline** until the next billing period or a higher limit. Railway emails at 75% and 90% of it.
+3. Per-service **replica limits** (2.2) cap RAM/CPU of a single service, so a runaway process can't use much. They
+   don't lower the normal bill.
+
+The Hobby plan includes **$5 of usage per month**; usage above that is billed on top of the subscription. Network
+egress can't be capped separately, but it's tiny here (JSON plus small uploads; photos are served by Cloudinary).
 
 ---
 
-## 3. ML API on Hugging Face Spaces
+## 3. ML API on Railway (lite runtime)
 
-### 3.1 Blocker: Docker Spaces now need a paid plan
+### 3.1 Training vs serving
 
-According to the Hugging Face Spaces docs, Gradio and Docker Spaces need a paid plan to create (PRO for
-personal accounts). Free accounts keep static Spaces and up to 2 ZeroGPU Gradio Spaces.
+- **Training, evaluation and the parity reference stay TensorFlow/Keras** (`src/training`, `src/evaluation`,
+  notebooks, `requirements-train.txt`), and so does the default local run (`ML_RUNTIME=tf`).
+- **Serving in production uses `ML_RUNTIME=lite`:** an exported copy of the **same** model (preprocessing included)
+  run by a small inference runtime, from `requirements-lite.txt` **without TensorFlow**.
+- **The resize step** (`tf.image.resize`, bilinear, no antialias, half-pixel centres) is re-implemented in NumPy
+  for the lite path and tested against TensorFlow.
 
-| Option | Cost | Change to the plan | Notes |
-|---|---|---|---|
-| **A. HF PRO** (recommended) | PRO subscription (*check the price on hf.co/pricing*), cancel after review | None: Docker Space on CPU Basic (2 vCPU, 16 GB RAM) | Keeps the stated target. TF + MobileNetV2 fits easily. |
-| B. Add billing credits on HF | Pay per use | None | Forum reports say adding billing unlocks Docker Spaces; *verify*. |
-| C. Second Render Free service for the ML API | $0 | Same Dockerfile, different host | **Risk:** Render Free has little RAM (512 MB class); TensorFlow + model may not fit, and it would also spin down after 15 min. Would need a memory test first. |
-| D. Railway Hobby for backend **and** ML | ~$5/month minimum plus usage | Both services on Railway, no sleeping | Simplest operationally; ML RAM use drives the cost. |
+### 3.2 Runtime choice
 
-The rest of this section assumes **A** (or B). The Dockerfile is the same for C and D, apart from the port.
+Both candidates were exported and checked in branch A: **TFLite/LiteRT** (`ai-edge-litert`) and **ONNX**
+(`onnxruntime`). The choice, the reasons and the measured numbers are in [3.6](#36-measured-ram-image-size-and-monthly-estimate)
+and in `ml/README.md`. The export script (`ml/scripts/export_lite.py`) takes any `.keras` model path, so the same
+command exports the Option B model later.
 
-### 3.2 Space layout
+### 3.3 Container
 
-The Space is a **separate git repo** on huggingface.co. Push only what the API needs, built from `ml/`:
+`ml/Dockerfile`:
+- `python:3.12-slim` base, installs `requirements-lite.txt`, copies `src/` and the exported model, runs as a
+  non-root user;
+- sets `ML_RUNTIME=lite` and `ML_DISABLE_DOCS=1`;
+- starts `uvicorn src.api.main:app --host :: --port ${PORT:-8000}`. That's dual stack, so it works for Railway's
+  private network (IPv4 + IPv6) and its healthcheck, and the port comes from Railway's `PORT`.
 
-```
-README.md          Space config (YAML front matter) + short description
-Dockerfile
-requirements.txt   = ml/requirements.txt (runtime only, Python 3.12, TF 2.21.0, Keras 3.13.2)
-src/api/  src/inference/
-models/swms_mobilenetv2_best.keras   (tracked with Git LFS/Xet)
-```
+### 3.4 API key and docs
 
-`README.md` front matter:
+- `ML_API_KEY` set → `/predict` requires header `X-API-Key`, compared in constant time (`hmac.compare_digest`).
+  Missing or wrong key → **401** in the usual error format, **before the upload body is read**.
+- `ML_API_KEY` unset → no check (local dev/tests), as before.
+- `/health` stays open (Railway healthcheck).
+- `ML_DISABLE_DOCS=1` removes `/docs`, `/redoc` and `/openapi.json`.
+- The backend already sends `X-API-Key`, and a 401 maps to 503 for the client. Set the **same value** on both
+  services (the backend uses a reference variable `${{ml.ML_API_KEY}}`).
 
-```yaml
----
-title: SWMS Waste Classifier
-sdk: docker
-app_port: 7860
-pinned: false
----
-```
+### 3.5 Smoke test (no public domain → from the backend)
 
-`Dockerfile` (later, committed as `ml/Dockerfile` so the repo stays the source of truth):
+The ML service is private, so check it through the backend:
+- the `ml` service log shows `Uvicorn running on http://[::]:8000` and the healthcheck passing;
+- `POST /api/reports` with `ml/tests/samples/plastic_101.jpg` on the public backend → 201,
+  `ai_predicted_category: "plastic"`, `ai_confidence` ≈ 0.998.
 
-```dockerfile
-FROM python:3.12-slim
-# Spaces run the container as user 1000
-RUN useradd -m -u 1000 user
-USER user
-ENV PATH="/home/user/.local/bin:$PATH" PYTHONUNBUFFERED=1 TF_CPP_MIN_LOG_LEVEL=2
-WORKDIR /home/user/app
-COPY --chown=user requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
-COPY --chown=user src ./src
-COPY --chown=user models ./models
-EXPOSE 7860
-CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "7860"]
-```
+To test the key itself, temporarily change `ML_API_KEY` on the **backend** only → `POST /api/reports` → 503, and the
+ML log shows 401. Then change it back.
 
-- **Port:** 7860 (the Spaces default). `app_port` must match the `--port`. The app must bind `0.0.0.0` (the
-  README's local command binds `127.0.0.1`).
-- **Model size / LFS:** 9.7 MB, under the 10 MB limit for plain git files on the Hub. The Hub still expects binary
-  files via **LFS/Xet**, so: `git lfs install && git lfs track "*.keras"` in the Space repo before adding the model.
-  If Option B is promoted later, check its size again: a `.keras` checkpoint saved while compiled includes the
-  optimizer state, and Adam for 1.66 M trainable weights adds about 13 MB. Re-save with
-  `load_model(..., compile=False)` → `save()` to drop it.
-- **Deploy script (later):** `ml/scripts/sync-space.sh` copies those paths into a local clone of the Space repo and
-  pushes. Keeps GitHub as the source of truth.
+### 3.6 Measured RAM, image size and monthly estimate
 
-### 3.3 API key between backend and ML (fixes SEC-09)
-
-- **ML side (code change, later):**
-  - `ML_API_KEY` env var. When it's set, `/predict` requires header `X-API-Key` and compares it in constant time
-    (`hmac.compare_digest`); wrong or missing key → **401** in the existing error format.
-  - When it's unset (local dev, tests), there's no check, as today.
-  - `/health` stays open: it's used for warm-up and returns only `status`/`model_loaded`/`model_version`.
-  - `ML_DISABLE_DOCS=1` → `FastAPI(docs_url=None, redoc_url=None, openapi_url=None)`.
-- **Backend side:** already done. `ml.service.js` sends `X-API-Key` when `ML_API_KEY` is set, and a 401 is treated
-  as "our fault" → 503 (it isn't one of the 400/413/415 image errors).
-- **Where it's set:** a Space **secret** (`ML_API_KEY`), and the same value in Render's env. Generate it with
-  `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
-- **The Space stays public** (a private Space would need an HF token in an `Authorization` header, which is a
-  different code change). The key protects `/predict`; the code itself is in a public repo anyway.
-
-### 3.4 Smoke test
-
-```bash
-curl https://<user>-swms-classifier.hf.space/health
-curl -F "file=@ml/tests/samples/plastic_101.jpg" https://<user>-swms-classifier.hf.space/predict              # → 401
-curl -H "X-API-Key: $ML_API_KEY" -F "file=@ml/tests/samples/plastic_101.jpg" https://<…>.hf.space/predict  # → plastic ≈ 0.998
-```
-
-The probabilities must match `tests/samples/expected.json` within ±0.01, the same check as the parity test.
-
-### 3.5 Cold starts: timeout, warm-up, pinging
-
-There are three sleepers in the chain:
-
-| Service | Sleeps after | Wake-up |
-|---|---|---|
-| Render Free | 15 min without traffic | up to ~1 min |
-| HF Space, CPU Basic | **48 h** unused (free hardware) | container start + TensorFlow import + model load, roughly 30–90 s (*measure it*) |
-| Neon Free | 5 min idle | usually under a second; the pool already allows 10 s (`connectionTimeoutMillis`) |
-
-The worst case is a reviewer's first photo after two quiet days: backend wake-up, then an ML wake-up inside the
-request.
-
-Proposal:
-1. **Backend ML timeout:** `ML_API_TIMEOUT_MS=90000` in production (env only; default stays 30 s).
-2. **Mobile timeout must stay longer than that.** It is 45 s today, built on the 30 s assumption. Raise
-   `REQUEST_TIMEOUT_MS` to **120 s for the report upload request only**; other requests keep 45 s. Small mobile
-   change, later.
-3. **Warm-up (code change, later):**
-   - **Backend start:** a fire-and-forget `GET {ML_API_URL}/health` when the backend starts, so a Render wake-up
-     also wakes the Space.
-   - **Mobile:** when the "Lapor" (new report) screen opens, call `GET /api/health`; that wakes Render, and Render
-     then wakes the Space. While the user takes the photo, both wake up.
-   - The backend's own `/api/health` stays fast and DB-free, as now.
-4. **Errors stay honest:** a sleeping Space can answer 503 while it boots. The backend already maps that to 503
-   "AI service unavailable, please try again later", and nothing is saved, so retrying is safe.
-5. **Periodic ping: not needed, and not proposed for the Space.**
-   - The Space's 48 h window means it only sleeps after two quiet days.
-   - Pinging only to defeat a provider's free-tier sleep goes against the intent of the free tier.
-   - Instead: **warm up by hand before submitting** (open the web dashboard and do one test report), and put
-     one line in the README: *"The first request after a quiet period can take up to ~2 minutes while the free
-     servers wake up."*
-   - For Render, an uptime monitor hitting `/api/health` every 10 min would stay within 750 h/month. Only use one
-     during the review window if Render's current terms allow it (*check*); otherwise Railway Hobby avoids the
-     issue.
+*Filled in from branch A's measurements; see below.*
 
 ---
 
@@ -371,9 +331,9 @@ an existing admin):
 
 - **Project:** import the GitHub repo, **Root Directory `web`**, framework Next.js (auto), build `next build`.
 - **Function region: `sin1` (Singapore)**, in Project → Settings → Functions. Every page render calls the
-  backend server-side; a US region would add a Pacific round trip to each call.
+  backend server-side; Singapore keeps that next to the Railway backend.
 - **Env vars:**
-  - `NEXT_PUBLIC_API_URL=https://<backend>.onrender.com`, no trailing slash (the code strips it anyway).
+  - `NEXT_PUBLIC_API_URL=https://<backend>.up.railway.app`, no trailing slash (the code strips it anyway).
   - It's **inlined at build time**: after changing it, **redeploy**.
   - It's public by design (it's only the API base URL).
 - **Cookie `Secure`:**
@@ -393,47 +353,29 @@ an existing admin):
 
 ## 6. Mobile: Android APK via EAS Build
 
-### 6.1 Changes needed (later)
+### 6.1 Config (branch D)
 
 - **`app.json`:**
-  - Add `"android": { "package": "com.jieffrey.swms", "versionCode": 1 }`. A package name is required for any
-    Android build, and it's permanent for that app.
-  - Optionally set `"slug": "swms"`; today it's `"Mobile"`. Decide before `eas init`, which links the slug to
-    the EAS project.
-- **`eas init`:** adds `extra.eas.projectId` and `owner` to `app.json`. Needs a free Expo account.
-- **`eas.json`:**
-
-```json
-{
-  "cli": { "appVersionSource": "local" },
-  "build": {
-    "development": { "developmentClient": true, "distribution": "internal" },
-    "preview": {
-      "distribution": "internal",
-      "android": { "buildType": "apk" },
-      "env": { "EXPO_PUBLIC_API_URL": "https://<backend>.onrender.com" }
-    }
-  }
-}
-```
-
-  `EXPO_PUBLIC_API_URL` isn't a secret (it ships inside the app), so `eas.json` is fine. EAS environment
-  variables (`eas env:create --environment preview`) work too.
-- **HTTPS:** the production URL is HTTPS, which also closes **SEC-12** (plain HTTP) for the release build.
-  Android blocks cleartext by default in release builds, so a stray `http://` URL would fail visibly.
-- **Upload timeout:** see [3.5](#35-cold-starts-timeout-warm-up-pinging), item 2.
+  - `"slug": "swms"` (renamed from `"Mobile"` **before** `eas init`, which links the slug to the EAS project);
+  - `"android": { "package": "com.jieffrey.swms", "versionCode": 1 }`. The package name is permanent for the app.
+- **`eas.json`:** a `preview` profile that builds an **APK** (`android.buildType: "apk"`, `distribution: "internal"`)
+  with `EXPO_PUBLIC_API_URL` = the Railway backend URL. Not a secret: it ships inside the app.
+- **`eas init`** (run by you) adds `extra.eas.projectId` and `owner` to `app.json`.
+- **HTTPS:** the Railway domain is HTTPS, which closes **SEC-12** for the release build. Android blocks cleartext
+  HTTP in release builds, so a stray `http://` URL fails visibly.
+- **Timeout:** the mobile request timeout (45 s) stays above the backend's ML timeout. The backend refuses to start
+  if `ML_API_TIMEOUT_MS` is set above 40 s (branch C), so the two can't drift apart.
 
 ### 6.2 Icon / splash check
 
 | Asset | Found | Requirement | OK? |
 |---|---|---|---|
 | `icon.png` | 1024×1024 | 1024×1024 | ✓ |
-| `android-icon-foreground.png` / `-background` / `-monochrome` | 1024×1024 each | 1024×1024, logo inside the central ~66% safe zone | Size ✓; **check the safe zone** on a round-mask launcher |
+| `android-icon-foreground.png` / `-background` / `-monochrome` | 1024×1024 each | 1024×1024, logo inside the central ~66% | Size ✓; check the safe zone on a round-mask launcher |
 | `splash-icon.png` | 1024×1024, `imageWidth: 200`, background `#FBFBF8` | | ✓ |
 
-These are the project's own icons (commit `d93c326`), not the Expo template. Final check: install the APK and
-look at the launcher icon (round and squircle masks), the themed (monochrome) icon on Android 13+, and the
-splash screen in light mode.
+After installing, look at the launcher icon (round and squircle masks), the themed icon on Android 13+, and the
+splash screen.
 
 ### 6.3 Build and install
 
@@ -444,66 +386,50 @@ npx eas-cli@latest init
 npx eas-cli@latest build -p android --profile preview
 ```
 
-- EAS prints a **build page URL with a QR code** and an `.apk` download.
-- **Reviewers install it:** open the link on an Android phone → download → allow "Install unknown apps" for the
-  browser when asked → install → open *SWMS*.
-- **README:** add an "Install the Android app" section with:
-  - the **GitHub Release** link (see the next bullet),
-  - a **QR code** image,
-  - the demo resident login (shared in the submission notes, not committed),
-  - the cold-start note.
-- **Upload the APK to a GitHub Release** (`v1.0.0`) as well as EAS. EAS internal-distribution artifacts may expire
-  on the free plan (*verify the retention*), and a Release link is permanent.
+- EAS prints a **build page URL with a QR code** and the `.apk`. Reviewers open it on an Android phone → download →
+  allow "Install unknown apps" for the browser → install → open *SWMS*.
+- Also attach the APK to a **GitHub Release** (`v1.0.0`) for a permanent link; EAS artifacts may expire.
+- **README:** add the Release link, a QR code and the note on where the demo resident login is (submission notes,
+  not the repo).
 
 ---
 
-## 7. Production demo data
+## 7. Production demo data (branch E)
 
-A **new script `backend/scripts/seed-demo.js`**, separate from the dev `seed.js`, plus data files in
-`backend/scripts/demo/`.
+`backend/scripts/seed-demo.js`, separate from the dev `seed.js`. Data in `backend/scripts/demo/`.
 
-### 7.1 Content (~48 reports)
+### 7.1 Content (48 reports)
 
 | | Plan |
 |---|---|
-| Residents | 5 accounts with fixed emails `@demo.swms.id`-style (*final domain to choose; must not be a real mailbox*), Indonesian names. One of them is the reviewer login. Passwords come from `DEMO_RESIDENT_PASSWORD` in `.env.production`, never committed. |
-| Photos | 48 images from the ML **test split** (never seen in training): ~16 per class, resized to ≤1024 px and stripped of EXIF. They include a few that the model **gets wrong** (from the misclassified list), so admin corrections are real corrections. |
-| Categories | All 3. `ai_predicted_category` / `ai_confidence` / `ai_model_version` come from **calling the real ML API** once per photo during seeding, so the AI fields are honest. `category` = AI prediction, or the admin's correction. |
-| Statuses | ~14 `pending`, ~12 `in_progress`, ~15 `completed`, ~7 `rejected`. History rows follow the allowed transitions (`pending→in_progress→completed`, `pending→rejected`, `in_progress→rejected`). |
-| Corrections | ~6 reports where the admin changed the category (mostly where the AI was wrong), each with an `admin_note`. Notes on rejected reports explain why ("Lokasi di luar wilayah layanan", "Foto bukan sampah"). |
-| Dates | `created_at` spread over the **last 30 days** (`days_ago` + hour per item, Asia/Jakarta). Status changes follow hours to days later; `updated_at` = last change. |
-| Places | Realistic coordinates and addresses in one city (e.g. Jakarta Selatan neighbourhoods), with small random-looking but **fixed** offsets. |
-
-The data lives in `backend/scripts/demo/manifest.json` (one entry per report: `key`, `photo`, `resident`,
-`description`, `address`, `lat`/`lng`, `days_ago`, `status_path`, optional `correct_to`, `admin_note`).
-
-**Photos:** commit the 48 resized images (about 4 MB) under `backend/scripts/demo/photos/`, **after checking the
-Kaggle dataset licence** allows redistribution. If it doesn't, keep the folder gitignored and read it from
-`DEMO_PHOTOS_DIR`.
+| Residents | 5 accounts with fixed emails on a non-mailbox domain (`@demo.swms.invalid`-style), Indonesian names. Passwords from `DEMO_RESIDENT_PASSWORD` (never committed). |
+| Photos | **48 committed images** in `backend/scripts/demo/photos/`, 16 per class, from the ML **test split**, resized to ≤1024 px and **EXIF-stripped**, with `ATTRIBUTION.md` (Kaggle *Garbage Classification V2* by sumn2u, version 8, **MIT**). `DEMO_PHOTOS_DIR` optionally overrides the folder. A few are images the model gets wrong, so admin corrections are real. |
+| AI fields | From **calling the ML API** once per photo while seeding (honest predictions). `category` = the AI prediction, or the admin's correction. |
+| Statuses | ~14 `pending`, ~12 `in_progress`, ~15 `completed`, ~7 `rejected`. History rows follow the allowed transitions. |
+| Corrections | ~6 category corrections with an `admin_note`; rejected reports have a reason in the note. |
+| Dates | `created_at` spread over the **last 30 days** (Asia/Jakarta), relative to the run; status changes hours to days later. |
+| Places | Fixed coordinates and addresses in Jakarta Selatan. |
 
 ### 7.2 Safe to re-run, never touches the admin
 
-- **Deterministic ids:** each report's UUID is a v5 UUID of its manifest `key`; inserts use
-  `ON CONFLICT (id) DO NOTHING`.
-- **Deterministic image ids:** Cloudinary `public_id` = `swms/prod/demo/<key>` with `overwrite: false`. An asset
-  that already exists is reused (looked up first), never duplicated.
-- **Residents:** `ON CONFLICT` on the email, insert only. Existing residents keep their password.
-- **The admin:**
-  - is looked up **read-only** by `DEMO_ADMIN_EMAIL`, and only its `id` is used as `changed_by` in history rows;
-  - the script **never runs an `UPDATE`/`INSERT` on any user with `role = 'admin'`**;
-  - the script **refuses to start** if a resident email equals the admin email or if the admin isn't found.
-- **One transaction per report** (report + its history rows). A failure leaves no half report, and the uploaded
-  asset is kept for the next run (deterministic id).
+- **Reports:** UUIDv5 ids from each manifest key, inserted with `ON CONFLICT (id) DO NOTHING`.
+- **Photos:** deterministic image names/public ids (`<folder>/demo/<key>`); an already-uploaded photo is reused.
+- **Residents:** inserted only if the email is new. Existing residents keep their password.
+- **Admin:**
+  - looked up **read-only** by `DEMO_ADMIN_EMAIL`, and only its `id` is used (`changed_by`);
+  - the script never writes any `users` row with `role = 'admin'`;
+  - it refuses to run if the admin is missing, or if a resident email belongs to an existing admin.
 - **Guard rails:**
-  - `--dry-run` prints what would be created;
-  - the script requires `--confirm <neon host>` matching the host in `DATABASE_URL`;
-  - it never deletes anything.
-- **Optional, later:** `--refresh-dates`, which shifts only demo reports' timestamps so they stay inside "the last
-  30 days" if the demo runs much later.
-- **Tests:** a test against the dev DB with the ML service and storage stubbed:
-  - running it twice gives the same row counts;
-  - the admin's `password_hash`/`updated_at` are unchanged;
-  - every history path is a legal transition.
+  - `--dry-run` prints the plan and writes nothing;
+  - real runs need `--confirm <host>` equal to the host in `DATABASE_URL`;
+  - the script never deletes anything.
+- **One transaction per report** (report + history).
+- **Tests** (dev DB, ML and storage stubbed):
+  - a second run creates nothing;
+  - the admin row is unchanged;
+  - every history path is a legal transition;
+  - `--dry-run` writes nothing;
+  - a wrong `--confirm` host is refused.
 
 ---
 
@@ -511,70 +437,73 @@ Kaggle dataset licence** allows redistribution. If it doesn't, keep the folder g
 
 ### 8.1 Env vars per service
 
-**Backend (Render → Environment)**
+**Railway `ml`**
+
+| Name | Example | Secret | Notes |
+|---|---|---|---|
+| `PORT` | `8000` | no | Set explicitly, so the backend's reference `${{ml.PORT}}` has a fixed value |
+| `ML_API_KEY` | 64 hex chars | **yes** | `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
+| `ML_RUNTIME` | `lite` | no | Already the Dockerfile default |
+| `ML_DISABLE_DOCS` | `1` | no | Already the Dockerfile default |
+| `MODEL_PATH` | *(unset)* | no | Default: the exported model in `models/` |
+
+**Railway `backend`**
 
 | Name | Example | Secret | Notes |
 |---|---|---|---|
 | `NODE_ENV` | `production` | no | |
-| `PORT` | *(set by Render)* | no | Don't set by hand |
-| `DATABASE_URL` | `postgresql://swms_app:…@ep-…-pooler.ap-southeast-1.aws.neon.tech/swms?sslmode=require` | **yes** | Pooled host |
-| `DB_POOL_MAX` | `5` | no | Small instance |
+| `PORT` | *(set by Railway)* | no | Don't set |
+| `DATABASE_URL` | `postgresql://…@ep-…-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require` | **yes** | Neon **prod**, pooled host |
+| `DB_POOL_MAX` | `5` | no | |
 | `JWT_SECRET` | 96 hex chars | **yes** | New value, not the dev one |
 | `JWT_EXPIRES_IN` | `24h` | no | |
-| `ML_API_URL` | `https://<user>-swms-classifier.hf.space` | no | |
-| `ML_API_KEY` | 64 hex chars | **yes** | Same as the Space secret |
-| `ML_API_TIMEOUT_MS` | `90000` | no | Cold-start headroom |
-| `TRUST_PROXY` | `1` | no | Verify with [2.3](#23-trust_proxy-and-the-rate-limiters-behind-the-proxy) |
+| `ML_API_URL` | `http://${{ml.RAILWAY_PRIVATE_DOMAIN}}:${{ml.PORT}}` | no | Reference variable → `http://ml.railway.internal:8000` |
+| `ML_API_KEY` | `${{ml.ML_API_KEY}}` | **yes** | Reference variable, same value as `ml` |
+| `ML_API_TIMEOUT_MS` | `30000` | no | Optional; 1000–40000 allowed (branch C) |
+| `TRUST_PROXY` | `1` | no | Verify with [2.3](#23-trust_proxy-and-the-rate-limiters-behind-railways-edge) |
 | `WEB_ORIGIN` | *(empty)* | no | Web calls are server-side |
-| `STORAGE_DRIVER` | `cloudinary` | no | *new* |
-| `CLOUDINARY_URL` | `cloudinary://<key>:<secret>@<cloud>` | **yes** | *new* |
-| `CLOUDINARY_FOLDER` | `swms/prod` | no | *new* |
+| `STORAGE_DRIVER` | `cloudinary` | no | Branch B |
+| `CLOUDINARY_URL` | `cloudinary://<api_key>:<api_secret>@<cloud_name>` | **yes** | Branch B |
+| `CLOUDINARY_FOLDER` | `swms/prod` | no | Branch B |
 
-**ML API (HF Space → Settings → Variables and secrets)**
-
-| Name | Example | Secret | Notes |
-|---|---|---|---|
-| `ML_API_KEY` | 64 hex chars | **yes** (Space secret) | *new check* |
-| `ML_DISABLE_DOCS` | `1` | no | *new* |
-| `MODEL_PATH` | *(unset)* | no | Default `models/swms_mobilenetv2_best.keras` |
-
-**Web (Vercel → Settings → Environment Variables, Production)**
+**Vercel (`web`, Production)**
 
 | Name | Example | Secret | Notes |
 |---|---|---|---|
-| `NEXT_PUBLIC_API_URL` | `https://<backend>.onrender.com` | no (public) | Build time: redeploy after a change |
+| `NEXT_PUBLIC_API_URL` | `https://<backend>.up.railway.app` | no (public) | Set at build time: redeploy after a change |
 
-**Mobile (`eas.json` preview profile, or EAS env "preview")**
+**EAS (`Mobile`, `preview` profile)**
 
 | Name | Example | Secret | Notes |
 |---|---|---|---|
-| `EXPO_PUBLIC_API_URL` | `https://<backend>.onrender.com` | no (public) | Built into the APK |
+| `EXPO_PUBLIC_API_URL` | `https://<backend>.up.railway.app` | no (public) | In `eas.json`, or EAS env `preview` |
 
-**Local only (`backend/.env.production`, gitignored)**
+**Local only: `backend/.env.production`** (gitignored by `.env.*`; scripts run with
+`node --env-file=.env.production …`)
 
 | Name | Used by | Secret |
 |---|---|---|
-| `DATABASE_URL` (prod) | db-check, set-admin-password, seed (first admin), seed-demo | **yes** |
+| `DATABASE_URL` (prod, pooled) | db-check, seed (first admin), set-admin-password, seed-demo | **yes** |
 | `SEED_ADMIN_NAME` / `_EMAIL` / `_PASSWORD`, `SEED_USER_*` | first admin only, then removed | **yes** |
-| `CLOUDINARY_URL`, `CLOUDINARY_FOLDER`, `ML_API_URL`, `ML_API_KEY` | seed-demo | **yes** (URL/key) |
-| `DEMO_ADMIN_EMAIL`, `DEMO_RESIDENT_PASSWORD`, `DEMO_PHOTOS_DIR` (opt.) | seed-demo | password: **yes** |
+| `STORAGE_DRIVER`, `CLOUDINARY_URL`, `CLOUDINARY_FOLDER` | seed-demo | URL: **yes** |
+| `ML_API_URL`, `ML_API_KEY` | seed-demo. The ML service is private, so run the ML container locally with the same image (`docker run -p 8000:8000 …`) and use `http://localhost:8000` | key: **yes** |
+| `DEMO_ADMIN_EMAIL`, `DEMO_RESIDENT_PASSWORD`, `DEMO_PHOTOS_DIR` (optional) | seed-demo | password: **yes** |
 
 ### 8.2 Step-by-step deploy order, with a smoke test after each step
 
-Before step 1, the code changes from sections 1, 3.3, 3.5, 6.1 and 7 are merged to `main`. Each change is its own
-branch and PR, with tests: storage + sharp; ML key + Dockerfile; warm-up + timeouts; EAS config; seed-demo.
+Before step 1, merge branches A–E to `main` ([section 10](#10-implementation-branches)).
 
 | # | Step | Smoke test |
 |---|---|---|
-| 1 | **Neon:** create `swms-prod` (Singapore), apply `schema.sql` | `\dt` shows 3 tables; `node --env-file=.env.production scripts/db-check.js` OK |
-| 2 | **Cloudinary:** create account, note `CLOUDINARY_URL`, create folder `swms/prod` | Upload one test image from the dashboard and open its `https://res.cloudinary.com/...` URL; delete it |
-| 3 | **ML Space:** create (PRO), set `ML_API_KEY` secret + `ML_DISABLE_DOCS=1`, push files with LFS | [3.4](#34-smoke-test): `/health` OK; `/predict` without key → 401; with key → `plastic ≈ 0.998`; `/docs` → 404. Note the cold-start time after "Restart Space" |
-| 4 | **Backend on Render** (Singapore), all env vars from 8.1 | `GET /api/health` → `{status:"ok"}`; register a test resident; `POST /api/reports` with `plastic_101.jpg` → 201, `image_url` starts with `https://res.cloudinary.com/`, the photo opens and **has no EXIF** (check with an EXIF viewer); the ML key is wrong in Render → 503 (then fix it back); 6 MB file → 413; `.txt` renamed `.jpg` → 415; TRUST_PROXY checks from 2.3; delete the test report/user by SQL |
-| 5 | **First admin** (4.3) | Login `Admin123!` → 401; real password → 200, role `admin` |
-| 6 | **Web on Vercel** (`web`, region `sin1`) | Log in; cookie is `HttpOnly; Secure; SameSite=Lax`; dashboard, reports list and detail load; the photo from step 4 shows; status change + category correction work; logout |
-| 7 | **Demo data:** `seed-demo.js --dry-run`, then real run, then **run it again** | Second run creates 0; dashboard shows ~48 reports over 30 days, all statuses/categories, AI-accuracy number < 100%; admin password still works |
-| 8 | **Mobile APK** (`preview` profile) | Install on a real phone (mobile data, not Wi-Fi), log in as the demo resident, list shows their reports with photos, **take a new photo → AI result**, it appears in the web admin; kill the app → still logged in |
-| 9 | **README:** live links (web, API health, APK/Release + QR), demo logins in submission notes, cold-start note | Open every link from a logged-out browser / another phone |
+| 1 | **Neon:** new project `swms-prod` (AWS `ap-southeast-1`), apply `backend/db/schema.sql` with the **direct** URL | `\dt` shows 3 tables; `node --env-file=.env.production scripts/db-check.js` OK |
+| 2 | **Cloudinary:** account, copy `CLOUDINARY_URL` | Upload one test image in the Media Library, open its `res.cloudinary.com` URL, delete it |
+| 3 | **Railway:** project `swms`, **usage alert + hard limit** (2.4), service `ml` (2.2), variables | Deploy log: healthcheck `/health` passes; log shows `[::]:8000`; Metrics RAM ≈ the measured value |
+| 4 | **Railway:** service `backend` (2.2), variables, generate domain | `GET https://<backend>/api/health` → ok. Then:<br>• register a test user; `POST /api/reports` with `plastic_101.jpg` → 201, `image_url` on `res.cloudinary.com`, photo opens and has **no EXIF**, `ai_predicted_category: plastic`<br>• 6 MB → 413; `.txt` renamed `.jpg` → 415<br>• the TRUST_PROXY checks from 2.3<br>• delete the test data by SQL |
+| 5 | **First admin** (4.3) | `Admin123!` → 401; the real password → 200, role `admin` |
+| 6 | **Vercel:** root `web`, region `sin1`, `NEXT_PUBLIC_API_URL` | Login; cookie `HttpOnly; Secure; SameSite=Lax`; dashboard/list/detail; photo shows; status change and category correction; logout |
+| 7 | **Demo data:** `seed-demo.js --dry-run`, then the real run with `--confirm`, then **run it again** | Second run creates 0; dashboard shows 48 reports over 30 days, all statuses/categories; admin password still works |
+| 8 | **APK:** `eas init`, `eas build --profile preview` | Install on a phone on mobile data; log in as the demo resident; photos load; new report → AI result → visible in the web admin |
+| 9 | **README:** live links, APK Release + QR, demo-login note | Open each link logged out / on another phone |
 
 ---
 
@@ -584,63 +513,57 @@ branch and PR, with tests: storage + sharp; ML key + Dockerfile; warm-up + timeo
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| **HF Docker Spaces need a paid plan** | Step 3 blocked on a free account | Decide option A–D in [3.1](#31-blocker-docker-spaces-now-need-a-paid-plan) first |
-| Cold-start chain (Render 15 min, Space 48 h) | A reviewer's first report waits 1–2 min, or the mobile app times out | Longer timeouts (90 s backend, 120 s upload in mobile), warm-up calls, README note, manual warm-up before submitting; Railway Hobby if that isn't acceptable |
-| Free-tier terms change (Render, Neon, Cloudinary, EAS) | Unexpected sleep, limits or suspension | Re-check each dashboard at sign-up; nothing depends on more than a few hundred requests |
+| Usage above the Hobby $5 | Extra cost | Lite runtime; replica limits; email alert + hard limit (2.4); estimate in 3.6 |
+| Hard limit reached | **Everything goes offline** | Alert well below the hard limit; check the Usage page during review week |
+| Lite model drifts from Keras (e.g. Option B export) | Wrong predictions in production | Export script verifies parity before writing; the parity test runs with `ML_RUNTIME=lite` |
+| Private networking misconfigured (IPv6 / port) | Backend gets 503 "AI service unavailable" | `--host ::`; fixed `PORT=8000`; reference variables; smoke test 4 |
 | `TRUST_PROXY` wrong | Shared lockout or spoofable limiter | Behavioural checks in 2.3 |
-| Web admin logins share the Vercel IP's rate-limit bucket | A stranger can block web admin logins for 15 min | Accepted, documented; the IP-forwarding fix is a separate decision |
-| In-memory rate limits reset on spin-down / redeploy | Limits are weaker than they look | Documented in `rate-limit.js`; fine for one instance |
-| Dev demo credentials reach production (SEC-01) | Public admin password | Separate prod DB; first-admin procedure in 4.3; seed-demo never touches admins |
-| Running `npm test` or the dev seed with the prod URL | Rows deleted / demo passwords | Scripts run only with `--env-file=.env.production` explicitly; never `npm run` against prod |
-| Orphaned Cloudinary asset (crash between upload and insert) | A few unused files | Rare; manual cleanup in the media library |
-| Photos are public by URL | Anyone with the link can view a photo | Same as today; UUID names; EXIF/GPS stripped |
-| `NEXT_PUBLIC_API_URL` / `EXPO_PUBLIC_API_URL` set at build time | A changed backend URL needs a web redeploy and a new APK | Pick the final Render URL (or custom domain) before building the APK |
-| Dataset image licence | Committing demo photos may not be allowed | Check the Kaggle licence; fallback `DEMO_PHOTOS_DIR` |
-| EAS artifact retention | APK link breaks later | Also attach the APK to a GitHub Release |
-| Option B model promoted later | Bigger file (optimizer state), new `model_version` | Re-save without optimizer; update the Space; the parity test |
+| Web admin logins share Vercel IP buckets | Web login can be blocked for 15 min | Accepted (decision 5), documented |
+| In-memory rate limits reset on redeploy | Weaker limits | One instance; documented in `rate-limit.js` |
+| Dev credentials reach production (SEC-01) | Public admin password | Separate prod DB; first-admin procedure; seed-demo never writes admins |
+| `npm test` / dev seed run against prod | Data deleted / demo passwords | Prod scripts only via `--env-file=.env.production`; never `npm run` |
+| Orphaned Cloudinary asset (crash between upload and insert) | Unused files | Rare; cleanup in the Media Library |
+| Photos public by URL | Anyone with the link can see a photo | Random names; EXIF/GPS stripped |
+| `NEXT_PUBLIC_…` / `EXPO_PUBLIC_…` set at build time | URL change needs a web redeploy and a new APK | Fix the Railway domain before building the APK |
+| Demo photos: dataset partly web-scraped, MIT on Kaggle | Licence of individual images can't be fully verified | Attribution file, MIT text, resized copies only; easy to replace via `DEMO_PHOTOS_DIR` |
 
-### 9.2 Pre-submission checklist (on the deployed system)
+### 9.2 Pre-submission checklist
 
-- [ ] Warm everything up the day of submission (open the web dashboard, make one report on the phone), then delete
-      the test report.
-- [ ] `GET <backend>/api/health` and `GET <space>/health` → OK; `<space>/docs` → 404; `/predict` without key → 401.
-- [ ] Web: login with the real admin; `Admin123!` → 401; cookie `Secure` + `HttpOnly`; logout works; another
-      browser without a session is sent to `/login`.
-- [ ] Rate limits: the 21st failed login from one IP → 429 with `Retry-After`; another network is not blocked.
-- [ ] Mobile APK on a clean phone: install from the README link, register a **new** account, report with camera +
-      location, see the AI result, see it in the web admin, change its status there, see the timeline update in the
-      app.
-- [ ] Photos load from `res.cloudinary.com` in web and app; a downloaded photo has **no GPS EXIF**.
-- [ ] Upload limits: 6 MB → 413, `.txt` as `.jpg` → 415, a non-waste photo still gets a category (known
-      limitation) and the admin can correct it.
-- [ ] Dashboard: numbers match the demo data (≈48 reports, all statuses and categories); AI accuracy reflects the
-      corrections.
-- [ ] Re-run `seed-demo.js` once more → creates nothing; admin password unchanged.
-- [ ] No secrets in the repo: `git grep -n "neon.tech\|cloudinary://\|hf_"` finds only placeholders; `.env*` files
-      are untracked.
-- [ ] README: live URLs, APK link + QR, cold-start note, where the demo logins are (submission notes, not the repo).
-- [ ] Logs in Render and the Space show no unexpected errors after the walkthrough.
+- [ ] Railway: both services healthy, region Singapore, `ml` has **no public domain**, usage alert + hard limit set,
+      RAM in Metrics as expected.
+- [ ] `GET <backend>/api/health` → ok. The ML API isn't reachable from the internet (no domain).
+- [ ] Web: real admin login works, `Admin123!` → 401, cookie `Secure` + `HttpOnly`, logout works.
+- [ ] Rate limits: the 21st failed login from one IP → 429 with `Retry-After`; another network not blocked.
+- [ ] APK on a clean phone: install from the README link, register a new account, report with camera + location,
+      AI result shown, visible in the web admin; change the status there and see the timeline in the app.
+- [ ] Photos load from `res.cloudinary.com`; a downloaded photo has **no GPS EXIF**.
+- [ ] Upload limits: 6 MB → 413, `.txt` as `.jpg` → 415.
+- [ ] Dashboard reflects the demo data (48 reports, all statuses/categories, AI accuracy < 100%).
+- [ ] Re-running `seed-demo.js` creates nothing; admin password unchanged.
+- [ ] No secrets in git: `git grep -n "neon.tech\|cloudinary://"` shows only placeholders; `.env*` untracked.
+- [ ] README: live URLs, APK link + QR, dataset credit, note on demo logins.
+- [ ] Railway and Vercel logs show no unexpected errors after the walkthrough.
 
 ---
 
-## Decisions needed from you
+## 10. Implementation branches
 
-1. **ML hosting** given the HF change: A (HF PRO, recommended), B (HF billing credits), C (Render, risky on RAM) or
-   D (Railway for backend + ML).
-2. **Backend host:** Render Free (recommended) or Railway Hobby (no sleeping, ~$5/month).
-3. **Android package name** (`com.jieffrey.swms`?) and whether to rename the Expo slug from `Mobile` before
-   `eas init`.
-4. **Demo photos:** commit 48 resized test-split images (if the licence allows) or keep them local.
-5. **Web admin login rate limit** behind Vercel: accept as documented (recommended for now), or add trusted client-IP
-   forwarding later.
+Each branch is made from `main`, has its own tests, and is pushed without a PR.
+
+| Branch | Content |
+|---|---|
+| A. `feat/ml-lite-runtime` | Export script (`.keras` → lite model, parity-checked), `ML_RUNTIME=lite\|tf`, NumPy resize, `requirements-lite.txt`, API key + docs switch, `Dockerfile` + `railway.json`, measurements |
+| B. `feat/backend-cloud-storage` | `STORAGE_DRIVER=local\|cloudinary`, sharp sanitize (SEC-06), tests |
+| C. `feat/deploy-timeouts` | Validated `ML_API_TIMEOUT_MS` (default 30 s, max 40 s, under the mobile 45 s), `engines`, `backend/railway.json` |
+| D. `feat/mobile-eas-config` | `android.package`, slug `swms`, `versionCode`, `eas.json` preview APK |
+| E. `feat/backend-seed-demo` | `seed-demo.js`, 48 committed photos + `ATTRIBUTION.md`, manifest, tests, README credits |
 
 ## Sources (checked 2026-11-05)
 
-- Render free tier: <https://render.com/docs/free>
-- Railway pricing: <https://railway.com/pricing>
-- Fly.io free trial / cost management: <https://fly.io/docs/about/free-trial/>, <https://fly.io/docs/about/cost-management/>
-- Hugging Face Spaces overview (paid plan for Docker/Gradio, hardware, sleep): <https://huggingface.co/docs/hub/en/spaces-overview>
-- HF Space runtime (48 h sleep on free cpu-basic): <https://huggingface.co/docs/huggingface_hub/package_reference/space_runtime>
-- HF forum, Docker SDK marked paid: <https://discuss.huggingface.co/t/docker-sdk-now-marked-as-paid-when-creating-a-new-space/177580>
+- Railway private networking: <https://docs.railway.com/private-networking>
+- Railway cost control (usage alerts and hard limits): <https://docs.railway.com/pricing/cost-control>
+- Railway plans: <https://docs.railway.com/reference/pricing/plans>, <https://railway.com/pricing>
+- Railway right-sizing CPU/memory: <https://docs.railway.com/guides/right-size-cpu-memory>
 - Neon free plan limits: <https://neon.com/faqs/free-plan-limits-and-quotas>
-- Cloudinary plans and credits: <https://cloudinary.com/documentation/billing_and_plans>, <https://cloudinary.com/documentation/developer_onboarding_faq_credits>
+- Cloudinary plans and credits: <https://cloudinary.com/documentation/billing_and_plans>
+- Dataset: <https://www.kaggle.com/datasets/sumn2u/garbage-classification-v2>
