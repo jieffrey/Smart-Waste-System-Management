@@ -1,4 +1,5 @@
-# Development and test dependencies (includes the runtime dependencies).
--r requirements.txt
+# Development and test dependencies: TensorFlow runtime + ONNX export/lite runtime, so the tests can check
+# both ML_RUNTIME=tf and ML_RUNTIME=lite.
+-r requirements-export.txt
 pytest==9.2.0
 httpx==0.28.1

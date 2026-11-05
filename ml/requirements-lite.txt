@@ -1,0 +1,8 @@
+# Production runtime for the ML API without TensorFlow (ML_RUNTIME=lite, used by the Dockerfile).
+# Serves models/swms_mobilenetv2_best.onnx (exported with scripts/export_lite.py) with ONNX Runtime.
+fastapi==0.162.0
+uvicorn==0.54.0
+python-multipart==0.0.33
+pillow==13.0.0
+numpy==2.5.4
+onnxruntime==1.31.1
