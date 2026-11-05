@@ -1,0 +1,1147 @@
+{
+  "note": "Production demo data for scripts/seed-demo.js. Photos: see photos/ATTRIBUTION.md.",
+  "residents": [
+    {
+      "key": "sari",
+      "full_name": "Sari Wulandari",
+      "email": "sari.wulandari@demo.swms.invalid"
+    },
+    {
+      "key": "budi",
+      "full_name": "Budi Santoso",
+      "email": "budi.santoso@demo.swms.invalid"
+    },
+    {
+      "key": "dewi",
+      "full_name": "Dewi Lestari",
+      "email": "dewi.lestari@demo.swms.invalid"
+    },
+    {
+      "key": "rizky",
+      "full_name": "Rizky Pratama",
+      "email": "rizky.pratama@demo.swms.invalid"
+    },
+    {
+      "key": "warga",
+      "full_name": "Warga Demo",
+      "email": "warga.demo@demo.swms.invalid"
+    }
+  ],
+  "reports": [
+    {
+      "key": "org-01",
+      "photo": "org-01.jpg",
+      "true_category": "organic",
+      "resident": "warga",
+      "description": "Kulit buah dan sayur busuk di dekat tempat parkir motor.",
+      "address": "Jl. Kemang Raya, Bangka, Mampang Prapatan",
+      "latitude": -6.25911,
+      "longitude": 106.814398,
+      "days_ago": 17,
+      "time": "18:56",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 5,
+          "note": "Dalam antrean pengangkutan minggu ini."
+        }
+      ],
+      "source": {
+        "file": "biological/biological_773.jpg",
+        "split": "test (confirmed)"
+      }
+    },
+    {
+      "key": "org-02",
+      "photo": "org-02.jpg",
+      "true_category": "organic",
+      "resident": "rizky",
+      "description": "Sisa makanan dari warung dibiarkan di trotoar.",
+      "address": "Jl. Haji Nawi, Gandaria Utara, Kebayoran Baru",
+      "latitude": -6.258311,
+      "longitude": 106.791513,
+      "days_ago": 12,
+      "time": "20:18",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 8,
+          "note": "Petugas kebersihan dijadwalkan datang besok pagi."
+        }
+      ],
+      "source": {
+        "file": "biological/biological_239.jpg",
+        "split": "test (confirmed)"
+      }
+    },
+    {
+      "key": "org-03",
+      "photo": "org-03.jpg",
+      "true_category": "organic",
+      "resident": "warga",
+      "description": "Sisa makanan dari warung dibiarkan di trotoar.",
+      "address": "Jl. Kalibata Raya, Rawajati, Pancoran",
+      "latitude": -6.25649,
+      "longitude": 106.847777,
+      "days_ago": 24,
+      "time": "18:48",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 11,
+          "note": null
+        },
+        {
+          "status": "completed",
+          "hours_after_report": 43,
+          "note": "Lokasi sudah dibersihkan."
+        }
+      ],
+      "source": {
+        "file": "biological/biological_102.jpg",
+        "split": "test (confirmed)"
+      }
+    },
+    {
+      "key": "org-04",
+      "photo": "org-04.jpg",
+      "true_category": "organic",
+      "resident": "dewi",
+      "description": "Sampah dapur dibuang di depan gang, mulai berbau.",
+      "address": "Jl. Fatmawati Raya, Cilandak Barat, Cilandak",
+      "latitude": -6.293705,
+      "longitude": 106.797256,
+      "days_ago": 3,
+      "time": "18:05",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 10,
+          "note": null
+        },
+        {
+          "status": "completed",
+          "hours_after_report": 35,
+          "note": "Sudah diangkut dan area disemprot disinfektan."
+        }
+      ],
+      "source": {
+        "file": "biological/biological_265.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "org-05",
+      "photo": "org-05.jpg",
+      "true_category": "organic",
+      "resident": "budi",
+      "description": "Daun dan ranting kering menumpuk menutupi selokan.",
+      "address": "Jl. Pasar Minggu Raya, Pejaten Timur, Pasar Minggu",
+      "latitude": -6.269419,
+      "longitude": 106.846266,
+      "days_ago": 13,
+      "time": "15:05",
+      "history": [],
+      "source": {
+        "file": "biological/biological_301.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "org-06",
+      "photo": "org-06.jpg",
+      "true_category": "organic",
+      "resident": "budi",
+      "description": "Sisa makanan dari warung dibiarkan di trotoar.",
+      "address": "Jl. Kalibata Raya, Rawajati, Pancoran",
+      "latitude": -6.257836,
+      "longitude": 106.84942,
+      "days_ago": 2,
+      "time": "09:18",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 14,
+          "note": null
+        },
+        {
+          "status": "completed",
+          "hours_after_report": 74,
+          "note": "Sampah sudah diangkut petugas. Terima kasih atas laporannya."
+        }
+      ],
+      "source": {
+        "file": "biological/biological_850.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "org-07",
+      "photo": "org-07.jpg",
+      "true_category": "organic",
+      "resident": "budi",
+      "description": "Kulit buah dan sayur busuk di dekat tempat parkir motor.",
+      "address": "Jl. Pejaten Barat, Pejaten Barat, Pasar Minggu",
+      "latitude": -6.277929,
+      "longitude": 106.827116,
+      "days_ago": 17,
+      "time": "20:05",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 20,
+          "note": null
+        },
+        {
+          "status": "completed",
+          "hours_after_report": 70,
+          "note": "Sudah diangkut dan area disemprot disinfektan."
+        }
+      ],
+      "source": {
+        "file": "biological/biological_83.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "org-08",
+      "photo": "org-08.jpg",
+      "true_category": "organic",
+      "resident": "dewi",
+      "description": "Daun dan ranting kering menumpuk menutupi selokan.",
+      "address": "Jl. Bangka Raya, Pela Mampang, Mampang Prapatan",
+      "latitude": -6.253451,
+      "longitude": 106.818442,
+      "days_ago": 16,
+      "time": "17:27",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 16,
+          "note": null
+        },
+        {
+          "status": "completed",
+          "hours_after_report": 61,
+          "note": "Sudah diangkut dan area disemprot disinfektan."
+        }
+      ],
+      "source": {
+        "file": "biological/biological_584.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "org-09",
+      "photo": "org-09.jpg",
+      "true_category": "organic",
+      "resident": "dewi",
+      "description": "Sampah dapur dibuang di depan gang, mulai berbau.",
+      "address": "Jl. Cipete Raya, Cipete Selatan, Cilandak",
+      "latitude": -6.27079,
+      "longitude": 106.801281,
+      "days_ago": 29,
+      "time": "08:33",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 4,
+          "note": "Petugas kebersihan dijadwalkan datang besok pagi."
+        }
+      ],
+      "source": {
+        "file": "biological/biological_806.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "org-10",
+      "photo": "org-10.jpg",
+      "true_category": "organic",
+      "resident": "sari",
+      "description": "Sampah dapur dibuang di depan gang, mulai berbau.",
+      "address": "Jl. Lenteng Agung Raya, Lenteng Agung, Jagakarsa",
+      "latitude": -6.321613,
+      "longitude": 106.831659,
+      "days_ago": 10,
+      "time": "15:48",
+      "history": [
+        {
+          "status": "rejected",
+          "hours_after_report": 6,
+          "note": "Foto kurang jelas untuk memastikan lokasi; silakan kirim laporan baru."
+        }
+      ],
+      "source": {
+        "file": "biological/biological_905.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "org-11",
+      "photo": "org-11.jpg",
+      "true_category": "organic",
+      "resident": "rizky",
+      "description": "Tumpukan sisa sayur dan buah di pinggir jalan dekat pasar.",
+      "address": "Jl. Pejaten Barat, Pejaten Barat, Pasar Minggu",
+      "latitude": -6.279315,
+      "longitude": 106.82767,
+      "days_ago": 12,
+      "time": "16:12",
+      "history": [
+        {
+          "status": "rejected",
+          "hours_after_report": 13,
+          "note": "Laporan ganda: lokasi ini sudah dilaporkan dan sedang ditangani."
+        }
+      ],
+      "source": {
+        "file": "biological/biological_557.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "org-12",
+      "photo": "org-12.jpg",
+      "true_category": "organic",
+      "resident": "rizky",
+      "description": "Kulit buah dan sayur busuk di dekat tempat parkir motor.",
+      "address": "Jl. Fatmawati Raya, Cilandak Barat, Cilandak",
+      "latitude": -6.292202,
+      "longitude": 106.795462,
+      "days_ago": 23,
+      "time": "20:27",
+      "history": [],
+      "source": {
+        "file": "biological/biological_37.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "org-13",
+      "photo": "org-13.jpg",
+      "true_category": "organic",
+      "resident": "warga",
+      "description": "Tumpukan sisa sayur dan buah di pinggir jalan dekat pasar.",
+      "address": "Jl. Bangka Raya, Pela Mampang, Mampang Prapatan",
+      "latitude": -6.250917,
+      "longitude": 106.814635,
+      "days_ago": 7,
+      "time": "06:05",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 8,
+          "note": null
+        },
+        {
+          "status": "rejected",
+          "hours_after_report": 31,
+          "note": "Sampah sudah dibersihkan oleh petugas kelurahan sebelum laporan diperiksa."
+        }
+      ],
+      "source": {
+        "file": "biological/biological_431.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "org-14",
+      "photo": "org-14.jpg",
+      "true_category": "organic",
+      "resident": "warga",
+      "description": "Daun dan ranting kering menumpuk menutupi selokan.",
+      "address": "Jl. Cipete Raya, Cipete Selatan, Cilandak",
+      "latitude": -6.269605,
+      "longitude": 106.801004,
+      "days_ago": 22,
+      "time": "10:41",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 14,
+          "note": null
+        },
+        {
+          "status": "completed",
+          "hours_after_report": 51,
+          "note": "Lokasi sudah dibersihkan."
+        }
+      ],
+      "source": {
+        "file": "biological/biological_623.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "org-15",
+      "photo": "org-15.jpg",
+      "true_category": "organic",
+      "resident": "dewi",
+      "description": "Tumpukan sisa sayur dan buah di pinggir jalan dekat pasar.",
+      "address": "Jl. Ampera Raya, Ragunan, Pasar Minggu",
+      "latitude": -6.282819,
+      "longitude": 106.820787,
+      "days_ago": 5,
+      "time": "17:27",
+      "history": [],
+      "source": {
+        "file": "biological/biological_211.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "org-16",
+      "photo": "org-16.jpg",
+      "true_category": "organic",
+      "resident": "rizky",
+      "description": "Sampah dapur dibuang di depan gang, mulai berbau.",
+      "address": "Jl. Tebet Barat Dalam, Tebet Barat, Tebet",
+      "latitude": -6.233606,
+      "longitude": 106.848802,
+      "days_ago": 4,
+      "time": "07:33",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 14,
+          "note": null
+        },
+        {
+          "status": "completed",
+          "hours_after_report": 53,
+          "note": "Sampah sudah diangkut petugas. Terima kasih atas laporannya."
+        }
+      ],
+      "source": {
+        "file": "biological/biological_518.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pap-01",
+      "photo": "pap-01.jpg",
+      "true_category": "paper",
+      "resident": "sari",
+      "description": "Kertas bekas kantor dibuang di lahan kosong.",
+      "address": "Jl. Haji Nawi, Gandaria Utara, Kebayoran Baru",
+      "latitude": -6.257667,
+      "longitude": 106.791273,
+      "days_ago": 4,
+      "time": "20:18",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 9,
+          "note": null
+        },
+        {
+          "status": "completed",
+          "hours_after_report": 57,
+          "note": "Lokasi sudah dibersihkan."
+        }
+      ],
+      "source": {
+        "file": "paper/paper_2183.jpg",
+        "split": "test (confirmed)"
+      }
+    },
+    {
+      "key": "pap-02",
+      "photo": "pap-02.jpg",
+      "true_category": "paper",
+      "resident": "dewi",
+      "description": "Kertas dan koran bekas berserakan di halte bus.",
+      "address": "Jl. Wolter Monginsidi, Petogogan, Kebayoran Baru",
+      "latitude": -6.241355,
+      "longitude": 106.8054,
+      "days_ago": 23,
+      "time": "17:27",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 17,
+          "note": null
+        },
+        {
+          "status": "completed",
+          "hours_after_report": 70,
+          "note": "Sampah sudah diangkut petugas. Terima kasih atas laporannya."
+        }
+      ],
+      "source": {
+        "file": "paper/paper_2576.jpg",
+        "split": "test (confirmed)"
+      }
+    },
+    {
+      "key": "pap-03",
+      "photo": "pap-03.jpg",
+      "true_category": "paper",
+      "resident": "warga",
+      "description": "Kardus bekas menumpuk di depan ruko yang tutup.",
+      "address": "Jl. Lenteng Agung Raya, Lenteng Agung, Jagakarsa",
+      "latitude": -6.327263,
+      "longitude": 106.832322,
+      "days_ago": 2,
+      "time": "20:18",
+      "history": [],
+      "source": {
+        "file": "paper/paper_1000.jpg",
+        "split": "test (confirmed)"
+      }
+    },
+    {
+      "key": "pap-04",
+      "photo": "pap-04.jpg",
+      "true_category": "paper",
+      "resident": "sari",
+      "description": "Kertas dan koran bekas berserakan di halte bus.",
+      "address": "Jl. Fatmawati Raya, Cilandak Barat, Cilandak",
+      "latitude": -6.293862,
+      "longitude": 106.800367,
+      "days_ago": 10,
+      "time": "17:05",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 5,
+          "note": "Dalam antrean pengangkutan minggu ini."
+        }
+      ],
+      "source": {
+        "file": "paper/paper_981.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pap-05",
+      "photo": "pap-05.jpg",
+      "true_category": "paper",
+      "resident": "warga",
+      "description": "Kertas bekas kantor dibuang di lahan kosong.",
+      "address": "Jl. Pejaten Barat, Pejaten Barat, Pasar Minggu",
+      "latitude": -6.27696,
+      "longitude": 106.825268,
+      "days_ago": 7,
+      "time": "07:56",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 19,
+          "note": "Dalam antrean pengangkutan minggu ini."
+        }
+      ],
+      "source": {
+        "file": "paper/paper_1978.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pap-06",
+      "photo": "pap-06.jpg",
+      "true_category": "paper",
+      "resident": "rizky",
+      "description": "Kardus bekas menumpuk di depan ruko yang tutup.",
+      "address": "Jl. Ampera Raya, Ragunan, Pasar Minggu",
+      "latitude": -6.287017,
+      "longitude": 106.820274,
+      "days_ago": 14,
+      "time": "19:05",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 19,
+          "note": null
+        },
+        {
+          "status": "completed",
+          "hours_after_report": 48,
+          "note": "Sudah diangkut dan area disemprot disinfektan."
+        }
+      ],
+      "source": {
+        "file": "paper/paper_2289.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pap-07",
+      "photo": "pap-07.jpg",
+      "true_category": "paper",
+      "resident": "rizky",
+      "description": "Kertas dan koran bekas berserakan di halte bus.",
+      "address": "Jl. Bangka Raya, Pela Mampang, Mampang Prapatan",
+      "latitude": -6.254133,
+      "longitude": 106.817432,
+      "days_ago": 25,
+      "time": "18:27",
+      "history": [],
+      "source": {
+        "file": "paper/paper_2670.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pap-08",
+      "photo": "pap-08.jpg",
+      "true_category": "paper",
+      "resident": "dewi",
+      "description": "Tumpukan karton basah di samping tempat sampah penuh.",
+      "address": "Jl. Kalibata Raya, Rawajati, Pancoran",
+      "latitude": -6.255745,
+      "longitude": 106.84801,
+      "days_ago": 17,
+      "time": "07:12",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 22,
+          "note": "Petugas kebersihan dijadwalkan datang besok pagi."
+        }
+      ],
+      "source": {
+        "file": "paper/paper_656.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pap-09",
+      "photo": "pap-09.jpg",
+      "true_category": "paper",
+      "resident": "rizky",
+      "description": "Brosur dan kertas bekas terbuang di taman.",
+      "address": "Jl. Wolter Monginsidi, Petogogan, Kebayoran Baru",
+      "latitude": -6.237528,
+      "longitude": 106.80844,
+      "days_ago": 11,
+      "time": "06:56",
+      "history": [],
+      "source": {
+        "file": "paper/paper_795.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pap-10",
+      "photo": "pap-10.jpg",
+      "true_category": "paper",
+      "resident": "dewi",
+      "description": "Kardus bekas menumpuk di depan ruko yang tutup.",
+      "address": "Jl. Haji Nawi, Gandaria Utara, Kebayoran Baru",
+      "latitude": -6.258141,
+      "longitude": 106.792277,
+      "days_ago": 2,
+      "time": "17:12",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 12,
+          "note": null
+        },
+        {
+          "status": "rejected",
+          "hours_after_report": 35,
+          "note": "Sampah sudah dibersihkan oleh petugas kelurahan sebelum laporan diperiksa."
+        }
+      ],
+      "source": {
+        "file": "paper/paper_1819.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pap-11",
+      "photo": "pap-11.jpg",
+      "true_category": "paper",
+      "resident": "budi",
+      "description": "Kotak kemasan karton dibuang sembarangan di pinggir jalan.",
+      "address": "Jl. Haji Nawi, Gandaria Utara, Kebayoran Baru",
+      "latitude": -6.255784,
+      "longitude": 106.790994,
+      "days_ago": 28,
+      "time": "14:27",
+      "history": [],
+      "source": {
+        "file": "paper/paper_2768.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pap-12",
+      "photo": "pap-12.jpg",
+      "true_category": "paper",
+      "resident": "warga",
+      "description": "Brosur dan kertas bekas terbuang di taman.",
+      "address": "Jl. Ampera Raya, Ragunan, Pasar Minggu",
+      "latitude": -6.28539,
+      "longitude": 106.821958,
+      "days_ago": 0,
+      "time": "12:12",
+      "history": [],
+      "source": {
+        "file": "paper/paper_2511.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pap-13",
+      "photo": "pap-13.jpg",
+      "true_category": "paper",
+      "resident": "dewi",
+      "description": "Kardus bekas menumpuk di depan ruko yang tutup.",
+      "address": "Jl. Pejaten Barat, Pejaten Barat, Pasar Minggu",
+      "latitude": -6.278578,
+      "longitude": 106.828676,
+      "days_ago": 1,
+      "time": "13:48",
+      "history": [],
+      "source": {
+        "file": "paper/paper_992.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pap-14",
+      "photo": "pap-14.jpg",
+      "true_category": "paper",
+      "resident": "budi",
+      "description": "Tumpukan karton basah di samping tempat sampah penuh.",
+      "address": "Jl. Kemang Raya, Bangka, Mampang Prapatan",
+      "latitude": -6.26238,
+      "longitude": 106.815737,
+      "days_ago": 26,
+      "time": "13:48",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 16,
+          "note": null
+        },
+        {
+          "status": "completed",
+          "hours_after_report": 75,
+          "note": "Sampah sudah diangkut petugas. Terima kasih atas laporannya."
+        }
+      ],
+      "source": {
+        "file": "paper/paper_2470.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pap-15",
+      "photo": "pap-15.jpg",
+      "true_category": "paper",
+      "resident": "rizky",
+      "description": "Kertas bekas kantor dibuang di lahan kosong.",
+      "address": "Jl. Kemang Raya, Bangka, Mampang Prapatan",
+      "latitude": -6.26437,
+      "longitude": 106.815384,
+      "days_ago": 14,
+      "time": "17:18",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 11,
+          "note": null
+        },
+        {
+          "status": "rejected",
+          "hours_after_report": 32,
+          "note": "Foto kurang jelas untuk memastikan lokasi; silakan kirim laporan baru."
+        }
+      ],
+      "source": {
+        "file": "paper/paper_2873.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pap-16",
+      "photo": "pap-16.jpg",
+      "true_category": "paper",
+      "resident": "dewi",
+      "description": "Tumpukan karton basah di samping tempat sampah penuh.",
+      "address": "Jl. Pasar Minggu Raya, Pejaten Timur, Pasar Minggu",
+      "latitude": -6.266164,
+      "longitude": 106.845172,
+      "days_ago": 11,
+      "time": "17:56",
+      "history": [
+        {
+          "status": "rejected",
+          "hours_after_report": 21,
+          "note": "Sampah sudah dibersihkan oleh petugas kelurahan sebelum laporan diperiksa."
+        }
+      ],
+      "source": {
+        "file": "paper/paper_1972.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pla-01",
+      "photo": "pla-01.jpg",
+      "true_category": "plastic",
+      "resident": "sari",
+      "description": "Kantong plastik berserakan terbawa angin di jalan kampung.",
+      "address": "Jl. Wolter Monginsidi, Petogogan, Kebayoran Baru",
+      "latitude": -6.240496,
+      "longitude": 106.80725,
+      "days_ago": 24,
+      "time": "18:27",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 16,
+          "note": "Dalam antrean pengangkutan minggu ini."
+        }
+      ],
+      "source": {
+        "file": "plastic/plastic_1864.jpg",
+        "split": "test (confirmed)"
+      }
+    },
+    {
+      "key": "pla-02",
+      "photo": "pla-02.jpg",
+      "true_category": "plastic",
+      "resident": "budi",
+      "description": "Botol plastik dan gelas bekas minuman menumpuk di selokan.",
+      "address": "Jl. Lenteng Agung Raya, Lenteng Agung, Jagakarsa",
+      "latitude": -6.32483,
+      "longitude": 106.831005,
+      "days_ago": 5,
+      "time": "17:56",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 30,
+          "note": "Sudah diteruskan ke petugas wilayah."
+        }
+      ],
+      "source": {
+        "file": "plastic/plastic_615.jpg",
+        "split": "test (confirmed)"
+      }
+    },
+    {
+      "key": "pla-03",
+      "photo": "pla-03.jpg",
+      "true_category": "plastic",
+      "resident": "sari",
+      "description": "Tumpukan kemasan plastik di pinggir kali.",
+      "address": "Jl. Kalibata Raya, Rawajati, Pancoran",
+      "latitude": -6.254791,
+      "longitude": 106.853336,
+      "days_ago": 22,
+      "time": "16:41",
+      "history": [],
+      "source": {
+        "file": "plastic/plastic_101.jpg",
+        "split": "test (confirmed)"
+      }
+    },
+    {
+      "key": "pla-04",
+      "photo": "pla-04.jpg",
+      "true_category": "plastic",
+      "resident": "rizky",
+      "description": "Botol plastik dan gelas bekas minuman menumpuk di selokan.",
+      "address": "Jl. Lenteng Agung Raya, Lenteng Agung, Jagakarsa",
+      "latitude": -6.325793,
+      "longitude": 106.835792,
+      "days_ago": 2,
+      "time": "15:48",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 20,
+          "note": null
+        },
+        {
+          "status": "completed",
+          "hours_after_report": 72,
+          "note": "Sudah diangkut dan area disemprot disinfektan."
+        }
+      ],
+      "source": {
+        "file": "plastic/plastic_925.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pla-05",
+      "photo": "pla-05.jpg",
+      "true_category": "plastic",
+      "resident": "sari",
+      "description": "Sampah plastik kemasan makanan di bawah jembatan penyeberangan.",
+      "address": "Jl. Cipete Raya, Cipete Selatan, Cilandak",
+      "latitude": -6.274803,
+      "longitude": 106.802047,
+      "days_ago": 7,
+      "time": "17:05",
+      "history": [],
+      "source": {
+        "file": "plastic/plastic_269.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pla-06",
+      "photo": "pla-06.jpg",
+      "true_category": "plastic",
+      "resident": "budi",
+      "description": "Botol plastik dan gelas bekas minuman menumpuk di selokan.",
+      "address": "Jl. Ampera Raya, Ragunan, Pasar Minggu",
+      "latitude": -6.285039,
+      "longitude": 106.818705,
+      "days_ago": 13,
+      "time": "10:33",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 25,
+          "note": "Sudah diteruskan ke petugas wilayah."
+        }
+      ],
+      "source": {
+        "file": "plastic/plastic_948.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pla-07",
+      "photo": "pla-07.jpg",
+      "true_category": "plastic",
+      "resident": "rizky",
+      "description": "Tumpukan kemasan plastik di pinggir kali.",
+      "address": "Jl. Pasar Minggu Raya, Pejaten Timur, Pasar Minggu",
+      "latitude": -6.270986,
+      "longitude": 106.841165,
+      "days_ago": 2,
+      "time": "07:18",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 19,
+          "note": "Petugas kebersihan dijadwalkan datang besok pagi."
+        }
+      ],
+      "source": {
+        "file": "plastic/plastic_908.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pla-08",
+      "photo": "pla-08.jpg",
+      "true_category": "plastic",
+      "resident": "sari",
+      "description": "Sampah plastik kemasan makanan di bawah jembatan penyeberangan.",
+      "address": "Jl. Pasar Minggu Raya, Pejaten Timur, Pasar Minggu",
+      "latitude": -6.271884,
+      "longitude": 106.845886,
+      "days_ago": 22,
+      "time": "15:48",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 7,
+          "note": null
+        },
+        {
+          "status": "completed",
+          "hours_after_report": 67,
+          "note": "Sampah sudah diangkut petugas. Terima kasih atas laporannya."
+        }
+      ],
+      "source": {
+        "file": "plastic/plastic_2184.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pla-09",
+      "photo": "pla-09.jpg",
+      "true_category": "plastic",
+      "resident": "dewi",
+      "description": "Sampah plastik kemasan makanan di bawah jembatan penyeberangan.",
+      "address": "Jl. Kemang Raya, Bangka, Mampang Prapatan",
+      "latitude": -6.260008,
+      "longitude": 106.815184,
+      "days_ago": 11,
+      "time": "16:05",
+      "history": [],
+      "source": {
+        "file": "plastic/plastic_496.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pla-10",
+      "photo": "pla-10.jpg",
+      "true_category": "plastic",
+      "resident": "budi",
+      "description": "Botol plastik bekas dibuang di dekat sekolah.",
+      "address": "Jl. Fatmawati Raya, Cilandak Barat, Cilandak",
+      "latitude": -6.290559,
+      "longitude": 106.798603,
+      "days_ago": 12,
+      "time": "09:05",
+      "history": [],
+      "source": {
+        "file": "plastic/plastic_268.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pla-11",
+      "photo": "pla-11.jpg",
+      "true_category": "plastic",
+      "resident": "warga",
+      "description": "Sampah plastik kemasan makanan di bawah jembatan penyeberangan.",
+      "address": "Jl. Wolter Monginsidi, Petogogan, Kebayoran Baru",
+      "latitude": -6.238436,
+      "longitude": 106.810337,
+      "days_ago": 8,
+      "time": "14:12",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 18,
+          "note": null
+        },
+        {
+          "status": "completed",
+          "hours_after_report": 51,
+          "note": "Sampah sudah diangkut petugas. Terima kasih atas laporannya."
+        }
+      ],
+      "source": {
+        "file": "plastic/plastic_1828.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pla-12",
+      "photo": "pla-12.jpg",
+      "true_category": "plastic",
+      "resident": "budi",
+      "description": "Botol plastik dan gelas bekas minuman menumpuk di selokan.",
+      "address": "Jl. Tebet Barat Dalam, Tebet Barat, Tebet",
+      "latitude": -6.237339,
+      "longitude": 106.848701,
+      "days_ago": 22,
+      "time": "18:33",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 14,
+          "note": "Petugas kebersihan dijadwalkan datang besok pagi."
+        }
+      ],
+      "source": {
+        "file": "plastic/plastic_722.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pla-13",
+      "photo": "pla-13.jpg",
+      "true_category": "plastic",
+      "resident": "sari",
+      "description": "Botol plastik dan gelas bekas minuman menumpuk di selokan.",
+      "address": "Jl. Tebet Barat Dalam, Tebet Barat, Tebet",
+      "latitude": -6.235733,
+      "longitude": 106.845613,
+      "days_ago": 23,
+      "time": "10:05",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 13,
+          "note": null
+        },
+        {
+          "status": "completed",
+          "hours_after_report": 72,
+          "note": "Sampah sudah diangkut petugas. Terima kasih atas laporannya."
+        }
+      ],
+      "source": {
+        "file": "plastic/plastic_1875.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pla-14",
+      "photo": "pla-14.jpg",
+      "true_category": "plastic",
+      "resident": "warga",
+      "description": "Tumpukan kemasan plastik di pinggir kali.",
+      "address": "Jl. Tebet Barat Dalam, Tebet Barat, Tebet",
+      "latitude": -6.237396,
+      "longitude": 106.844072,
+      "days_ago": 16,
+      "time": "09:27",
+      "history": [],
+      "source": {
+        "file": "plastic/plastic_1916.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pla-15",
+      "photo": "pla-15.jpg",
+      "true_category": "plastic",
+      "resident": "sari",
+      "description": "Sampah plastik kemasan makanan di bawah jembatan penyeberangan.",
+      "address": "Jl. Bangka Raya, Pela Mampang, Mampang Prapatan",
+      "latitude": -6.255116,
+      "longitude": 106.814226,
+      "days_ago": 5,
+      "time": "17:27",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 15,
+          "note": "Petugas kebersihan dijadwalkan datang besok pagi."
+        }
+      ],
+      "source": {
+        "file": "plastic/plastic_184.jpg",
+        "split": "test (local split re-run)"
+      }
+    },
+    {
+      "key": "pla-16",
+      "photo": "pla-16.jpg",
+      "true_category": "plastic",
+      "resident": "budi",
+      "description": "Sampah plastik kemasan makanan di bawah jembatan penyeberangan.",
+      "address": "Jl. Cipete Raya, Cipete Selatan, Cilandak",
+      "latitude": -6.274598,
+      "longitude": 106.804722,
+      "days_ago": 14,
+      "time": "11:33",
+      "history": [
+        {
+          "status": "in_progress",
+          "hours_after_report": 11,
+          "note": null
+        },
+        {
+          "status": "rejected",
+          "hours_after_report": 40,
+          "note": "Foto kurang jelas untuk memastikan lokasi; silakan kirim laporan baru."
+        }
+      ],
+      "source": {
+        "file": "plastic/plastic_393.jpg",
+        "split": "test (local split re-run)"
+      }
+    }
+  ]
+}
