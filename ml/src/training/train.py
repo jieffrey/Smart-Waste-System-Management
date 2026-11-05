@@ -35,20 +35,26 @@ DROPOUT_RATE = 0.2
 EARLY_STOPPING_PATIENCE = 2
 
 
-def load_datasets():
+def load_datasets(dataset_dir=DATASET_DIR, return_raw=False):
+    """Train (shuffled, seed=SEED) and validation datasets, prefetched.
+
+    With return_raw=True the un-prefetched train dataset is returned as well, because only it
+    has .file_paths and .class_names (used by Option B to count the training images per class).
+    """
     # Class names come from the folder names in alphabetical order: organic, paper, plastic
     train_ds = tf.keras.utils.image_dataset_from_directory(
-        f"{DATASET_DIR}/train", image_size=IMG_SIZE, batch_size=BATCH_SIZE, shuffle=True, seed=SEED
+        f"{dataset_dir}/train", image_size=IMG_SIZE, batch_size=BATCH_SIZE, shuffle=True, seed=SEED
     )
     val_ds = tf.keras.utils.image_dataset_from_directory(
-        f"{DATASET_DIR}/validation", image_size=IMG_SIZE, batch_size=BATCH_SIZE, shuffle=False
+        f"{dataset_dir}/validation", image_size=IMG_SIZE, batch_size=BATCH_SIZE, shuffle=False
     )
     print("Class names:", train_ds.class_names)
 
-    return train_ds.prefetch(tf.data.AUTOTUNE), val_ds.prefetch(tf.data.AUTOTUNE)
+    prefetched = (train_ds.prefetch(tf.data.AUTOTUNE), val_ds.prefetch(tf.data.AUTOTUNE))
+    return (*prefetched, train_ds) if return_raw else prefetched
 
 
-def build_model():
+def build_model(learning_rate=LEARNING_RATE):
     base_model = tf.keras.applications.MobileNetV2(
         input_shape=(224, 224, 3), include_top=False, weights="imagenet"
     )
@@ -64,7 +70,7 @@ def build_model():
 
     model = keras.Model(inputs, outputs)
     model.compile(
-        optimizer=keras.optimizers.Adam(learning_rate=LEARNING_RATE),
+        optimizer=keras.optimizers.Adam(learning_rate=learning_rate),
         loss="sparse_categorical_crossentropy",
         metrics=["accuracy"],
     )
@@ -84,6 +90,14 @@ def train(model, train_ds, val_ds):
     return model.fit(train_ds, validation_data=val_ds, epochs=EPOCHS, callbacks=[checkpoint, early_stopping])
 
 
+def write_history_csv(h: dict, path: Path):
+    with open(path, "w", newline="") as f:
+        writer = csv.writer(f, lineterminator="\n")
+        writer.writerow(["epoch", *h.keys()])
+        for epoch in range(len(h["loss"])):
+            writer.writerow([epoch, *(h[key][epoch] for key in h)])
+
+
 def save_history(history):
     metrics_dir = Path(RESULTS_DIR) / "metrics"
     figures_dir = Path(RESULTS_DIR) / "figures"
@@ -91,12 +105,7 @@ def save_history(history):
     figures_dir.mkdir(parents=True, exist_ok=True)
 
     h = history.history  # keys: accuracy, loss, val_accuracy, val_loss
-
-    with open(metrics_dir / "training_history.csv", "w", newline="") as f:
-        writer = csv.writer(f, lineterminator="\n")
-        writer.writerow(["epoch", *h.keys()])
-        for epoch in range(len(h["loss"])):
-            writer.writerow([epoch, *(h[key][epoch] for key in h)])
+    write_history_csv(h, metrics_dir / "training_history.csv")
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 4))
     ax[0].plot(h["accuracy"], label="train")
