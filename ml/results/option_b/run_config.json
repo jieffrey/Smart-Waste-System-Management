@@ -1,0 +1,71 @@
+{
+    "model_file": "swms_mobilenetv2_option_b.keras",
+    "dataset_dir": "/content/drive/MyDrive/SWMS/dataset_split",
+    "img_size": [
+        224,
+        224
+    ],
+    "batch_size": 32,
+    "dropout": 0.2,
+    "early_stopping_patience": 3,
+    "phase1": {
+        "epochs_max": 20,
+        "learning_rate": 0.001,
+        "base": "frozen"
+    },
+    "phase2": {
+        "epochs_max": 20,
+        "learning_rate": 1e-05
+    },
+    "seeds": {
+        "python_random": 42,
+        "numpy": 42,
+        "tensorflow": 42,
+        "PYTHONHASHSEED": 42,
+        "dataset_shuffle": 42,
+        "deterministic_ops": false
+    },
+    "environment": {
+        "python": "3.13.16",
+        "tensorflow": "2.21.0",
+        "keras": "3.13.2",
+        "numpy": "2.4.6",
+        "scikit_learn": "1.6.1",
+        "gpus": [
+            "/physical_device:GPU:0"
+        ],
+        "gpu_name": "Tesla T4"
+    },
+    "class_weight": {
+        "organic": 1.559062649450024,
+        "paper": 0.924822695035461,
+        "plastic": 0.7829010566762729
+    },
+    "phase1_trainable_params": 3843,
+    "fine_tuning": {
+        "fine_tune_from": "block_13_expand",
+        "fine_tune_from_index": 116,
+        "base_layers": 154,
+        "unfrozen_layers": 38,
+        "batchnorm_kept_frozen": 13,
+        "trainable_layers_in_base": 25,
+        "trainable_params": 1667203,
+        "learning_rate": 1e-05
+    },
+    "selection": {
+        "phase1_best": {
+            "epoch": 10,
+            "epochs_run": 13,
+            "val_loss": 0.03946765512228012,
+            "val_accuracy": 0.9871428608894348
+        },
+        "phase2_best": {
+            "epoch": 1,
+            "epochs_run": 4,
+            "val_loss": 0.034328434616327286,
+            "val_accuracy": 0.9885714054107666
+        },
+        "selected_phase": 2,
+        "rule": "lowest validation loss"
+    }
+}
