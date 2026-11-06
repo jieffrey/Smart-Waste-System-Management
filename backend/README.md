@@ -233,8 +233,9 @@ simply try again:
 { "error": { "message": "AI service unavailable, please try again later", "details": null } }
 ```
 
-Order of work: validate the request → classify with the ML API → save the image → insert the report
-and its first status-history row (`pending`) in one transaction. The reason for an ML failure is
+Order of work: validate the request → classify with the ML API → strip the photo's metadata → store the
+image → insert the report and its first status-history row (`pending`) in one transaction. If the insert (or
+getting a database connection) fails, the stored image is deleted again. The reason for an ML failure is
 only logged on the server, never sent to the client.
 
 | Status | When |
@@ -245,9 +246,9 @@ only logged on the server, never sent to the client.
 | `403` | Not role `user` (e.g. an admin), or account deactivated |
 | `413` | Image larger than 5 MB |
 | `415` | Not a JPEG, PNG or WebP image |
-| `422` | The ML API couldn't process the photo (error on the `image` field) |
+| `422` | The ML API couldn't process the photo, or it can't be decoded for storage (error on the `image` field) |
 | `429` | More than 20 new reports in an hour (see [Rate limits](#rate-limits)) |
-| `503` | ML API unavailable (see above) |
+| `503` | ML API unavailable (see above), or photo storage (Cloudinary) unavailable |
 
 ### List your own reports — `GET /api/reports/me`
 
@@ -297,14 +298,24 @@ include who made each change.
 
 ### Images
 
-Images are stored locally in `backend/uploads/` (gitignored) and served at `/uploads/<uuid>.<ext>`.
-All file access goes through `src/modules/uploads/uploads.service.js`, so it can be swapped for
-cloud storage later.
+All image handling goes through `src/modules/uploads/uploads.service.js`. `STORAGE_DRIVER` picks where
+photos go:
 
-`image_url` is **relative** (e.g. `/uploads/<uuid>.jpg`). Clients build the full URL from the API
-base URL they already use: if `image_url` starts with `http`, use it as is; otherwise prefix it with
-the API base URL (e.g. `http://192.168.1.10:4000` + `image_url`). This keeps working if storage later
-moves to the cloud and returns absolute URLs.
+| `STORAGE_DRIVER` | Stored in | `image_url` | Use |
+|---|---|---|---|
+| `local` (default) | `backend/uploads/` (gitignored), served at `/uploads/<uuid>.<ext>` | relative, `/uploads/<uuid>.jpg` | development, tests |
+| `cloudinary` | Cloudinary, public id `<CLOUDINARY_FOLDER>/<uuid>` (needs `CLOUDINARY_URL`) | absolute, `https://res.cloudinary.com/…` | production (container disks are wiped on redeploy) |
+
+With `cloudinary`, `/uploads` isn't mounted. The server refuses to start with an unknown driver, or with
+`cloudinary` but no `CLOUDINARY_URL`.
+
+**Metadata is stripped before storing (SEC-06).** The upload is classified as sent, then re-encoded with
+`sharp` in the same format: the EXIF orientation is applied to the pixels, and all metadata is dropped
+(EXIF including GPS, XMP, IPTC, ICC). An image that can't be decoded gets `422` on the `image` field.
+
+Clients build the full URL like this: if `image_url` starts with `http`, use it as is; otherwise prefix it
+with the API base URL (e.g. `http://192.168.1.10:4000` + `image_url`). The web and mobile helpers already do
+this, so both drivers work without client changes.
 
 ## Admin API — `/api/admin`
 

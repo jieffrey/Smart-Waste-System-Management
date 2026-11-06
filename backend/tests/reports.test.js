@@ -4,6 +4,7 @@
 const { test, before, beforeEach, after } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
+const sharp = require('sharp');
 const { startFakeMlApi, DEFAULT_PREDICTION } = require('./helpers/fake-ml-api');
 
 const runId = Date.now();
@@ -15,8 +16,10 @@ const UNAVAILABLE_BODY = {
   error: { message: 'AI service unavailable, please try again later', details: null },
 };
 
-// Only the first bytes matter for type detection; the fake ML API does not decode images.
-const JPEG_BYTES = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(100, 1)]);
+// A real (tiny) JPEG, made in before(): the backend decodes it to strip metadata before storing it.
+let JPEG_BYTES;
+// Passes the magic-byte check (and the fake ML API, which doesn't decode), but isn't a decodable image.
+const FAKE_JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(100, 1)]);
 const VALID_FIELDS = { description: '  Plastic bottles next to the bus stop  ', latitude: '-6.200000', longitude: '106.816666' };
 
 let fakeMl;
@@ -66,7 +69,12 @@ async function countImageFiles() {
   return files.length;
 }
 
+function solidImage(width, height) {
+  return sharp({ create: { width, height, channels: 3, background: { r: 90, g: 140, b: 60 } } });
+}
+
 before(async () => {
+  JPEG_BYTES = await solidImage(32, 24).jpeg().toBuffer();
   fakeMl = await startFakeMlApi();
 
   // The config is read when the app is first loaded, so set the env before requiring it.
@@ -137,10 +145,89 @@ test('creates a report with the category taken from the ML prediction', async ()
   );
   assert.deepEqual(history.rows, [{ old_status: null, new_status: 'pending', changed_by: userId }]);
 
-  // The saved image is served at its URL
+  // The saved image is served at its URL (re-encoded without metadata, same size and format)
   const image = await fetch(`${baseUrl}${report.image_url}`);
   assert.equal(image.status, 200);
-  assert.deepEqual(Buffer.from(await image.arrayBuffer()), JPEG_BYTES);
+  const metadata = await sharp(Buffer.from(await image.arrayBuffer())).metadata();
+  assert.deepEqual([metadata.format, metadata.width, metadata.height], ['jpeg', 32, 24]);
+});
+
+test('strips EXIF (including GPS) and applies the EXIF orientation before storing the photo (SEC-06)', async () => {
+  // 40x20 pixels stored, EXIF orientation 6 (rotate 90°), plus a GPS position and a camera model.
+  // (withExif ignores Orientation, so the orientation is set with withMetadata.)
+  const withExif = await solidImage(40, 20)
+    .withMetadata({ orientation: 6 })
+    .withExif({
+      IFD0: { Model: 'Test Phone' },
+      IFD3: { GPSLatitudeRef: 'S', GPSLatitude: '6/1 12/1 0/1', GPSLongitudeRef: 'E', GPSLongitude: '106/1 49/1 0/1' },
+    })
+    .jpeg()
+    .toBuffer();
+  const before = await sharp(withExif).metadata();
+  assert.ok(before.exif && before.orientation === 6, 'the test image must start with EXIF and orientation 6');
+
+  const res = await createReport({ image: withExif });
+
+  assert.equal(res.status, 201);
+  const stored = await fs.readFile(`${uploads.UPLOAD_DIR}/${res.body.report.image_url.split('/').pop()}`);
+  const metadata = await sharp(stored).metadata();
+  assert.equal(metadata.exif, undefined);
+  assert.equal(metadata.icc, undefined);
+  assert.equal(metadata.xmp, undefined);
+  assert.equal(metadata.orientation, undefined);
+  assert.deepEqual([metadata.width, metadata.height], [20, 40]); // rotated into the pixels
+  // The ML API got the original upload (classification is unchanged by sanitizing)
+  assert.ok(fakeMl.state.requests[0].body.includes(withExif));
+});
+
+test('returns 422 on the image field and saves nothing when the image passes the ML API but cannot be decoded', async (t) => {
+  t.mock.method(console, 'warn', () => {});
+  const [reportsBefore, filesBefore] = [await countReports(), await countImageFiles()];
+
+  const res = await createReport({ image: FAKE_JPEG });
+
+  assert.equal(res.status, 422);
+  assert.deepEqual(res.body.error.details, [{ field: 'image', message: "The photo couldn't be processed. Try another photo." }]);
+  assert.equal(await countReports(), reportsBefore);
+  assert.equal(await countImageFiles(), filesBefore);
+});
+
+// Replaces pool.connect() for createReport only. pool.query() (used by the auth middleware) calls
+// connect(callback) internally, so callback-style calls still go to the real pool.
+function mockReportConnection(t, fakeConnect) {
+  const realConnect = pool.connect.bind(pool);
+  t.mock.method(pool, 'connect', (...args) => (typeof args[0] === 'function' ? realConnect(...args) : fakeConnect()));
+}
+
+test('deletes the stored photo again when the database insert fails', async (t) => {
+  t.mock.method(console, 'error', () => {});
+  const filesBefore = await countImageFiles();
+  mockReportConnection(t, async () => ({
+    query: async (sql) => {
+      if (sql.trim().startsWith('INSERT')) {
+        throw new Error('simulated insert failure');
+      }
+    },
+    release: () => {},
+  }));
+
+  const res = await createReport();
+
+  assert.equal(res.status, 500);
+  assert.equal(await countImageFiles(), filesBefore);
+});
+
+test('deletes the stored photo again when no database connection can be made', async (t) => {
+  t.mock.method(console, 'error', () => {});
+  const filesBefore = await countImageFiles();
+  mockReportConnection(t, async () => {
+    throw new Error('simulated connection failure');
+  });
+
+  const res = await createReport();
+
+  assert.equal(res.status, 500);
+  assert.equal(await countImageFiles(), filesBefore);
 });
 
 test('returns 503 and saves nothing when the ML API returns an error', async (t) => {

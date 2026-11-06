@@ -23,7 +23,10 @@ if (webOrigins.length > 0) {
 
 app.use(express.json());
 
-app.use(UPLOAD_URL_PREFIX, serveImages);
+// Local photo storage only (STORAGE_DRIVER=local); Cloudinary photos are served by Cloudinary.
+if (serveImages) {
+  app.use(UPLOAD_URL_PREFIX, serveImages);
+}
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
