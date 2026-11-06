@@ -76,6 +76,7 @@ export function ReportDetail({ report, children }: { report: AdminReportDetail; 
             ai_predicted_category={report.ai_predicted_category}
             ai_confidence={report.ai_confidence}
             ai_model_version={report.ai_model_version}
+            needs_review={report.needs_review}
           />
           <HandlingGuide category={report.category} />
           <section className="border-t border-ink pt-4">

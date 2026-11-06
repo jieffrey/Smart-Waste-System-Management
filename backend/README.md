@@ -38,6 +38,7 @@ change existing tables — don't run it against a database that already has the 
 | `DB_POOL_MAX` | no | Max database connections (default `10`) |
 | `ML_API_URL` | no* | Base URL of the ML API, e.g. `http://localhost:8000`. *Without it the server still starts (with a warning), but creating a report returns `503`. |
 | `ML_API_KEY` | no | Sent to the ML API as the `X-API-Key` header, only when set (e.g. for a hosted ML API) |
+| `AI_REVIEW_THRESHOLD` | no | Reports with AI confidence below this (0–1) "need review" until an admin confirms or corrects them. Default `0.70`; anything outside (0, 1] stops the server at startup |
 | `ML_API_TIMEOUT_MS` | no | ML API request timeout in milliseconds: default `30000`, allowed `100`–`40000`. The server refuses to start outside that range, so the timeout stays below the mobile app's 45 s upload timeout |
 | `TRUST_PROXY` | no | Number of reverse proxies in front of the API (e.g. `1` on Render/Railway). Needed so rate limits see each client's IP instead of the proxy's. Leave unset when clients connect directly. See [Rate limits](#rate-limits). |
 | `WEB_ORIGIN` | no | Browser origins allowed to call the API (CORS), comma-separated, e.g. `http://localhost:3001,https://admin.example.com`. Empty = no CORS headers. See [CORS](#cors). |
@@ -382,6 +383,7 @@ All reports, newest first, each with `reporter_name` and `reporter_email`.
 | `category` | `organic`, `paper` or `plastic` |
 | `from`, `to` | Dates `YYYY-MM-DD` (Asia/Jakarta); `to` is inclusive and must not be before `from` |
 | `q` | Case-insensitive search in `description` and `address` (`%` and `_` are matched literally) |
+| `needs_review` | `true`: only reports that need review (see below); `false` or absent: no filter |
 | `page`, `limit` | Pagination |
 
 ```bash
@@ -437,7 +439,8 @@ completed, rejected → final (no more changes of any kind)
   },
   "reports_per_day": [{ "date": "2026-10-05", "count": 0, "completed_count": 0 }, "… 30 days, oldest first, today last …"],
   "ai_accuracy": { "reviewed": 6, "matching": 5, "accuracy": 0.8333 },
-  "ai_flow": [{ "ai_category": "organic", "category": "organic", "count": 4 }, "… all 9 pairs …"]
+  "ai_flow": [{ "ai_category": "organic", "category": "organic", "count": 4 }, "… all 9 pairs …"],
+  "needs_review": { "count": 2, "threshold": 0.7 }
 }
 ```
 
@@ -451,6 +454,16 @@ completed, rejected → final (no more changes of any kind)
   `ai_category` (what the AI said) to each current `category`. Always all 9 pairs, in the order
   organic, paper, plastic (AI) × organic, paper, plastic (current), with `count: 0` when none. Pairs
   where the two differ are admin corrections. Used for the dashboard's Sankey chart.
+- `needs_review`: how many reports need review right now, and the `AI_REVIEW_THRESHOLD` in use.
+
+#### "Needs review"
+
+Every report payload (admin and resident) has a computed `needs_review` boolean: **true** when
+`ai_confidence < AI_REVIEW_THRESHOLD` (default `0.70`) **and** no admin has confirmed or corrected the category
+yet, i.e. `category = ai_predicted_category` **and** `status = 'pending'`. It is computed in SQL, not stored (no
+migration). Correcting the category clears it. So does routing the report (in progress / completed /
+rejected), because routing means an admin looked at it and kept the category. The one case this can't see is
+an admin who saves only a note on a pending report: that still counts as unreviewed, which is the safe side.
 
 ### List users — `GET /api/admin/users`
 

@@ -33,6 +33,10 @@ export function AiResult({ report, onViewReport, onReportAgain }: AiResultProps)
         <Text style={[styles.confidence, { color: colors.onFill }]}>
           {t.result.confidence(formatConfidence(report.ai_confidence))}
         </Text>
+        {report.needs_review ? (
+          // Plain and honest: the AI wasn't sure, so a person checks it. Ink on yellow punk (15.3:1).
+          <Text style={styles.lowConfidence}>{t.result.lowConfidence}</Text>
+        ) : null}
       </Animated.View>
 
       <View style={styles.journey}>
@@ -77,6 +81,16 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.semibold,
     fontSize: 18,
     lineHeight: 26,
+  },
+  lowConfidence: {
+    alignSelf: 'flex-start',
+    backgroundColor: Palette.highlight,
+    color: Palette.ink,
+    fontFamily: FontFamily.extrabold,
+    fontSize: 16,
+    lineHeight: 22,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.one,
   },
   confidence: {
     fontFamily: FontFamily.mono,

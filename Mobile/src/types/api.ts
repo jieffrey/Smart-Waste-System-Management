@@ -27,6 +27,8 @@ export interface Report {
   ai_predicted_category: WasteCategory | null;
   ai_confidence: number | null;
   ai_model_version: string | null;
+  // AI confidence below the review threshold and no admin has confirmed/corrected it yet (older API: absent)
+  needs_review?: boolean;
   admin_note: string | null;
   created_at: string;
   updated_at: string;

@@ -3,12 +3,14 @@ const { classifyImage } = require('../ml/ml.service');
 const uploads = require('../uploads/uploads.service');
 const HttpError = require('../../utils/http-error');
 const { reportIdSchema } = require('./reports.schema');
+const { needsReviewSql } = require('./needs-review');
 
 // NUMERIC columns are cast to float8 so they are returned as JSON numbers, not strings.
 const REPORT_COLUMNS = `id, user_id, description, category, status, image_url,
   latitude::float8 AS latitude, longitude::float8 AS longitude, address,
   ai_predicted_category, ai_confidence::float8 AS ai_confidence, ai_model_version,
-  admin_note, created_at, updated_at`;
+  admin_note, created_at, updated_at,
+  ${needsReviewSql()} AS needs_review`;
 
 // A failed cleanup is logged, never thrown: the caller needs the original error.
 async function deleteImageQuietly(imageUrl) {

@@ -1,4 +1,5 @@
 const { readMlApiTimeout } = require('./ml-timeout');
+const { readAiReviewThreshold } = require('./ai-review');
 
 const databaseUrl = process.env.DATABASE_URL;
 const jwtSecret = process.env.JWT_SECRET;
@@ -31,6 +32,8 @@ module.exports = {
   mlApiUrl: process.env.ML_API_URL ? process.env.ML_API_URL.replace(/\/+$/, '') : null,
   mlApiKey: process.env.ML_API_KEY || null,
   mlApiTimeoutMs: readMlApiTimeout(process.env.ML_API_TIMEOUT_MS),
+  // Reports with AI confidence below this need an admin's review (default 0.70)
+  aiReviewThreshold: readAiReviewThreshold(process.env.AI_REVIEW_THRESHOLD),
   // Number of reverse proxies in front of the API (e.g. 1 on Render/Railway), so req.ip is the client's IP
   // for rate limiting. Leave unset when clients connect directly.
   trustProxy: Number(process.env.TRUST_PROXY) || 0,

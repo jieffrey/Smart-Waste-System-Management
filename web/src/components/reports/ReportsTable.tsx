@@ -8,6 +8,11 @@ import { reportDetailHref, type ReportFilters } from "@/lib/report-filters";
 import type { AdminReport } from "@/types/api";
 import { ReportThumbnail } from "./ReportThumbnail";
 
+// AI was unsure and nobody has confirmed the category yet: ink on yellow punk (15.3:1).
+function ReviewTag() {
+  return <span className="label-micro mt-1 block w-fit bg-highlight px-1 text-ink">Needs review</span>;
+}
+
 // Full address (or coordinates) for the hover title of the short location.
 function fullLocation(report: AdminReport) {
   return report.address || coordinatesLabel(report.latitude, report.longitude);
@@ -54,6 +59,7 @@ export function ReportsTable({ reports, filters }: { reports: AdminReport[]; fil
             </TableCell>
             <TableCell>
               <StatusMarker status={report.status} />
+              {report.needs_review && <ReviewTag />}
             </TableCell>
             <TableCell className="hidden md:table-cell max-w-56 truncate text-gray-700" title={fullLocation(report)}>
               {shortLocation(report)}
