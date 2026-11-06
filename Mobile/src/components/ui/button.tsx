@@ -6,7 +6,9 @@ import { FontFamily, Palette, Spacing } from '@/constants/theme';
 // secondary = 1px ink outline.
 // ink       = ink fill + snow label, for use on a colored block.
 // text      = text only, underlined.
-// Disabled stays readable (gray-700 on gray-100, 7.81:1) instead of fading to an illegible ghost.
+// Disabled stays readable instead of fading to an illegible ghost. A disabled primary keeps a pale red-orange
+// tint (ink label, 11:1+) so the screen's main action is still recognisable before the form is filled;
+// the others go gray-700 on gray-100 (7.81:1).
 type Variant = 'primary' | 'secondary' | 'ink' | 'text';
 
 interface ButtonProps {
@@ -19,6 +21,9 @@ interface ButtonProps {
   accessibilityHint?: string;
 }
 
+// Red orange at ~35% on snow.
+const SIGNAL_TINT = '#FFC2B2';
+
 const VARIANTS: Record<Variant, { background: string; border: string; text: string }> = {
   primary: { background: Palette.signal, border: Palette.signal, text: Palette.ink },
   secondary: { background: Palette.snow, border: Palette.ink, text: Palette.ink },
@@ -30,7 +35,7 @@ export function Button({ title, onPress, variant = 'primary', disabled = false, 
   const inactive = disabled || loading;
   const colors = VARIANTS[variant];
   const isText = variant === 'text';
-  const textColor = disabled && !isText ? Palette.gray700 : colors.text;
+  const textColor = disabled && !isText ? (variant === 'primary' ? Palette.ink : Palette.gray700) : colors.text;
 
   return (
     <Pressable
@@ -42,8 +47,8 @@ export function Button({ title, onPress, variant = 'primary', disabled = false, 
       style={({ pressed }) => [
         isText ? styles.textButton : styles.button,
         !isText && {
-          backgroundColor: disabled ? Palette.gray100 : colors.background,
-          borderColor: disabled ? Palette.gray300 : colors.border,
+          backgroundColor: disabled ? (variant === 'primary' ? SIGNAL_TINT : Palette.gray100) : colors.background,
+          borderColor: disabled ? (variant === 'primary' ? SIGNAL_TINT : Palette.gray300) : colors.border,
         },
         pressed && !inactive && (isText ? styles.textPressed : styles.pressed),
         style,
