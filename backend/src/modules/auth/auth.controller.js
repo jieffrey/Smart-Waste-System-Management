@@ -14,4 +14,14 @@ function me(req, res) {
   res.status(200).json({ user: req.user });
 }
 
-module.exports = { register, login, me };
+async function updateMe(req, res) {
+  const user = await authService.updateProfile(req.user.id, req.body);
+  res.status(200).json({ user });
+}
+
+async function changePassword(req, res) {
+  await authService.changePassword(req.user.id, req.body);
+  res.status(200).json({ message: 'Password changed' });
+}
+
+module.exports = { register, login, me, updateMe, changePassword };

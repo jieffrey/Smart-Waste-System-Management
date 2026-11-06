@@ -46,4 +46,30 @@ const reportLimiter = createRateLimiter({
   action: 'new reports',
 });
 
-module.exports = { loginIpLimiter, loginEmailLimiter, registerLimiter, reportLimiter };
+// Profile changes, per user: 20 per hour. Plenty for fixing a typo; stops a script from using the
+// "email already registered" answer to probe which emails have accounts.
+const profileLimiter = createRateLimiter({
+  windowMs: HOUR,
+  limit: 20,
+  key: (req) => `profile-user:${req.user.id}`,
+  action: 'profile changes',
+});
+
+// Password changes, per user: 5 failed attempts per 15 minutes (same as login). Stops someone with an
+// unlocked phone or a stolen token from guessing the current password. Only failures count.
+const passwordChangeLimiter = createRateLimiter({
+  windowMs: 15 * MINUTE,
+  limit: 5,
+  key: (req) => `password-user:${req.user.id}`,
+  action: 'password change attempts',
+  onlyFailures: true,
+});
+
+module.exports = {
+  loginIpLimiter,
+  loginEmailLimiter,
+  registerLimiter,
+  reportLimiter,
+  profileLimiter,
+  passwordChangeLimiter,
+};

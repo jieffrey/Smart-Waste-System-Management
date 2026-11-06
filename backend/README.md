@@ -196,6 +196,8 @@ All errors use the same format:
 | `POST /api/auth/register` | `{ full_name, email, password }` → `201 { user, token }` (role is always `user`). Password: 8–72 characters and not one of the most common passwords |
 | `POST /api/auth/login` | `{ email, password }` → `200 { user, token }` |
 | `GET /api/auth/me` | `Authorization: Bearer <token>` → `200 { user }` |
+| `PATCH /api/auth/me` | `{ full_name?, email? }` (at least one, same rules as registration) → `200 { user }`. An email of another account → `409 Email is already registered`. The token stays valid |
+| `POST /api/auth/change-password` | `{ current_password, new_password }` → `200 { message: "Password changed" }`. Wrong current password → `400` with a `current_password` detail (not 401, so the apps don't sign out). The new password follows the registration rules and must differ from the current one. Existing tokens stay valid until they expire (stateless JWT) |
 
 ### Rate limits
 
@@ -207,6 +209,8 @@ Limited requests get `429` with a `Retry-After` header (seconds) and the usual e
 | `POST /api/auth/login` | 20 per IP per 15 min | Plenty for typos or a shared office IP; far too few for password guessing |
 | `POST /api/auth/login` | 5 **failed** attempts per email per 15 min | Stops guessing one account from many IPs. Successful logins don't count. Applies to any email, registered or not, so it reveals nothing |
 | `POST /api/auth/register` | 10 per IP per hour | A group signing up together fits; mass account creation doesn't |
+| `PATCH /api/auth/me` | 20 per user per hour | Enough to fix typos; stops probing which emails are registered |
+| `POST /api/auth/change-password` | 5 **failed** attempts per user per 15 min | Same as login: stops guessing the current password with a stolen token or an unlocked phone |
 | `POST /api/reports` | 20 per user per hour | A busy reporter fits; filling the disk with 5 MB photos doesn't (max ~100 MB per user per hour) |
 
 The counters are kept **in memory**: they reset when the server restarts and only work correctly with a
