@@ -32,6 +32,8 @@ export const t = {
     somethingWrong: 'Ada yang tidak beres',
     genericError: 'Ada yang tidak beres. Coba lagi, ya.',
     loadMore: 'Muat lagi',
+    showPassword: 'Tampilkan kata sandi',
+    hidePassword: 'Sembunyikan kata sandi',
   },
 
   auth: {

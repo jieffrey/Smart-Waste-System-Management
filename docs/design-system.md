@@ -138,6 +138,7 @@ Numbers anywhere use `font-mono` (JetBrains Mono, tabular) at the size of their 
 |---|---|
 | Button | `primary` = red orange fill, ink label, used **once per view**. `secondary` = 1px ink outline. `ghost` = text only, underline on hover. All 40px tall (32px in tables) |
 | Input / Select / Textarea | 1px ink border, snow fill, 2px radius max, ink focus outline. Native `<select>` (keeps forms and accessibility simple) |
+| Password field | Every password input has a show/hide toggle inside the field on the right: eye = show, eye-off = hide, gray-700 icon (ink on hover). Each field toggles on its own and starts hidden whenever the screen opens; `autocomplete` stays `current-password` / `new-password`. **Web** (`PasswordInput`, lucide `Eye`/`EyeOff`): a real `type="button"` 40×40, `aria-label` "Show password" / "Hide password", `aria-pressed`, the standard ink focus outline drawn inside the field, and a click keeps focus in the input. **Mobile** (`TextField` with `secureTextEntry`, Paper `IconButton` `eye`/`eye-off`): 48×48 touch target, `accessibilityLabel` "Tampilkan kata sandi" / "Sembunyikan kata sandi" |
 | Table | No outer box. 2px ink top rule, 1px gray-200 row rules, mono micro headers, right-aligned numbers |
 | StatusMarker | Shape + label (see Status). Never a colored pill |
 | CategoryLabel | Square swatch in the category color + ink label |
