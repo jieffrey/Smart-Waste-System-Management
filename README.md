@@ -43,8 +43,8 @@ All web pages at 1440 px and 390 px are in [`docs/screenshots/final/web/`](docs/
 - **Onboarding:** three animated slides on first launch, skippable (**Lewati**), replayable from settings.
 - **Account:** register, log in, log out; the session is restored on start (token in `expo-secure-store`).
 - **Email verification (OTP):** a 6-digit code screen with a resend countdown. Only active when the backend runs
-  with `OTP_ENABLED=true` (off by default). In the live demo it is **TODO: on / off**.
-  <!-- TODO(owner): fill in whether OTP_ENABLED is on in the deployed demo. -->
+  with `OTP_ENABLED=true` (off by default). **It is on in the live demo:** a new account gets a code by email
+  before it can sign in. The demo accounts from the submission email are already verified.
 - **New report:** photo from camera or gallery (resized to 1600 px, JPEG), GPS location with an editable address,
   description. After submitting, the app shows the AI category and confidence.
 - **Low-confidence message:** when the AI is unsure (see *needs review* below), the result says an officer will
