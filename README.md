@@ -22,18 +22,19 @@ The ML API has no public URL: only the backend can reach it, over Railway's priv
 
 ## Screenshots
 
-<!-- TODO(owner): these web screenshots (docs/screenshots/polish-final/, 2026-11-06 14:01) predate the
-     Plus Jakarta Sans font, the glass top bar and the needs-review / possible-duplicate markers. Recapture them
-     with tools/screenshots when convenient. -->
+Admin web panel (1440 px, [mock data](tools/screenshots/)):
 
 | Dashboard | Reports list | Report detail |
 |---|---|---|
-| ![Admin dashboard](docs/screenshots/polish-final/dashboard-1440.png) | ![Admin reports list](docs/screenshots/polish-final/reports-1440.png) | ![Admin report detail](docs/screenshots/polish-final/report-detail-pending-1440.png) |
+| ![Admin dashboard](docs/screenshots/final/web/dashboard-1440.png) | ![Admin reports list with needs-review and possible-duplicate tags](docs/screenshots/final/web/reports-1440.png) | ![Admin report detail with the needs-review note and a possible-duplicate link](docs/screenshots/final/web/report-detail-pending-1440.png) |
 
-<!-- TODO(owner): add mobile screenshots. The only mobile captures (docs/screenshots/mobile/ and
-     docs/screenshots/polish-final/mobile/) predate the glass tab bar, onboarding, handling guidance, the
-     "Baru" update tag and the low-confidence message, so they are left out on purpose. Wanted:
-     onboarding slide, AI result (with handling guidance), "Laporan saya" list (with a "Baru" tag). -->
+Resident app (Android phone):
+
+| Onboarding | My reports | Report detail |
+|---|---|---|
+| <img src="docs/screenshots/final/01-onboarding.png" alt="Onboarding, first slide" width="240"> | <img src="docs/screenshots/final/02-list-reports.png" alt="My reports list with the floating glass tab bar" width="240"> | <img src="docs/screenshots/final/03-detail-report.png" alt="Report detail with handling guidance, admin note and status timeline" width="240"> |
+
+All web pages at 1440 px and 390 px are in [`docs/screenshots/final/web/`](docs/screenshots/final/web/).
 
 ## Features
 
@@ -42,8 +43,8 @@ The ML API has no public URL: only the backend can reach it, over Railway's priv
 - **Onboarding:** three animated slides on first launch, skippable (**Lewati**), replayable from settings.
 - **Account:** register, log in, log out; the session is restored on start (token in `expo-secure-store`).
 - **Email verification (OTP):** a 6-digit code screen with a resend countdown. Only active when the backend runs
-  with `OTP_ENABLED=true` (off by default). In the live demo it is **TODO: on / off**.
-  <!-- TODO(owner): fill in whether OTP_ENABLED is on in the deployed demo. -->
+  with `OTP_ENABLED=true` (off by default). **It is on in the live demo:** a new account gets a code by email
+  before it can sign in. The demo accounts from the submission email are already verified.
 - **New report:** photo from camera or gallery (resized to 1600 px, JPEG), GPS location with an editable address,
   description. After submitting, the app shows the AI category and confidence.
 - **Low-confidence message:** when the AI is unsure (see *needs review* below), the result says an officer will
@@ -56,6 +57,11 @@ The ML API has no public URL: only the backend can reach it, over Railway's priv
 - **Report detail:** photo, status timeline with admin notes, AI category and confidence (and the AI's original
   guess if an admin corrected it), Open in Maps.
 - **Account settings:** edit name and email, change password, replay the guide, log out.
+- **Log-out confirmation:** every log-out button (Akun, Pengaturan, and the offline start screen) asks
+  "Keluar dari akun?" first.
+- **Back-to-exit confirmation:** on Android, the hardware back button on *Laporan saya* asks "Tutup aplikasi?"
+  instead of closing the app at once.
+- **Password fields** have a show/hide toggle.
 
 ### Admin (web panel)
 
@@ -70,6 +76,9 @@ The ML API has no public URL: only the backend can reach it, over Railway's priv
 - **Users:** list and search users with their report count; activate or deactivate accounts (a deactivated
   user's token stops working at once; an admin can't deactivate their own account).
 - **Settings:** edit profile, change password, log out.
+- **Log-out confirmation:** the sidebar and `/settings` log-out buttons open a "Log out?" dialog (Cancel focused
+  first, Esc cancels, focus stays inside); the session ends only after confirming.
+- **Password fields** (login, settings) have a show/hide toggle.
 
 ### AI
 
@@ -83,6 +92,31 @@ The ML API has no public URL: only the backend can reach it, over Railway's priv
   for the admin.
 - **AI accuracy:** the share of reviewed reports (`in_progress` / `completed`) whose category the admin left as
   the AI predicted it.
+
+## Design
+
+- **Concept:** residents are the eyes, the AI is the sorter, admins are the dispatchers. The interface says that
+  without decoration: Bauhaus / punk-zine discipline, hard edges, 1px ink rules instead of boxes, one big number
+  leading each screen. Light mode only.
+- **Palette roles:**
+  - **Red orange** `#FF4A1C`: the one primary action, the key number, the active state. Never errors or
+    "rejected".
+  - **Yellow punk** `#E8F23A`: only as a highlighter behind ink text (needs review, the admin note, the
+    active tab pill), or as text on ink.
+  - **Cobalt** `#2B4BD8`: the plastic category.
+  - **Ink** `#121212` on **snow** `#FBFBF8`: text, rules and icons.
+- **Status without color:** pending, in progress, completed and rejected are squares that fill up (empty, half,
+  filled with a check, crossed with a struck label), the same on web and mobile.
+- **Category colors as identity:** organic = red orange, paper = ink, plastic = cobalt, everywhere (tables,
+  charts, the AI result). In text a category is a square swatch plus an ink label.
+- **Type:** Plus Jakarta Sans (made by Tokotype for Jakarta's city identity) for headings and UI, JetBrains Mono
+  with tabular figures for numbers, dates, IDs and coordinates.
+- **Motion:** short (150–400 ms) count-ups, chart draw-ins and press feedback, all off with reduced motion. On
+  mobile a floating glass tab bar (blur + snow tint) lets content scroll behind it, with a yellow pill that slides
+  to the active tab. Phones get a sticky glass top bar on web as well.
+
+Full rules and contrast checks: [`docs/design-system.md`](docs/design-system.md). The ranked polish review with
+before/after screenshots: [`docs/design-review.md`](docs/design-review.md).
 
 ## Architecture
 

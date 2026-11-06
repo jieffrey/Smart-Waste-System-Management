@@ -19,21 +19,42 @@ const PAGES = [
   ["users", "/users"],
 ];
 
+// A full-page screenshot resizes the viewport while capturing, which makes the charts re-measure mid-shot.
+// Instead: grow the viewport to the page height, let everything settle, take a normal screenshot, shrink back.
+async function shoot(page, file) {
+  const viewport = page.viewportSize();
+  const height = await page.evaluate(() => document.documentElement.scrollHeight);
+  await page.setViewportSize({ width: viewport.width, height });
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: file });
+  await page.setViewportSize(viewport);
+}
+
 async function settle(page) {
   await page.waitForLoadState("networkidle");
-  await page.waitForTimeout(2500); // chart enter animations
+  // Charts lay themselves out once they are in view: scroll through the page first, then back to the top.
+  const height = await page.evaluate(() => document.documentElement.scrollHeight);
+  for (let y = 0; y < height; y += 400) {
+    await page.mouse.wheel(0, 400);
+    await page.waitForTimeout(150);
+  }
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.mouse.move(0, 0); // no chart tooltip in the picture
+  await page.waitForTimeout(1000);
 }
 
 const browser = await chromium.launch();
 const saved = [];
 for (const width of [1440, 390]) {
-  const context = await browser.newContext({ viewport: { width, height: width === 1440 ? 900 : 844 }, deviceScaleFactor: 1 });
+  // Reduced motion: charts render in their final state, also below the fold (in-view animations never start
+  // in a full-page screenshot because the page isn't scrolled).
+  const context = await browser.newContext({ viewport: { width, height: width === 1440 ? 900 : 844 }, deviceScaleFactor: 1, reducedMotion: "reduce" });
   const page = await context.newPage();
 
   await page.goto(`${base}/login`);
   await settle(page);
   const loginFile = path.join(outDir, `login-${width}.png`);
-  await page.screenshot({ path: loginFile, fullPage: true });
+  await shoot(page, loginFile);
   saved.push(loginFile);
 
   await page.fill("#email", "dewi@swms.example");
@@ -42,7 +63,8 @@ for (const width of [1440, 390]) {
 
   // Find one open and one closed report from the list to photograph their detail pages.
   const ids = await (await fetch(`${mock}/api/admin/reports?page=1`)).json();
-  const pending = ids.reports.find((r) => r.status === "pending")?.id;
+  // Prefer an open report that shows the newer markers (needs review / possible duplicate).
+  const pending = (ids.reports.find((r) => r.status === "pending" && r.needs_review && r.possible_duplicate_of) ?? ids.reports.find((r) => r.status === "pending" && (r.needs_review || r.possible_duplicate_of)) ?? ids.reports.find((r) => r.status === "pending"))?.id;
   const closed = ids.reports.find((r) => r.status === "completed")?.id;
 
   for (const [name, route] of PAGES) {
@@ -50,7 +72,7 @@ for (const width of [1440, 390]) {
     await page.goto(base + url);
     await settle(page);
     const file = path.join(outDir, `${name}-${width}.png`);
-    await page.screenshot({ path: file, fullPage: true });
+    await shoot(page, file);
     saved.push(file);
   }
   await context.close();
