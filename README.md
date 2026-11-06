@@ -8,6 +8,21 @@ An admin checks the AI's category (correcting it if needed), routes the report t
 The problem it addresses: waste reports that arrive unsorted, without a location and without feedback to the
 person who reported them.
 
+## Submission checklist
+
+| # | Brief item | Where / how it's met |
+|---|---|---|
+| 1 | GitHub Repository (source code) | This repository: [`backend/`](backend/), [`web/`](web/), [`Mobile/`](Mobile/), [`ml/`](ml/) ([repo structure](#repo-structure)) |
+| 2 | Link demo website | Admin web panel: https://smart-waste-system-management.vercel.app (credentials in the submission email) |
+| 3 | APK atau link demo aplikasi mobile | Android APK on [GitHub Releases → latest](https://github.com/jieffrey/Smart-Waste-System-Management/releases/latest) |
+| 4 | Dokumentasi API | [`docs/API.md`](docs/API.md): every backend and ML API endpoint with auth, request, responses, errors and rate limits |
+| 5 | Database schema atau ERD | [`docs/database.md`](docs/database.md) (ERD, tables, indexes) and [`backend/db/schema.sql`](backend/db/schema.sql) + [migrations](backend/db/migrations/) |
+| 6 | Source code dan model Machine Learning | [`ml/src/`](ml/src/) (training, evaluation, inference, FastAPI), [`ml/notebooks/`](ml/notebooks/), models in [`ml/models/`](ml/models/) (`.keras` + the served `.onnx`) |
+| 7 | Dataset beserta sumbernya | Kaggle [Garbage Classification V2](https://www.kaggle.com/datasets/sumn2u/garbage-classification-v2) by sumn2u (MIT); how it was split and used: [ML Development Process §1](ml/README.md#1-problem--dataset). The full image set isn't committed; 3 test samples are in [`ml/tests/samples/`](ml/tests/samples/) and 48 demo photos in [`backend/scripts/demo/photos/`](backend/scripts/demo/photos/ATTRIBUTION.md) |
+| 8 | Hasil evaluasi model | [`ml/results/`](ml/results/) (metrics, figures, [Option B](ml/results/option_b/)) and the [ML Development Process](ml/README.md#ml-development-process); summary in [ML summary](#ml-summary) |
+| 9 | README berisi panduan instalasi dan penggunaan | This README: [Run locally](#run-locally), [Features](#features), [Live demo](#live-demo); per app: [backend](backend/README.md), [web](web/README.md), [mobile](Mobile/README.md), [ML](ml/README.md) |
+| 10 | Video demo maksimal 10 menit yang menjelaskan hasil pengerjaan | TODO: video link |
+
 ## Live demo
 
 | | |
@@ -316,7 +331,7 @@ backend/   Express API: src/modules/<feature>/ (routes → controller → servic
 ml/        Classifier: training code, notebooks, results/, models/, FastAPI service (src/api), tests/, Dockerfile
 web/       Admin panel (Next.js App Router): src/app, src/components, src/lib
 Mobile/    Resident app (Expo Router): src/app screens, components, services, store
-docs/      Security audit, deploy plan, migrations runbook, OTP setup, design system/review, screenshots/
+docs/      API reference, database/ERD, security audit, deploy plan, migrations runbook, OTP setup, design system/review, screenshots/
 tools/     Screenshot harness (tools/screenshots)
 ```
 
