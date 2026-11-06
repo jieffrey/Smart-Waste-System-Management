@@ -42,11 +42,14 @@ export function TabBar({ state, navigateToTab, insets }: BottomTabBarProps) {
               pressed && (tab.dominant ? styles.dominantPressed : styles.pressed),
             ]}>
             {!tab.dominant && focused ? <View style={styles.activeBar} /> : null}
-            <MaterialCommunityIcons
-              name={focused ? tab.iconActive : tab.icon}
-              size={tab.dominant ? 28 : 24}
-              color={Palette.ink}
-            />
+            {/* Same icon box for every tab, so the labels share one baseline. */}
+            <View style={styles.iconBox}>
+              <MaterialCommunityIcons
+                name={focused ? tab.iconActive : tab.icon}
+                size={tab.dominant ? 28 : 24}
+                color={Palette.ink}
+              />
+            </View>
             <Text style={[styles.label, (focused || tab.dominant) && styles.labelStrong]}>{tab.label}</Text>
           </Pressable>
         );
@@ -87,6 +90,11 @@ const styles = StyleSheet.create({
     right: 16,
     height: 3,
     backgroundColor: Palette.ink,
+  },
+  iconBox: {
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   label: {
     fontFamily: FontFamily.medium,
