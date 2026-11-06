@@ -199,6 +199,12 @@ export const t = {
     settings: 'Pengaturan',
   },
 
+  exitApp: {
+    title: 'Tutup aplikasi?',
+    message: 'Laporan yang sudah terkirim tetap tersimpan.',
+    confirm: 'Tutup',
+  },
+
   settings: {
     title: 'Pengaturan',
     back: 'Akun',
