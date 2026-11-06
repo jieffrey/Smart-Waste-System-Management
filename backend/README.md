@@ -38,6 +38,8 @@ change existing tables — don't run it against a database that already has the 
 | `DB_POOL_MAX` | no | Max database connections (default `10`) |
 | `ML_API_URL` | no* | Base URL of the ML API, e.g. `http://localhost:8000`. *Without it the server still starts (with a warning), but creating a report returns `503`. |
 | `ML_API_KEY` | no | Sent to the ML API as the `X-API-Key` header, only when set (e.g. for a hosted ML API) |
+| `OTP_ENABLED` | no | `true` turns on email verification codes at registration (default off: registration works as before). Needs the four `EMAILJS_*` variables, see [`docs/email-otp-setup.md`](../docs/email-otp-setup.md) |
+| `EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID`, `EMAILJS_PUBLIC_KEY`, `EMAILJS_PRIVATE_KEY` | with OTP | EmailJS service, template and keys. The private key stays on the server |
 | `AI_REVIEW_THRESHOLD` | no | Reports with AI confidence below this (0–1) "need review" until an admin confirms or corrects them. Default `0.70`; anything outside (0, 1] stops the server at startup |
 | `ML_API_TIMEOUT_MS` | no | ML API request timeout in milliseconds: default `30000`, allowed `100`–`40000`. The server refuses to start outside that range, so the timeout stays below the mobile app's 45 s upload timeout |
 | `TRUST_PROXY` | no | Number of reverse proxies in front of the API (e.g. `1` on Render/Railway). Needed so rate limits see each client's IP instead of the proxy's. Leave unset when clients connect directly. See [Rate limits](#rate-limits). |
@@ -193,7 +195,9 @@ All errors use the same format:
 
 | Endpoint | Description |
 |---|---|
-| `POST /api/auth/register` | `{ full_name, email, password }` → `201 { user, token }` (role is always `user`). Password: 8–72 characters and not one of the most common passwords |
+| `POST /api/auth/register` | `{ full_name, email, password }` → `201 { user, token }` (role is always `user`). Password: 8–72 characters and not one of the most common passwords. With `OTP_ENABLED=true`: `201 { user, verification_required: true }` and no token (see [`docs/email-otp-setup.md`](../docs/email-otp-setup.md)) |
+| `POST /api/auth/verify-email` | OTP only: `{ email, code }` (6 digits) → `200 { user, token }`. Wrong, expired or dead code → `400` on `code`. `404` when OTP is off |
+| `POST /api/auth/resend-code` | OTP only: `{ email }` → `200` (same answer for unknown/verified emails). Once per 60 s per account (`429` + `Retry-After`). `404` when OTP is off |
 | `POST /api/auth/login` | `{ email, password }` → `200 { user, token }` |
 | `GET /api/auth/me` | `Authorization: Bearer <token>` → `200 { user }` |
 | `PATCH /api/auth/me` | `{ full_name?, email? }` (at least one, same rules as registration) → `200 { user }`. An email of another account → `409 Email is already registered`. The token stays valid |
@@ -211,6 +215,8 @@ Limited requests get `429` with a `Retry-After` header (seconds) and the usual e
 | `POST /api/auth/register` | 10 per IP per hour | A group signing up together fits; mass account creation doesn't |
 | `PATCH /api/auth/me` | 20 per user per hour | Enough to fix typos; stops probing which emails are registered |
 | `POST /api/auth/change-password` | 5 **failed** attempts per user per 15 min | Same as login: stops guessing the current password with a stolen token or an unlocked phone |
+| `POST /api/auth/verify-email` | 20 per IP per 15 min | Plus 5 wrong tries per code: a 6-digit code can't be brute-forced |
+| `POST /api/auth/resend-code` | 10 per IP per hour, and 60 s per account | Protects the EmailJS quota |
 | `POST /api/reports` | 20 per user per hour | A busy reporter fits; filling the disk with 5 MB photos doesn't (max ~100 MB per user per hour) |
 
 The counters are kept **in memory**: they reset when the server restarts and only work correctly with a

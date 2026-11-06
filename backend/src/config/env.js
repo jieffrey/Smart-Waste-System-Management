@@ -1,5 +1,6 @@
 const { readMlApiTimeout } = require('./ml-timeout');
 const { readAiReviewThreshold } = require('./ai-review');
+const { readOtpConfig } = require('./otp');
 
 const databaseUrl = process.env.DATABASE_URL;
 const jwtSecret = process.env.JWT_SECRET;
@@ -43,6 +44,8 @@ module.exports = {
     .map((origin) => origin.trim().replace(/\/+$/, ''))
     .filter(Boolean),
   storageDriver,
+  // Email verification codes via EmailJS (off unless OTP_ENABLED=true)
+  otp: readOtpConfig(process.env),
   // Cloudinary folder for report photos (only used with STORAGE_DRIVER=cloudinary). The SDK reads
   // CLOUDINARY_URL (cloudinary://<api_key>:<api_secret>@<cloud_name>) by itself.
   cloudinaryFolder: (process.env.CLOUDINARY_FOLDER || 'swms').trim().replace(/^\/+|\/+$/g, ''),

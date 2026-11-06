@@ -51,4 +51,22 @@ const changePasswordSchema = z
     path: ['new_password'],
   });
 
-module.exports = { registerSchema, loginSchema, updateProfileSchema, changePasswordSchema };
+// Bodies for POST /api/auth/verify-email and POST /api/auth/resend-code.
+const verifyEmailSchema = z.object({
+  email,
+  code: z
+    .string({ error: 'Code is required' })
+    .trim()
+    .regex(/^\d{6}$/, 'Code must be 6 digits'),
+});
+
+const resendCodeSchema = z.object({ email });
+
+module.exports = {
+  registerSchema,
+  loginSchema,
+  updateProfileSchema,
+  changePasswordSchema,
+  verifyEmailSchema,
+  resendCodeSchema,
+};
