@@ -22,18 +22,19 @@ The ML API has no public URL: only the backend can reach it, over Railway's priv
 
 ## Screenshots
 
-<!-- TODO(owner): these web screenshots (docs/screenshots/polish-final/, 2026-11-06 14:01) predate the
-     Plus Jakarta Sans font, the glass top bar and the needs-review / possible-duplicate markers. Recapture them
-     with tools/screenshots when convenient. -->
+Admin web panel (1440 px, [mock data](tools/screenshots/)):
 
 | Dashboard | Reports list | Report detail |
 |---|---|---|
-| ![Admin dashboard](docs/screenshots/polish-final/dashboard-1440.png) | ![Admin reports list](docs/screenshots/polish-final/reports-1440.png) | ![Admin report detail](docs/screenshots/polish-final/report-detail-pending-1440.png) |
+| ![Admin dashboard](docs/screenshots/final/web/dashboard-1440.png) | ![Admin reports list with needs-review and possible-duplicate tags](docs/screenshots/final/web/reports-1440.png) | ![Admin report detail with the needs-review note and a possible-duplicate link](docs/screenshots/final/web/report-detail-pending-1440.png) |
 
-<!-- TODO(owner): add mobile screenshots. The only mobile captures (docs/screenshots/mobile/ and
-     docs/screenshots/polish-final/mobile/) predate the glass tab bar, onboarding, handling guidance, the
-     "Baru" update tag and the low-confidence message, so they are left out on purpose. Wanted:
-     onboarding slide, AI result (with handling guidance), "Laporan saya" list (with a "Baru" tag). -->
+Resident app (Android phone):
+
+| Onboarding | My reports | Report detail |
+|---|---|---|
+| <img src="docs/screenshots/final/01-onboarding.png" alt="Onboarding, first slide" width="240"> | <img src="docs/screenshots/final/02-list-reports.png" alt="My reports list with the floating glass tab bar" width="240"> | <img src="docs/screenshots/final/03-detail-report.png" alt="Report detail with handling guidance, admin note and status timeline" width="240"> |
+
+All web pages at 1440 px and 390 px are in [`docs/screenshots/final/web/`](docs/screenshots/final/web/).
 
 ## Features
 
