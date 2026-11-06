@@ -103,22 +103,25 @@ Focus indicator: 2px ink outline with a 2px offset (ink on snow, 18:1).
 ## Typography
 
 Fonts load with `next/font` (self-hosted at build time):
-- **Archivo** (variable, with the width axis) for headings and UI text. Display sizes use the wide width
-  (`font-stretch: 125%`).
-- **IBM Plex Mono** for numbers, dates, IDs and coordinates, with tabular figures, so columns line up.
+- **Plus Jakarta Sans** for headings and UI text. Designed by Gumpita Rahayu (Tokotype) for Jakarta's city
+  identity ("+Jakarta: City of Collaboration"), it fits an Indonesian civic service and reads warmer and less stiff
+  than the earlier grotesque. Open source (SIL OFL 1.1). The scale uses **400 / 600 / 800**. Big sizes get
+  tighter tracking: `tracking-display` (−0.035em) on display and page titles, `tracking-heading` (−0.02em) on
+  large headings. Body text keeps the default tracking.
+- **JetBrains Mono** for numbers, dates, IDs and coordinates, with tabular figures, so columns line up (SIL OFL 1.1).
 
 **The type scale has 6 sizes, and only these are used:**
 
 | Token | Size / line height | Font | Use |
 |---|---|---|---|
-| `text-display` | 64 / 60 px | Archivo 800, width 125% | The one key number on a screen |
-| `text-title` | 32 / 36 px | Archivo 700, width 112% | Page title |
-| `text-heading` | 20 / 26 px | Archivo 650 | Section heading |
-| `text-body` | 16 / 24 px | Archivo 400 | Paragraphs, form inputs |
-| `text-small` | 14 / 20 px | Archivo 400/500 | Tables, buttons, filters |
-| `text-micro` | 12 / 16 px | Plex Mono 500, uppercase, +0.06em | Labels, column headers, meta |
+| `text-display` | 64 / 60 px | Jakarta 800, −0.035em | The one key number on a screen |
+| `text-title` | 32 / 36 px | Jakarta 800, −0.035em (page titles) / −0.02em | Page title |
+| `text-heading` | 20 / 26 px | Jakarta 600 | Section heading |
+| `text-body` | 16 / 24 px | Jakarta 400 | Paragraphs, form inputs |
+| `text-small` | 14 / 20 px | Jakarta 400 (600 for emphasis) | Tables, buttons, filters |
+| `text-micro` | 12 / 16 px | JetBrains Mono 500, uppercase, +0.06em | Labels, column headers, meta |
 
-Numbers anywhere use `font-mono` (Plex Mono, tabular) at the size of their context.
+Numbers anywhere use `font-mono` (JetBrains Mono, tabular) at the size of their context.
 
 ## Space, rules, shape
 
@@ -203,7 +206,7 @@ disc** set into the cobalt field, which keeps the category colors true. On yello
 
 - Light, not black: snow background, a 1px ink rule on the right that runs the **full page height** (the rule
   belongs to the layout column, the content inside is sticky), never cut off.
-- Wordmark in Archivo at its expanded width.
+- Wordmark in Jakarta Sans 800 with display tracking.
 - Active item: a yellow punk background with a 3px ink bar on the left. The indicator **slides** between items.
 - The Reports item shows the pending count as an ink mono number on a red-orange chip.
 - The admin's name and "Log out" are pinned to the bottom.
@@ -223,7 +226,7 @@ disc** set into the cobalt field, which keeps the category colors true. On yello
 
 ### Typography and section rhythm
 
-- Page titles use Archivo at its **expanded** width and extra-bold weight, like the login headline.
+- Page titles use Jakarta Sans 800 with display tracking (`tracking-display`), like the login headline.
 - The dashboard shows today's date (Asia/Jakarta, mono) above its title.
 - **Not every section gets the same template.** Mono uppercase eyebrows are kept only where they add
   information (for example "Last 30 days"), not as decoration. Colored blocks are dominant, the trend
@@ -242,13 +245,14 @@ slides between items, and page content fades and slides up slightly when it appe
 
 The mobile app uses the same tokens (`Mobile/src/constants/theme.ts`) and a fully overridden Paper MD3 theme
 (`Mobile/src/constants/paper-theme.ts`): our palette, `roundness: 0`, every elevation level flat snow (no shadows,
-no tinted surfaces), Archivo and IBM Plex Mono for every Paper text variant. **Light mode only**: `app.json`
+no tinted surfaces), Plus Jakarta Sans and JetBrains Mono for every Paper text variant (through `configureFonts`). **Light mode only**: `app.json`
 forces `userInterfaceStyle: "light"`, the navigation and Paper themes are light-only, and the status bar uses dark
 icons, so the app looks the same whatever the phone's dark-mode setting is.
 
-- **Fonts:** `@expo-google-fonts/archivo` ships weights only, no expanded width. Display titles therefore use
-  **Archivo Black (900) with tight negative tracking** instead of the web's expanded width. Numbers, dates, IDs
-  and coordinates use IBM Plex Mono.
+- **Fonts:** `@expo-google-fonts/plus-jakarta-sans` and `@expo-google-fonts/jetbrains-mono`, loaded in the root
+  layout. Display and title use Jakarta 800 with tight negative tracking (−1.6 / −0.8), heading 600, body 400.
+  Jakarta's heaviest weight is 800, so the old `black` key is an alias for 800. Numbers, dates, IDs and
+  coordinates use JetBrains Mono.
 - **Type scale (6 sizes):** display 44, title 28, heading 20, body 16, small 14, micro 12 (mono, uppercase).
 - **Language:** all user-facing text is Bahasa Indonesia, in one file (`Mobile/src/constants/strings.ts`).
   Known backend error messages are translated there too; unknown ones pass through unchanged.
