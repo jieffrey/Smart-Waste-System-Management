@@ -1,0 +1,40 @@
+{
+  "source_model": "swms_mobilenetv2_option_b.keras",
+  "source_sha256": "5c705b3ad35ea5ca2d0577427514427a35fdb251f36ffe5f59bfffab044d2942",
+  "onnx_model": "swms_mobilenetv2_option_b.onnx",
+  "onnx_sha256": "89fef2b97f7ab797fecb47829c17ba235757a855c856d2c8948ff4308f3ea1b8",
+  "onnx_bytes": 8923883,
+  "classes": [
+    "organic",
+    "paper",
+    "plastic"
+  ],
+  "input": "raw RGB pixels 0-255, float32, shape (N, 224, 224, 3); MobileNetV2 preprocessing is inside the model",
+  "exported_at": "2026-11-06T04:39:40+00:00",
+  "versions": {
+    "tensorflow": "2.21.0",
+    "keras": "3.13.2",
+    "onnxruntime": "1.31.1"
+  },
+  "tolerance": 0.01,
+  "parity": {
+    "random inputs": {
+      "images": 8,
+      "max_abs_prob_diff": 4.6193599700927734e-07,
+      "label_flips": 0,
+      "flipped": []
+    },
+    "tests/samples": {
+      "images": 3,
+      "max_abs_prob_diff": 9.094947017729282e-10,
+      "label_flips": 0,
+      "flipped": []
+    },
+    "dataset garbage-dataset": {
+      "images": 4661,
+      "max_abs_prob_diff": 2.855062484741211e-05,
+      "label_flips": 0,
+      "flipped": []
+    }
+  }
+}
