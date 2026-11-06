@@ -20,7 +20,7 @@ export function Sidebar() {
     <aside className="w-full shrink-0 border-b border-ink bg-snow md:w-60 md:self-stretch md:border-r md:border-b-0">
       <div className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-3 px-4 py-3 md:sticky md:top-0 md:flex md:h-screen md:flex-col md:items-stretch md:gap-6 md:px-0 md:py-8">
         <Link href="/dashboard" className="block w-fit md:px-6">
-          <span className="font-wide block text-title leading-none font-extrabold tracking-tight text-ink">SWMS</span>
+          <span className="tracking-display block text-title leading-none font-extrabold text-ink">SWMS</span>
           <span className="label-micro mt-1 block text-gray-600">Waste dispatch</span>
         </Link>
         <div className="col-span-2 row-start-2 -mx-3 md:mx-0">

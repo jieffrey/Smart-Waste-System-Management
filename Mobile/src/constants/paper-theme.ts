@@ -3,24 +3,24 @@ import { configureFonts, MD3LightTheme, type MD3Theme } from 'react-native-paper
 import { FontFamily, Palette } from './theme';
 
 // React Native Paper, re-themed so it no longer looks like stock Material Design: our palette, square corners,
-// no elevation tint, Archivo / IBM Plex Mono everywhere. Light only.
+// no elevation tint, Plus Jakarta Sans / JetBrains Mono everywhere (wired through configureFonts). Light only.
 
 const family = (fontFamily: string) => ({ fontFamily, fontWeight: 'normal' as const, letterSpacing: 0 });
 
 const fonts = configureFonts({
   config: {
-    displayLarge: { ...family(FontFamily.black), fontSize: 44, lineHeight: 46, letterSpacing: -1.5 },
-    displayMedium: { ...family(FontFamily.black), fontSize: 36, lineHeight: 40, letterSpacing: -1.2 },
-    displaySmall: { ...family(FontFamily.black), fontSize: 28, lineHeight: 32, letterSpacing: -0.8 },
-    headlineLarge: { ...family(FontFamily.black), fontSize: 28, lineHeight: 32, letterSpacing: -0.8 },
+    displayLarge: { ...family(FontFamily.extrabold), fontSize: 44, lineHeight: 48, letterSpacing: -1.6 },
+    displayMedium: { ...family(FontFamily.extrabold), fontSize: 36, lineHeight: 42, letterSpacing: -1.2 },
+    displaySmall: { ...family(FontFamily.extrabold), fontSize: 28, lineHeight: 34, letterSpacing: -0.8 },
+    headlineLarge: { ...family(FontFamily.extrabold), fontSize: 28, lineHeight: 34, letterSpacing: -0.8 },
     headlineMedium: { ...family(FontFamily.extrabold), fontSize: 24, lineHeight: 28 },
-    headlineSmall: { ...family(FontFamily.bold), fontSize: 20, lineHeight: 26 },
-    titleLarge: { ...family(FontFamily.bold), fontSize: 20, lineHeight: 26 },
+    headlineSmall: { ...family(FontFamily.semibold), fontSize: 20, lineHeight: 26, letterSpacing: -0.3 },
+    titleLarge: { ...family(FontFamily.semibold), fontSize: 20, lineHeight: 26, letterSpacing: -0.3 },
     titleMedium: { ...family(FontFamily.semibold), fontSize: 16, lineHeight: 24 },
     titleSmall: { ...family(FontFamily.semibold), fontSize: 14, lineHeight: 20 },
     labelLarge: { ...family(FontFamily.semibold), fontSize: 14, lineHeight: 20 },
-    labelMedium: { ...family(FontFamily.monoMedium), fontSize: 12, lineHeight: 16, letterSpacing: 0.6 },
-    labelSmall: { ...family(FontFamily.monoMedium), fontSize: 12, lineHeight: 16, letterSpacing: 0.6 },
+    labelMedium: { ...family(FontFamily.monoMedium), fontSize: 12, lineHeight: 16, letterSpacing: 0.4 },
+    labelSmall: { ...family(FontFamily.monoMedium), fontSize: 12, lineHeight: 16, letterSpacing: 0.4 },
     bodyLarge: { ...family(FontFamily.regular), fontSize: 16, lineHeight: 24 },
     bodyMedium: { ...family(FontFamily.regular), fontSize: 14, lineHeight: 20 },
     bodySmall: { ...family(FontFamily.regular), fontSize: 14, lineHeight: 20 },

@@ -84,7 +84,7 @@ function OpenReportForm({ report }: Props) {
     <section className="border-2 border-ink">
       {/* Yellow header strip: the one action on this page (ink on yellow, 15.34:1). */}
       <div className="border-b-2 border-ink bg-highlight px-4 py-3">
-        <h2 className="font-wide text-heading font-extrabold tracking-tight text-ink">Route this report</h2>
+        <h2 className="tracking-display text-heading font-extrabold text-ink">Route this report</h2>
       </div>
 
       {/* Remounted after each save (key), so the inputs start from the latest data. */}

@@ -16,7 +16,7 @@ export function EmptyState({
   const page = size === "page";
   return (
     <div className={cn("border-t border-ink", page ? "py-16" : "py-12")}>
-      <p className={cn("font-semibold text-ink", page ? "font-semiwide text-title tracking-tight" : "text-heading")}>{title}</p>
+      <p className={cn("font-semibold text-ink", page ? "tracking-heading text-title" : "text-heading")}>{title}</p>
       {hint && <p className={cn("mt-1 text-gray-600", page ? "text-body" : "text-small")}>{hint}</p>}
       {children && <div className={page ? "mt-6" : "mt-4"}>{children}</div>}
     </div>

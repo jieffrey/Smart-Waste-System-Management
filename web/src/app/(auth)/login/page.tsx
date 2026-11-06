@@ -60,10 +60,10 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
       {/* The concept, in one sentence */}
       <section className="flex flex-col justify-between gap-6 bg-ink px-6 py-6 text-snow sm:gap-12 sm:px-12 sm:py-12">
         <div>
-          <p className="font-wide text-heading font-extrabold tracking-tight">SWMS</p>
+          <p className="tracking-display text-heading font-extrabold">SWMS</p>
           <p className="label-micro mt-1 text-gray-300">Smart Waste Management System</p>
         </div>
-        <h1 className="font-semiwide max-w-3xl text-title leading-tight font-bold tracking-tight sm:text-display sm:leading-none">
+        <h1 className="tracking-heading max-w-3xl text-title leading-tight font-extrabold sm:text-display sm:leading-none">
           Residents spot it. The AI sorts it. <span className="text-highlight">You dispatch it.</span>
         </h1>
         <Facts />
@@ -74,7 +74,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
         <div className="w-full max-w-sm space-y-8">
           <div className="border-b-2 border-ink pb-4">
             <p className="label-micro text-gray-600">Admin</p>
-            <h2 className="font-semiwide mt-1 text-title font-bold tracking-tight text-ink">Sign in</h2>
+            <h2 className="tracking-heading mt-1 text-title font-extrabold text-ink">Sign in</h2>
             <p className="mt-2 text-small text-gray-700">For dispatchers with an admin account. Residents use the mobile app.</p>
           </div>
           <Suspense fallback={null}>

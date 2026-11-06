@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 // No outer box: a 2px ink rule on top, 1px gray-200 rules between rows, mono micro headers.
-// Put numbers in cells with `numeric` so they align right in Plex Mono.
+// Put numbers in cells with `numeric` so they align right in JetBrains Mono.
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
