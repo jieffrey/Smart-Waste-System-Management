@@ -62,8 +62,8 @@ export default function ReportDetailScreen() {
     report.ai_predicted_category !== null && report.ai_predicted_category !== report.category;
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${report.latitude},${report.longitude}`;
 
-  // Reading order: photo -> status (the most prominent element) -> admin note -> timeline -> category and AI
-  // -> location -> description.
+  // Reading order: photo -> status (the most prominent element) -> what was reported (category and AI) ->
+  // admin note -> timeline -> location -> description. Category comes early, like the web detail's title.
   return (
     <ScrollView
       style={styles.screen}
@@ -87,6 +87,16 @@ export default function ReportDetailScreen() {
         </ThemedText>
       </View>
 
+      <Section title={t.detail.category}>
+        <CategoryLabel category={report.category} />
+        {categoryWasCorrected && report.ai_predicted_category ? (
+          <ThemedText type="small">{t.detail.aiSuggested(CATEGORY_LABELS[report.ai_predicted_category])}</ThemedText>
+        ) : null}
+        <ThemedText type="mono" themeColor="textSecondary">
+          {t.detail.aiConfidence(formatConfidence(report.ai_confidence))}
+        </ThemedText>
+      </Section>
+
       {report.admin_note ? (
         <View style={styles.note}>
           <ThemedText type="micro">{t.detail.adminNote}</ThemedText>
@@ -98,16 +108,6 @@ export default function ReportDetailScreen() {
 
       <Section title={t.detail.timeline}>
         <StatusTimeline history={report.status_history} />
-      </Section>
-
-      <Section title={t.detail.category}>
-        <CategoryLabel category={report.category} />
-        {categoryWasCorrected && report.ai_predicted_category ? (
-          <ThemedText type="small">{t.detail.aiSuggested(CATEGORY_LABELS[report.ai_predicted_category])}</ThemedText>
-        ) : null}
-        <ThemedText type="mono" themeColor="textSecondary">
-          {t.detail.aiConfidence(formatConfidence(report.ai_confidence))}
-        </ThemedText>
       </Section>
 
       <Section title={t.detail.location}>
