@@ -361,3 +361,11 @@ Keep the two in step.
   with a heading: Profil, Ganti kata sandi, Panduan ("Lihat panduan lagi" replays the onboarding) and Sesi
   (Keluar, with the confirm dialog). The Akun screen keeps the name and email, then a secondary "Pengaturan"
   button and a text "Keluar".
+
+## "Baru": report updates (mobile)
+
+- **List row:** a small yellow-punk "Baru" tag with a 1.5px ink outline, tilted −6° like a sticker, on the
+  top-left corner of the thumbnail. It shows when an admin changed the report since the resident last opened it.
+  Opening the report clears it.
+- **Tab:** "Laporan saya" carries the count as an ink dot with a yellow-punk mono number (15.3:1), shown as "9+"
+  above 9. The accessibility label reads "Laporan saya, N laporan ada kabar baru".

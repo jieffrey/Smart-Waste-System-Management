@@ -93,6 +93,9 @@ export const t = {
 
   myReports: {
     title: 'Laporan saya',
+    updated: 'Baru',
+    updatedA11y: 'ada kabar baru',
+    tabUpdates: (count: number) => `${count} laporan ada kabar baru`,
     loading: 'Memuat laporanmu…',
     emptyTitle: 'Belum ada laporan',
     emptyMessage: 'Lihat tumpukan sampah? Foto dan laporkan, biar petugas yang urus.',
