@@ -93,6 +93,31 @@ All web pages at 1440 px and 390 px are in [`docs/screenshots/final/web/`](docs/
 - **AI accuracy:** the share of reviewed reports (`in_progress` / `completed`) whose category the admin left as
   the AI predicted it.
 
+## Design
+
+- **Concept:** residents are the eyes, the AI is the sorter, admins are the dispatchers. The interface says that
+  without decoration: Bauhaus / punk-zine discipline, hard edges, 1px ink rules instead of boxes, one big number
+  leading each screen. Light mode only.
+- **Palette roles:**
+  - **Red orange** `#FF4A1C`: the one primary action, the key number, the active state. Never errors or
+    "rejected".
+  - **Yellow punk** `#E8F23A`: only as a highlighter behind ink text (needs review, the admin note, the
+    active tab pill), or as text on ink.
+  - **Cobalt** `#2B4BD8`: the plastic category.
+  - **Ink** `#121212` on **snow** `#FBFBF8`: text, rules and icons.
+- **Status without color:** pending, in progress, completed and rejected are squares that fill up (empty, half,
+  filled with a check, crossed with a struck label), the same on web and mobile.
+- **Category colors as identity:** organic = red orange, paper = ink, plastic = cobalt, everywhere (tables,
+  charts, the AI result). In text a category is a square swatch plus an ink label.
+- **Type:** Plus Jakarta Sans (made by Tokotype for Jakarta's city identity) for headings and UI, JetBrains Mono
+  with tabular figures for numbers, dates, IDs and coordinates.
+- **Motion:** short (150–400 ms) count-ups, chart draw-ins and press feedback, all off with reduced motion. On
+  mobile a floating glass tab bar (blur + snow tint) lets content scroll behind it, with a yellow pill that slides
+  to the active tab. Phones get a sticky glass top bar on web as well.
+
+Full rules and contrast checks: [`docs/design-system.md`](docs/design-system.md). The ranked polish review with
+before/after screenshots: [`docs/design-review.md`](docs/design-review.md).
+
 ## Architecture
 
 ```mermaid
