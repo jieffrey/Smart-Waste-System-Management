@@ -9,7 +9,7 @@ exposed publicly.
 | | |
 |---|---|
 | Architecture | MobileNetV2 (transfer learning) |
-| File | `models/swms_mobilenetv2_best.keras` (Keras 3.13.2) |
+| File | `models/swms_mobilenetv2_best.keras` (Keras 3.13.2); exported copy `models/swms_mobilenetv2_best.onnx` for production ([Serving runtimes](#serving-runtimes-ml_runtime)) |
 | Input | 224×224 RGB |
 | Classes (in order) | `organic`, `paper`, `plastic` |
 | Test accuracy | **97.72%** |
@@ -25,7 +25,7 @@ dataset (version 8). Its `biological` class is used as **organic**. See
 `preprocess_input` — that would apply it twice and give wrong predictions.
 
 The API resizes images the same way as training (`image_dataset_from_directory`):
-`tf.image.resize` to 224×224, bilinear, no antialias, no crop. It additionally applies EXIF
+`tf.image.resize` to 224×224, bilinear, no antialias, no crop (the lite runtime uses an exact NumPy copy of it). It additionally applies EXIF
 rotation so phone photos are upright (training did not): decode with Pillow → EXIF rotation →
 RGB → float32 → resize.
 
@@ -39,7 +39,13 @@ uv venv .venv --python 3.12
 uv pip install -r requirements-dev.txt
 ```
 
-`requirements.txt` has the runtime packages; `requirements-dev.txt` adds `pytest` and `httpx` for tests.
+| File | What it's for |
+|---|---|
+| `requirements.txt` | API with the TensorFlow runtime (`ML_RUNTIME=tf`, the local default) |
+| `requirements-lite.txt` | API with the lite runtime, **no TensorFlow** (`ML_RUNTIME=lite`, production / Docker) |
+| `requirements-export.txt` | `requirements.txt` + ONNX export tools (`scripts/export_lite.py`) |
+| `requirements-dev.txt` | everything above + `pytest`, `httpx`: the tests check both runtimes |
+| `requirements-train.txt` | training/evaluation scripts (Colab versions; separate environment) |
 
 ## Run the API
 
@@ -54,7 +60,73 @@ From `ml/`:
 ```
 
 (Or activate the venv first and run `uvicorn src.api.main:app --port 8000`.)
-Interactive docs: http://localhost:8000/docs
+Interactive docs: http://localhost:8000/docs (removed when `ML_DISABLE_DOCS=1`, as in the Docker image).
+
+| Env var | Default | Meaning |
+|---|---|---|
+| `ML_RUNTIME` | `tf` | `tf` = `.keras` with TensorFlow; `lite` = `.onnx` with ONNX Runtime ([Serving runtimes](#serving-runtimes-ml_runtime)) |
+| `MODEL_PATH` | `models/swms_mobilenetv2_best.keras` / `.onnx` | Model file; its name (without extension) is the `model_version` |
+| `ML_API_KEY` | *(unset)* | When set, `/predict` requires header `X-API-Key` with this value (constant-time compare) → otherwise `401`. `/health` stays open |
+| `ML_DISABLE_DOCS` | *(unset)* | `1` removes `/docs`, `/redoc`, `/openapi.json` |
+| `PORT` | `8000` | Port for `python -m src.api.serve` (Docker) |
+
+## Serving runtimes (`ML_RUNTIME`)
+
+Training, evaluation and the Colab parity values stay **TensorFlow/Keras**. For production the same model is
+exported to ONNX and served with **ONNX Runtime**, so the always-on container doesn't load TensorFlow.
+
+```bash
+python -m scripts.export_lite                       # models/swms_mobilenetv2_best.keras → .onnx (+ .onnx.json report)
+python -m scripts.export_lite --model models/swms_mobilenetv2_option_b.keras   # e.g. the Option B model
+python -m scripts.export_lite --dataset <folder>    # also check every image in a folder
+```
+
+The export is only written if the ONNX model matches Keras through the whole API pipeline. That means every
+class probability within **0.01** (the parity-test tolerance) and **no label flips**, on random inputs, the 3
+samples and, with `--dataset`, every image in the folder. The result is recorded in `models/*.onnx.json`.
+
+**Measured** (2026-11-05, served model, Linux container `python:3.12-slim`):
+
+| | `tf` (TensorFlow 2.21) | `lite`: ONNX Runtime 1.31 (**chosen**) | LiteRT 2.3 (evaluated) |
+|---|---|---|---|
+| Parity on all **4,661** dataset images of the 3 classes (a superset of the test split) | reference | max \|Δp\| **1.5e-5**, **0** label flips | max \|Δp\| 2.0e-5, 0 label flips |
+| Parity on the 3 samples vs `expected.json` | ✓ | ✓ (test `test_lite_runtime.py`) | ✓ |
+| RSS after startup | 595 MB | **118 MB** | 98 MB |
+| RSS after 20 predictions | 708 MB | **143 MB** | 104 MB |
+| Peak for one 24 MP (6000×4000) upload | — | 660 MB, back to 156 MB after | — |
+| Docker image (uncompressed) | 3.14 GB | **444 MB** | 483 MB |
+| Model file | 9.7 MB | 8.9 MB | 8.9 MB |
+
+The 3 samples aren't part of the parity set: the Colab split can't be rebuilt exactly here (file order), so all
+images of the 3 classes were used instead. That includes every test image, whichever files they are.
+
+**Why ONNX Runtime and not LiteRT.** Both match Keras equally well, and LiteRT uses about 30 MB less RAM (about
+$0.30/month on Railway). ONNX was chosen because its export path is the more reliable one on this stack:
+- **Export:** Keras 3.13's built-in `model.export(format="onnx")` (tf2onnx under the hood) worked first time. LiteRT
+  conversion depends on TensorFlow's `tf.lite` converter, which TF marks as deprecated and scheduled for removal.
+  One of its standard routes (`TFLiteConverter.from_concrete_functions`) produced a broken 200 KB model that output
+  NaN without any error.
+- **Runtime:** ONNX Runtime is a mature, widely used runtime with a stable API, independent of TensorFlow's release
+  cycle. That matters when Option B (or a model trained with a newer TF) is exported later.
+
+The export script still guards against a bad export: it refuses to write a model that doesn't match.
+
+**Resize without TensorFlow:** `src/inference/resize.py` re-implements `tf.image.resize` (bilinear, half-pixel
+centres, no antialias) in NumPy. It is identical to TensorFlow on 117 real photos and on random shapes (max
+difference 0.0), and `tests/test_resize.py` checks it against TensorFlow.
+
+## Docker (Railway)
+
+`Dockerfile` builds the production image: `python:3.12-slim` + `requirements-lite.txt`, the API code and the
+exported `.onnx` model (allowlisted in `.dockerignore`). It runs as a non-root user with `ML_RUNTIME=lite` and
+`ML_DISABLE_DOCS=1`, and starts with `python -m src.api.serve`. That opens **one dual-stack socket** (IPv4 + IPv6)
+on `$PORT`. `uvicorn --host ::` alone would be IPv6-only, which breaks IPv4 callers on Railway's private
+network. `railway.json` sets the healthcheck (`/health`) and the restart policy.
+
+```bash
+docker build -t swms-ml .
+docker run --rm -p 8000:8000 -e ML_API_KEY=change-me swms-ml
+```
 
 ## Run the tests
 
@@ -77,7 +149,7 @@ curl http://localhost:8000/health
 ```
 
 ```json
-{ "status": "ok", "model_loaded": true, "model_version": "swms_mobilenetv2_best" }
+{ "status": "ok", "model_loaded": true, "model_version": "swms_mobilenetv2_best", "runtime": "tf" }
 ```
 
 ### `POST /predict`
@@ -123,6 +195,7 @@ All errors use the same format as the Express backend:
 | Status | When |
 |---|---|
 | `400` | No `file` field, empty file, corrupt/truncated image, or image dimensions too large |
+| `401` | `ML_API_KEY` is set and `X-API-Key` is missing or wrong (checked before the body is read) |
 | `413` | Request body (file) larger than 5 MB |
 | `415` | Not a JPEG, PNG or WebP image (e.g. a text file or GIF) |
 | `404` / `405` | Unknown route or wrong HTTP method |
@@ -415,7 +488,7 @@ Committing `misclassified.png` (16 small dataset images) would turn these hypoth
 ### 9. Serving
 
 **FastAPI** ([`src/api/main.py`](src/api/main.py)), loaded once at startup:
-- **`GET /health`:** `{ status, model_loaded, model_version }`.
+- **`GET /health`:** `{ status, model_loaded, model_version, runtime }`.
 - **`POST /predict`:** multipart field `file` → `{ category, confidence, probabilities, model_version }`
   ([details](#post-predict)).
 
@@ -428,8 +501,10 @@ SEC-03 and SEC-08):
   images, where a small file claims huge dimensions.
 - **Format:** only JPEG, PNG and WebP, detected by decoding, not by file name.
 - **Broken files:** truncated or corrupt files get `400`/`415`, never `500`.
-- **Network:** the documented start command binds to `127.0.0.1`. The API doesn't check an API key yet
-  (audit SEC-09), so it must stay on a private network next to the backend.
+- **API key (SEC-09):** with `ML_API_KEY` set, `/predict` needs a matching `X-API-Key` header (constant-time
+  compare, checked before the body is read); `/health` stays open. In production the service also has no
+  public domain: only the backend reaches it, over Railway's private network.
+- **Runtime:** production runs the exported ONNX model with ONNX Runtime ([Serving runtimes](#serving-runtimes-ml_runtime)).
 
 **How the backend uses a prediction** (Express, `backend/src/modules/ml/ml.service.js` and
 `reports.service.js`):

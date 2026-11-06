@@ -1,0 +1,6 @@
+# Exporting a .keras model to ONNX (python -m scripts.export_lite). Needs TensorFlow, so it builds on the
+# TensorFlow runtime requirements.
+-r requirements.txt
+onnx==1.23.2
+tf2onnx==1.17.0
+onnxruntime==1.31.1

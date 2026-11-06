@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from PIL import Image
 
 from src.api.main import MAX_UPLOAD_BYTES, app
+from src.inference.predictor import RUNTIME
 
 CATEGORIES = {"organic", "paper", "plastic"}
 SAMPLES_DIR = Path(__file__).parent / "samples"
@@ -41,7 +42,12 @@ def test_health_returns_ok(client):
     res = client.get("/health")
 
     assert res.status_code == 200
-    assert res.json() == {"status": "ok", "model_loaded": True, "model_version": "swms_mobilenetv2_best"}
+    assert res.json() == {
+        "status": "ok",
+        "model_loaded": True,
+        "model_version": "swms_mobilenetv2_best",
+        "runtime": RUNTIME,
+    }
 
 
 def test_predict_valid_jpeg(client):

@@ -1,0 +1,8 @@
+# Allowlist: the image only needs the lite requirements, the API code and the exported model(s).
+*
+!requirements-lite.txt
+!src/
+!models/*.onnx
+**/__pycache__
+src/training/
+src/evaluation/
