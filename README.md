@@ -172,3 +172,146 @@ In place:
 
 Not in place: HTTP security headers (SEC-07) and token revocation (see below). The full white-box review, with the
 status of each finding, is in [`docs/security-audit.md`](docs/security-audit.md).
+
+## Run locally
+
+**Prerequisites:** Node.js 22.9+, Python 3.12 with [uv](https://docs.astral.sh/uv/), PostgreSQL 13+ with `psql`
+(local, or a Neon branch), and for the app either an Android phone with **Expo Go (SDK 58)** on the same Wi-Fi or
+an emulator.
+
+**Env files:** copy each example and fill it in. Never commit the copies.
+
+```bash
+cp backend/.env.example backend/.env   # DATABASE_URL, JWT_SECRET (32+ chars), ML_API_URL=http://localhost:8000
+cp web/.env.example web/.env           # NEXT_PUBLIC_API_URL=http://localhost:4000
+cp Mobile/.env.example Mobile/.env     # EXPO_PUBLIC_API_URL=http://<your LAN IP>:4000 (not localhost)
+```
+
+The ML API needs no env file locally (defaults: TensorFlow runtime, port 8000, no API key). Every variable is
+described in [`backend/README.md`](backend/README.md#environment-variables) and
+[`ml/README.md`](ml/README.md#run-the-api).
+
+**1. Database** (a new, empty database; `schema.sql` already includes every migration):
+
+```bash
+cd backend
+psql "<connection string>" -v ON_ERROR_STOP=1 -f db/schema.sql
+```
+
+**2. ML API** (from `ml/`):
+
+```bash
+uv venv .venv --python 3.12
+uv pip install -r requirements-dev.txt
+.venv/bin/python -m uvicorn src.api.main:app --port 8000      # Windows: .venv\Scripts\python ...
+```
+
+**3. Backend** (from `backend/`, port 4000):
+
+```bash
+npm ci
+npm run db:check    # connection + tables
+npm run dev
+```
+
+**4. Web** (from `web/`, http://localhost:3000; admin accounts only):
+
+```bash
+npm install
+npm run dev
+```
+
+**5. Mobile** (from `Mobile/`; scan the QR code with Expo Go):
+
+```bash
+npm ci
+npx expo start
+```
+
+The phone must reach the backend on your LAN IP; see [`Mobile/README.md`](Mobile/README.md#setup) for the
+Windows firewall rule and the `/api/health` check.
+
+### Seed local demo data
+
+```bash
+cd backend
+npm run seed        # demo admin + demo user, local only (credentials in backend/README.md, public on purpose)
+```
+
+For the 48 demo reports with photos (needs the ML API running; the admin email is the one `npm run seed`
+created), [`seed-demo.js`](backend/scripts/seed-demo.js) writes only when `--confirm` names the host in
+`DATABASE_URL` (a wrong value makes it print the expected one). `--dry-run` writes nothing. Bash syntax:
+
+```bash
+DEMO_ADMIN_EMAIL=<seeded admin email> DEMO_RESIDENT_PASSWORD=<any password> \
+  node --env-file=.env scripts/seed-demo.js --dry-run
+DEMO_ADMIN_EMAIL=<seeded admin email> DEMO_RESIDENT_PASSWORD=<any password> \
+  node --env-file=.env scripts/seed-demo.js --confirm <host in DATABASE_URL, e.g. localhost>
+```
+
+Details: [`backend/README.md`](backend/README.md#production-demo-data-seed-demojs).
+
+### Tests
+
+| Suite | Command | Notes |
+|---|---|---|
+| Backend | `cd backend && npm test` | Node's test runner against the database in `DATABASE_URL`. Point it at a **throwaway** database with the schema loaded, not a shared one. No ML API needed (a fake one is started) |
+| ML API | `cd ml && .venv/bin/python -m pytest` | Both runtimes, limits, API key, resize parity, Colab parity on 3 samples |
+| Web | `cd web && npm run lint` | ESLint only; there are no web unit tests |
+| Mobile | `cd Mobile && npm run lint && npx tsc --noEmit` | ESLint + type check; there are no mobile unit tests |
+
+## Deployment
+
+- **Backend** and **ML API**: two services in one Railway project (Singapore). The ML service builds from
+  [`ml/Dockerfile`](ml/Dockerfile) with the ONNX runtime and has no public domain.
+- **Web**: Vercel, with `NEXT_PUBLIC_API_URL` set to the backend's Railway domain.
+- **Database**: Neon Postgres. Schema changes reach production only through the numbered files in
+  `backend/db/migrations/`, run **before** merging the branch that needs them.
+- **Photos**: Cloudinary.
+- **Mobile**: Android APK from EAS Build (`preview` profile), published on GitHub Releases.
+
+Full plan: [`docs/deploy-plan.md`](docs/deploy-plan.md). Migrations: [`docs/migrations-runbook.md`](docs/migrations-runbook.md).
+Email OTP setup: [`docs/email-otp-setup.md`](docs/email-otp-setup.md).
+
+## Repo structure
+
+```
+backend/   Express API: src/modules/<feature>/ (routes → controller → service), db/ schema + migrations, scripts/, tests/
+ml/        Classifier: training code, notebooks, results/, models/, FastAPI service (src/api), tests/, Dockerfile
+web/       Admin panel (Next.js App Router): src/app, src/components, src/lib
+Mobile/    Resident app (Expo Router): src/app screens, components, services, store
+docs/      Security audit, deploy plan, migrations runbook, OTP setup, design system/review, screenshots/
+tools/     Screenshot harness (tools/screenshots)
+```
+
+## Known limitations
+
+- **Free / hobby hosting:** Railway Hobby, Vercel, Neon and Cloudinary free tiers. Fine for a demo, not sized for
+  real load.
+- **Tokens can't be revoked:** a JWT stays valid until it expires (`JWT_EXPIRES_IN`, default 24 h), also after
+  logout or a password change. Only deactivating the account stops it immediately.
+- **In-memory rate limits:** they reset on restart and only work with one backend instance. Web admin logins all
+  come from the Next.js server, so they share one per-IP counter (the per-email limit still applies).
+- **One training run per model:** the Option B gain (4 fewer errors out of 701) has no variance estimate, so its
+  size isn't proven.
+- **Demo AI accuracy is optimistic:** the 48 demo photos come from the dataset; only 9 are confirmed test-split
+  images, the other 39 may have been training images. The dashboard's AI accuracy on demo data overstates how the
+  model does on new photos.
+- **No "not waste" class:** every photo is forced into organic, paper or plastic, even a selfie. Low confidence
+  only marks it for review.
+- **No HTTP security headers** yet (SEC-07 in the security audit).
+
+## Credits
+
+- **Dataset:** [Garbage Classification V2](https://www.kaggle.com/datasets/sumn2u/garbage-classification-v2) by
+  sumn2u on Kaggle (version 8), **MIT license**. The model was trained on its `biological`, `paper` and `plastic`
+  images. The repository includes 3 test samples (`ml/tests/samples/`) and 48 resized, metadata-free demo photos
+  (`backend/scripts/demo/photos/`, see [ATTRIBUTION.md](backend/scripts/demo/photos/ATTRIBUTION.md)).
+- **Model base:** MobileNetV2 with ImageNet weights, from Keras Applications.
+- **Fonts:** [Plus Jakarta Sans](https://fonts.google.com/specimen/Plus+Jakarta+Sans) (Tokotype) and
+  [JetBrains Mono](https://www.jetbrains.com/lp/mono/), both SIL OFL 1.1.
+- **UI:** [Bklit UI](https://ui.bklit.com) charts, [shadcn/ui](https://ui.shadcn.com) and Radix UI on the web;
+  [React Native Paper](https://reactnativepaper.com) on mobile.
+- **Other notable libraries:** Next.js, Expo / React Native, Express, `pg`, zod, sharp, multer, d3 (`d3-sankey`),
+  Motion, NumberFlow, Lucide icons, FastAPI, ONNX Runtime, TensorFlow / Keras, Pillow, Cloudinary SDK; EmailJS (REST API)
+  (OTP emails).
