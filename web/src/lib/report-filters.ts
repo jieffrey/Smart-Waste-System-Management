@@ -6,9 +6,9 @@ import type { ReportCategory, ReportStatus } from "@/types/api";
 export const REPORTS_PAGE_SIZE = 20;
 
 // Extra flags a report can be filtered by (one at a time).
-export const REPORT_FLAGS = ["needs_review"] as const;
+export const REPORT_FLAGS = ["needs_review", "duplicate"] as const;
 export type ReportFlag = (typeof REPORT_FLAGS)[number];
-export const FLAG_LABELS: Record<ReportFlag, string> = { needs_review: "Needs review" };
+export const FLAG_LABELS: Record<ReportFlag, string> = { needs_review: "Needs review", duplicate: "Possible duplicate" };
 function isReportFlag(value: string | undefined): value is ReportFlag {
   return REPORT_FLAGS.includes(value as ReportFlag);
 }

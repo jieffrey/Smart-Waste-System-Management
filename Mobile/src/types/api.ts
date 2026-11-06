@@ -31,6 +31,8 @@ export interface Report {
   needs_review?: boolean;
   // Changed (by an admin) since the owner last opened it (list and detail only)
   has_update?: boolean;
+  // An open report nearby that looks the same (older API: absent)
+  possible_duplicate_of?: string | null;
   admin_note: string | null;
   created_at: string;
   updated_at: string;

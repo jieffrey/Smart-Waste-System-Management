@@ -39,6 +39,13 @@ export function AiResult({ report, onViewReport, onReportAgain }: AiResultProps)
         ) : null}
       </Animated.View>
 
+      {report.possible_duplicate_of ? (
+        // Not a problem, just context: an ink-outlined note under the result block.
+        <View style={styles.duplicate}>
+          <ThemedText type="smallBold">{t.result.possibleDuplicate}</ThemedText>
+        </View>
+      ) : null}
+
       <View style={styles.journey}>
         <ThemedText type="micro" themeColor="textSecondary">
           {t.handling.title}
@@ -81,6 +88,12 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.semibold,
     fontSize: 18,
     lineHeight: 26,
+  },
+  duplicate: {
+    borderWidth: 1.5,
+    borderColor: Palette.ink,
+    borderLeftWidth: 6,
+    padding: Spacing.three,
   },
   lowConfidence: {
     alignSelf: 'flex-start',

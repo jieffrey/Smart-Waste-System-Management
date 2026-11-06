@@ -13,6 +13,11 @@ function ReviewTag() {
   return <span className="label-micro mt-1 block w-fit bg-highlight px-1 text-ink">Needs review</span>;
 }
 
+// Linked to an earlier open report nearby: an ink outline tag (no color; it's information, not urgency).
+function DuplicateTag() {
+  return <span className="label-micro mt-1 block w-fit border border-ink px-1 text-ink">Possible duplicate</span>;
+}
+
 // Full address (or coordinates) for the hover title of the short location.
 function fullLocation(report: AdminReport) {
   return report.address || coordinatesLabel(report.latitude, report.longitude);
@@ -60,6 +65,7 @@ export function ReportsTable({ reports, filters }: { reports: AdminReport[]; fil
             <TableCell>
               <StatusMarker status={report.status} />
               {report.needs_review && <ReviewTag />}
+              {report.possible_duplicate_of && <DuplicateTag />}
             </TableCell>
             <TableCell className="hidden md:table-cell max-w-56 truncate text-gray-700" title={fullLocation(report)}>
               {shortLocation(report)}
