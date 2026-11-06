@@ -14,7 +14,7 @@ person who reported them.
 |---|---|
 | Admin web panel | https://smart-waste-system-management.vercel.app |
 | Android APK | [GitHub Releases → latest](https://github.com/jieffrey/Smart-Waste-System-Management/releases/latest) |
-| Backend health | <!-- TODO(owner): replace with the real Railway domain --> `https://<backend>.up.railway.app/api/health` → `{"status":"ok"}` |
+| Backend health | https://smart-waste-system-management-production-c94d.up.railway.app/api/health → `{"status":"ok"}` |
 
 Demo credentials (one admin, one resident) are in the submission email. They are not in this repository.
 
