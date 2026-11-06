@@ -4,12 +4,13 @@ const uploads = require('../uploads/uploads.service');
 const HttpError = require('../../utils/http-error');
 const { reportIdSchema } = require('./reports.schema');
 const { needsReviewSql } = require('./needs-review');
+const { findPossibleDuplicate } = require('./duplicates');
 
 // NUMERIC columns are cast to float8 so they are returned as JSON numbers, not strings.
 const REPORT_COLUMNS = `id, user_id, description, category, status, image_url,
   latitude::float8 AS latitude, longitude::float8 AS longitude, address,
   ai_predicted_category, ai_confidence::float8 AS ai_confidence, ai_model_version,
-  admin_note, created_at, updated_at,
+  admin_note, possible_duplicate_of, created_at, updated_at,
   ${needsReviewSql()} AS needs_review`;
 
 // A failed cleanup is logged, never thrown: the caller needs the original error.
@@ -36,11 +37,14 @@ async function createReport(userId, { description, latitude, longitude, address 
     client = await pool.connect();
     await client.query('BEGIN');
 
+    // The AI category is known now: link to a similar open report nearby, if any (never blocks the report).
+    const possibleDuplicateOf = await findPossibleDuplicate(client, { category: prediction.category, latitude, longitude });
+
     const { rows } = await client.query(
       `INSERT INTO waste_reports
          (user_id, description, category, image_url, latitude, longitude, address,
-          ai_predicted_category, ai_confidence, ai_model_version)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $3, $8, $9)
+          ai_predicted_category, ai_confidence, ai_model_version, possible_duplicate_of)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $3, $8, $9, $10)
        RETURNING ${REPORT_COLUMNS}`,
       [
         userId,
@@ -52,6 +56,7 @@ async function createReport(userId, { description, latitude, longitude, address 
         address || null,
         prediction.confidence,
         prediction.modelVersion,
+        possibleDuplicateOf,
       ]
     );
     const report = rows[0];

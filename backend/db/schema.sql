@@ -57,6 +57,8 @@ CREATE TABLE waste_reports (
     ai_confidence          numeric(5,4),
     ai_model_version       varchar(50),
     admin_note             text,
+    -- migration 002: an open report nearby (same category, last 24 h, ≤ 50 m) this one may duplicate
+    possible_duplicate_of  uuid                     REFERENCES waste_reports (id) ON DELETE SET NULL,
     created_at             timestamp with time zone NOT NULL DEFAULT now(),
     updated_at             timestamp with time zone NOT NULL DEFAULT now(),
     CONSTRAINT waste_reports_ai_confidence_check
@@ -81,6 +83,8 @@ CREATE TABLE waste_reports (
 CREATE INDEX waste_reports_user_created_idx   ON waste_reports (user_id, created_at DESC);
 CREATE INDEX waste_reports_status_created_idx ON waste_reports (status, created_at DESC);
 CREATE INDEX waste_reports_category_idx       ON waste_reports (category);
+CREATE INDEX waste_reports_possible_duplicate_of_idx
+    ON waste_reports (possible_duplicate_of) WHERE possible_duplicate_of IS NOT NULL;
 
 CREATE TRIGGER waste_reports_set_updated_at
     BEFORE UPDATE ON waste_reports

@@ -35,3 +35,21 @@ Verify: both numbers must be equal right after the migration.
 ```bash
 psql "$PROD_DB" -c "SELECT (SELECT COUNT(*) FROM waste_reports) AS reports, (SELECT COUNT(*) FROM report_seen) AS seen;"
 ```
+
+---
+
+## 002: `possible_duplicate_of` (branch `feat/possible-duplicate`)
+
+Adds a nullable `waste_reports.possible_duplicate_of` (references another report, `ON DELETE SET NULL`) and a
+partial index on it. Existing reports keep `NULL`. Run it after 001 (the branches are stacked).
+
+```bash
+psql "$PROD_DB" -v ON_ERROR_STOP=1 -f db/migrations/002_possible_duplicate.sql
+```
+
+Verify: one row with `is_nullable = YES`, plus the index name.
+
+```bash
+psql "$PROD_DB" -c "SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = 'waste_reports' AND column_name = 'possible_duplicate_of';"
+psql "$PROD_DB" -c "SELECT indexname FROM pg_indexes WHERE indexname = 'waste_reports_possible_duplicate_of_idx';"
+```

@@ -388,6 +388,7 @@ All reports, newest first, each with `reporter_name` and `reporter_email`.
 | `from`, `to` | Dates `YYYY-MM-DD` (Asia/Jakarta); `to` is inclusive and must not be before `from` |
 | `q` | Case-insensitive search in `description` and `address` (`%` and `_` are matched literally) |
 | `needs_review` | `true`: only reports that need review (see below); `false` or absent: no filter |
+| `duplicate` | `true`: only reports linked to an earlier one as a possible duplicate (see below) |
 | `page`, `limit` | Pagination |
 
 ```bash
@@ -459,6 +460,16 @@ completed, rejected → final (no more changes of any kind)
   organic, paper, plastic (AI) × organic, paper, plastic (current), with `count: 0` when none. Pairs
   where the two differ are admin corrections. Used for the dashboard's Sankey chart.
 - `needs_review`: how many reports need review right now, and the `AI_REVIEW_THRESHOLD` in use.
+
+#### "Possible duplicate"
+
+When a report is created (after the AI category is known), the backend looks for an **open** report
+(`pending` / `in_progress`) with the **same category**, created in the **last 24 hours**, within **50 m**
+(haversine distance in SQL, after a bounding-box prefilter). If there is one, the new report is still saved
+(nothing is blocked) with `possible_duplicate_of` set to the nearest such report (the newest on a tie).
+Every report payload has `possible_duplicate_of` (`null` when not linked). The admin detail also lists
+`possible_duplicates`: `[{ id, status, created_at }]` of the later reports linked to this one. Needs migration
+002 (see `docs/migrations-runbook.md`).
 
 #### "Needs review"
 
