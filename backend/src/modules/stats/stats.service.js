@@ -1,6 +1,8 @@
 const { query } = require('../../db/pool');
 const { TIME_ZONE } = require('../../config/constants');
 const { REPORT_STATUSES, REPORT_CATEGORIES } = require('../reports/reports.schema');
+const { needsReviewSql } = require('../reports/needs-review');
+const { aiReviewThreshold } = require('../../config/env');
 
 // Turns rows like [{ key: 'pending', count: 2 }] into { pending: 2, in_progress: 0, ... } (every key present).
 function countsByKey(rows, keys) {
@@ -92,12 +94,19 @@ async function getAiAccuracy() {
   return { reviewed, matching, accuracy };
 }
 
+// Reports the AI was unsure about that no admin has confirmed or corrected yet (see needs-review.js).
+async function getNeedsReview() {
+  const { rows } = await query(`SELECT COUNT(*)::int AS count FROM waste_reports WHERE ${needsReviewSql()}`);
+  return { count: rows[0].count, threshold: aiReviewThreshold };
+}
+
 async function getStats() {
   return {
     totals: await getTotals(),
     reports_per_day: await getReportsPerDay(),
     ai_accuracy: await getAiAccuracy(),
     ai_flow: await getAiFlow(),
+    needs_review: await getNeedsReview(),
   };
 }
 

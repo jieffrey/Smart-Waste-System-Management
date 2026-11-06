@@ -142,6 +142,7 @@ export const t = {
     detected: (category: string) => `Terdeteksi sampah ${category.toLowerCase()}.`,
     whatNext: 'Laporanmu sudah masuk dan menunggu ditinjau petugas.',
     confidence: (value: string) => `Keyakinan AI ${value}`,
+    lowConfidence: 'AI kurang yakin, petugas akan cek manual.',
     journeyTitle: 'Perjalanan laporanmu',
     viewReport: 'Lihat laporan',
     reportAgain: 'Lapor lagi',

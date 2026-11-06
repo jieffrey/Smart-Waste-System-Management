@@ -9,9 +9,18 @@ export function getStats() {
   return adminRequest<Stats>("/api/admin/stats");
 }
 
-export function listReports({ page, status, category, from, to, q }: ReportFilters) {
+export function listReports({ page, status, category, from, to, q, flag }: ReportFilters) {
   return adminRequest<{ reports: AdminReport[]; pagination: Pagination }>("/api/admin/reports", {
-    query: { page, limit: REPORTS_PAGE_SIZE, status, category, from, to, q },
+    query: {
+      page,
+      limit: REPORTS_PAGE_SIZE,
+      status,
+      category,
+      from,
+      to,
+      q,
+      needs_review: flag === "needs_review" ? "true" : undefined,
+    },
   });
 }
 

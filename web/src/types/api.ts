@@ -41,6 +41,8 @@ export type AdminReport = {
   admin_note: string | null;
   created_at: string;
   updated_at: string;
+  // AI confidence below the threshold and no admin has confirmed or corrected the category yet
+  needs_review: boolean;
   reporter_name: string;
   reporter_email: string;
 };
@@ -60,6 +62,8 @@ export type Stats = {
   ai_accuracy: { reviewed: number; matching: number; accuracy: number | null };
   // AI category -> current category, all 9 pairs (count 0 when none)
   ai_flow: { ai_category: ReportCategory; category: ReportCategory; count: number }[];
+  // Reports that need an admin's review, and the confidence threshold used
+  needs_review: { count: number; threshold: number };
 };
 
 export type LoginResponse = { user: User; token: string };

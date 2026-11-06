@@ -339,3 +339,14 @@ Keep the two in step.
 - Web shows it on the report detail under "AI sorting" as a "Handling" section: the category swatch + name, one
   line on what it is, dash bullets, and "Where it goes". It always follows the report's final category, so a
   correction updates the guidance.
+
+## "Needs review" (AI unsure)
+
+- **Web list:** a small "Needs review" tag (mono micro, ink on yellow punk, 15.3:1) under the status marker.
+  The "Flag" filter has a "Needs review" option (`?flag=needs_review`).
+- **Web detail:** a yellow-punk note with a 4px ink left rule at the top of "AI sorting". It says the AI was
+  not confident and asks the admin to confirm (route) or correct the category.
+- **Dashboard:** inside the red-orange "Needs action" block, a compact ink chip with yellow text ("3 need
+  review: the AI was unsure →"), linking to the filtered list. It's only shown when the count is above 0.
+- **Mobile:** on the AI result, below the confidence, a yellow-punk label: "AI kurang yakin, petugas akan
+  cek manual."

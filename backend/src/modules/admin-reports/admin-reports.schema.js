@@ -35,6 +35,11 @@ const listReportsSchema = z
     from: dateField('From').optional(),
     to: dateField('To').optional(),
     q: z.string().trim().max(100, 'Search must be at most 100 characters').optional(),
+    // ?needs_review=true: only reports the AI was unsure about that no admin has confirmed or corrected yet
+    needs_review: z
+      .enum(['true', 'false'], { error: 'needs_review must be true or false' })
+      .transform((value) => value === 'true')
+      .optional(),
   })
   .refine((query) => !query.from || !query.to || query.from <= query.to, {
     message: 'To must be on or after From',

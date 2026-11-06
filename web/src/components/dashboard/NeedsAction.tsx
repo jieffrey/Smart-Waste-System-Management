@@ -34,6 +34,15 @@ export function NeedsAction({ stats }: { stats: Stats }) {
       <p className="mt-1 text-small">
         <span className="font-mono">{in_progress}</span> already in progress.
       </p>
+      {(stats.needs_review?.count ?? 0) > 0 && (
+        <Link
+          href="/reports?flag=needs_review"
+          className="mt-3 flex w-fit items-center gap-2 bg-ink px-2 py-1 text-small font-semibold text-highlight underline-offset-4 hover:underline"
+        >
+          <span className="font-mono">{stats.needs_review.count}</span>
+          {stats.needs_review.count === 1 ? "needs" : "need"} review: the AI was unsure →
+        </Link>
+      )}
 
       <dl className="mt-6 grid grid-cols-2 border-t border-ink">
         <div className="border-r border-ink py-3 pr-3">

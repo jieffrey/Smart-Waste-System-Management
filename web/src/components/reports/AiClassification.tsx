@@ -3,16 +3,22 @@ import { formatPercent } from "@/lib/format";
 import { CATEGORY_LABELS } from "@/lib/labels";
 import type { AdminReportDetail } from "@/types/api";
 
-type Props = Pick<AdminReportDetail, "category" | "ai_predicted_category" | "ai_confidence" | "ai_model_version">;
+type Props = Pick<AdminReportDetail, "category" | "ai_predicted_category" | "ai_confidence" | "ai_model_version" | "needs_review">;
 
 // The AI result in plain language: what it sorted the photo as, how sure it was, and whether an admin
 // corrected it. The category routes the report, so it leads.
-export function AiClassification({ category, ai_predicted_category, ai_confidence, ai_model_version }: Props) {
+export function AiClassification({ category, ai_predicted_category, ai_confidence, ai_model_version, needs_review }: Props) {
   const corrected = ai_predicted_category !== null && ai_predicted_category !== category;
 
   return (
     <section className="border-t border-ink pt-4">
       <p className="label-micro text-gray-600">AI sorting</p>
+      {needs_review && (
+        <p role="note" className="mt-2 border-l-4 border-ink bg-highlight px-3 py-2 text-small text-ink">
+          <span className="font-semibold">Needs review.</span> The AI was not confident about this photo. Check it and
+          confirm the category (route the report) or correct it.
+        </p>
+      )}
       {ai_predicted_category === null ? (
         <p className="mt-2 text-body text-ink">
           The AI has no result for this report. It is routed as <CategoryLabel category={category} className="align-middle" />.

@@ -4,6 +4,14 @@ import { isReportCategory, isReportStatus } from "./labels";
 import type { ReportCategory, ReportStatus } from "@/types/api";
 
 export const REPORTS_PAGE_SIZE = 20;
+
+// Extra flags a report can be filtered by (one at a time).
+export const REPORT_FLAGS = ["needs_review"] as const;
+export type ReportFlag = (typeof REPORT_FLAGS)[number];
+export const FLAG_LABELS: Record<ReportFlag, string> = { needs_review: "Needs review" };
+function isReportFlag(value: string | undefined): value is ReportFlag {
+  return REPORT_FLAGS.includes(value as ReportFlag);
+}
 const MAX_SEARCH_LENGTH = 100; // same limit as the backend
 
 export type ReportFilters = {
@@ -12,6 +20,7 @@ export type ReportFilters = {
   from?: string; // YYYY-MM-DD, a calendar date in Asia/Jakarta (the backend counts days there)
   to?: string; // YYYY-MM-DD, inclusive
   q?: string;
+  flag?: ReportFlag;
   page: number;
 };
 
@@ -48,6 +57,7 @@ export function parseReportFilters(params: SearchParams): ReportFilters {
     to = undefined;
   }
   const q = first(params.q)?.trim().slice(0, MAX_SEARCH_LENGTH) || undefined;
+  const flag = first(params.flag);
 
   return {
     status: isReportStatus(status) ? status : undefined,
@@ -55,18 +65,19 @@ export function parseReportFilters(params: SearchParams): ReportFilters {
     from,
     to,
     q,
+    flag: isReportFlag(flag) ? flag : undefined,
     page: parsePage(first(params.page)),
   };
 }
 
 export function hasActiveFilters(filters: ReportFilters) {
-  return Boolean(filters.status || filters.category || filters.from || filters.to || filters.q);
+  return Boolean(filters.status || filters.category || filters.from || filters.to || filters.q || filters.flag);
 }
 
 // Query string for these filters. Empty values and page 1 are left out to keep URLs short.
 function filtersQuery(filters: Partial<ReportFilters>) {
   const params = new URLSearchParams();
-  for (const key of ["status", "category", "from", "to", "q"] as const) {
+  for (const key of ["status", "category", "from", "to", "q", "flag"] as const) {
     const value = filters[key];
     if (value) {
       params.set(key, value);

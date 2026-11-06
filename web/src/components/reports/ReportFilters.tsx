@@ -7,7 +7,7 @@ import { fieldClass } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { CATEGORY_LABELS, REPORT_CATEGORIES, REPORT_STATUSES, STATUS_LABELS } from "@/lib/labels";
-import { hasActiveFilters, reportsHref, type ReportFilters as Filters } from "@/lib/report-filters";
+import { FLAG_LABELS, hasActiveFilters, REPORT_FLAGS, reportsHref, type ReportFilters as Filters } from "@/lib/report-filters";
 import { cn } from "@/lib/utils";
 
 const compactField = cn(fieldClass, "h-8 text-small");
@@ -37,7 +37,7 @@ export function ReportFilters({ filters }: { filters: Filters }) {
   }
 
   return (
-    <div className="grid grid-cols-2 items-end gap-3 lg:grid-cols-[minmax(12rem,1fr)_10rem_9rem_9.5rem_9.5rem_auto]">
+    <div className="grid grid-cols-2 items-end gap-3 lg:grid-cols-[minmax(12rem,1fr)_9rem_8rem_9rem_9.5rem_9.5rem_auto]">
       <Field label="Search" className="col-span-2 lg:col-span-1">
         <SearchInput
           key={searchKey}
@@ -73,6 +73,21 @@ export function ReportFilters({ filters }: { filters: Filters }) {
           {REPORT_CATEGORIES.map((category) => (
             <NativeSelectOption key={category} value={category}>
               {CATEGORY_LABELS[category]}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+      </Field>
+
+      <Field label="Flag">
+        <NativeSelect
+          size="sm"
+          value={filters.flag ?? ""}
+          onChange={(event) => navigate({ flag: (event.target.value || undefined) as Filters["flag"] })}
+        >
+          <NativeSelectOption value="">Any</NativeSelectOption>
+          {REPORT_FLAGS.map((flag) => (
+            <NativeSelectOption key={flag} value={flag}>
+              {FLAG_LABELS[flag]}
             </NativeSelectOption>
           ))}
         </NativeSelect>
