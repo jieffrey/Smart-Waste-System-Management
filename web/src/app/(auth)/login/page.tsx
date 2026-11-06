@@ -70,7 +70,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
       </section>
 
       {/* The door */}
-      <section className="flex items-center px-6 py-8 sm:px-12 sm:py-12">
+      <section className="flex items-start px-6 py-8 sm:px-12 sm:py-12 lg:items-center">
         <div className="w-full max-w-sm space-y-8">
           <div className="border-b-2 border-ink pb-4">
             <p className="label-micro text-gray-600">Admin</p>
