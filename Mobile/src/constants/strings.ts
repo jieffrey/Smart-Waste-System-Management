@@ -53,6 +53,34 @@ export const t = {
     goToLogin: 'Masuk di sini',
   },
 
+  onboarding: {
+    skip: 'Lewati',
+    next: 'Lanjut',
+    start: 'Mulai lapor',
+    progress: (step: number, total: number) => `Langkah ${step} dari ${total}`,
+    slides: [
+      {
+        kicker: '01 · lihat',
+        title: 'Lihat sampah?\nJepret aja.',
+        body: 'Satu foto cukup. Lokasinya ikut tercatat otomatis, nggak perlu ngetik alamat.',
+      },
+      {
+        kicker: '02 · pilah',
+        title: 'AI langsung\nmilahin.',
+        body: 'Organik, kertas, atau plastik? Ketahuan dalam hitungan detik.',
+      },
+      {
+        kicker: '03 · beres',
+        title: 'Petugas gerak,\nkamu pantau.',
+        body: 'Dari menunggu sampai selesai, semua kelihatan di HP-mu. Sampai beres.',
+      },
+    ],
+    stickers: {
+      snap: 'cekrek!',
+      ai: 'AI',
+      done: 'beres!',
+    },
+  },
   tabs: {
     myReports: 'Laporan saya',
     report: 'Lapor',
