@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from PIL import Image
 
 from src.api.main import MAX_UPLOAD_BYTES, app
-from src.inference.predictor import RUNTIME
+from src.inference.predictor import MODEL_VERSION, RUNTIME
 
 CATEGORIES = {"organic", "paper", "plastic"}
 SAMPLES_DIR = Path(__file__).parent / "samples"
@@ -35,7 +35,7 @@ def assert_valid_prediction(body: dict):
     assert set(body["probabilities"]) == CATEGORIES
     assert sum(body["probabilities"].values()) == pytest.approx(1, abs=0.001)
     assert body["probabilities"][body["category"]] == body["confidence"]
-    assert body["model_version"] == "swms_mobilenetv2_best"
+    assert body["model_version"] == MODEL_VERSION == "swms_mobilenetv2_option_b"
 
 
 def test_health_returns_ok(client):
@@ -45,7 +45,7 @@ def test_health_returns_ok(client):
     assert res.json() == {
         "status": "ok",
         "model_loaded": True,
-        "model_version": "swms_mobilenetv2_best",
+        "model_version": "swms_mobilenetv2_option_b",
         "runtime": RUNTIME,
     }
 
