@@ -53,6 +53,17 @@ export const t = {
     goToLogin: 'Masuk di sini',
   },
 
+  verify: {
+    title: 'Cek email kamu',
+    intro: (email: string) => `Kami kirim 6 angka ke ${email}. Kodenya berlaku 10 menit.`,
+    code: 'Kode verifikasi',
+    submit: 'Verifikasi',
+    resend: 'Kirim ulang kode',
+    resendIn: (seconds: number) => `Kirim ulang dalam ${seconds} dtk`,
+    resent: 'Kode baru sudah dikirim. Cek juga folder spam.',
+    otherEmail: 'Pakai email lain',
+  },
+
   onboarding: {
     skip: 'Lewati',
     next: 'Lanjut',
@@ -259,23 +270,36 @@ const BACKEND_MESSAGES: Record<string, string> = {
   'Current password is required': 'Kata sandi sekarang wajib diisi.',
   'New password must be different from the current one': 'Kata sandi baru harus beda dari yang sekarang.',
   'Provide at least one of: full_name, email': 'Isi nama atau email.',
+  'Email not verified': 'Email kamu belum diverifikasi. Masukkan kode dari email.',
+  'Invalid or expired code': 'Kodenya salah atau sudah tidak berlaku.',
+  'Code expired. Request a new code': 'Kodenya sudah kedaluwarsa. Minta kode baru, ya.',
+  'Too many wrong codes. Request a new code': 'Terlalu banyak kode salah. Minta kode baru, ya.',
+  'Code must be 6 digits': 'Kode harus 6 angka.',
+  'Code is required': 'Kode wajib diisi.',
+  'Could not send the verification email. Please try again later': 'Email verifikasi gagal dikirim. Coba lagi nanti.',
 };
 
 // "Too many login attempts. Please try again in 15 minutes." and similar rate-limit messages.
 const RATE_LIMIT =
-  /^Too many (login attempts|sign-up attempts|new reports|profile changes|password change attempts)\. Please try again in (\d+) minutes?\.$/;
+  /^Too many (login attempts|sign-up attempts|new reports|profile changes|password change attempts|code attempts|code requests)\. Please try again in (\d+) minutes?\.$/;
 const RATE_LIMIT_WHAT: Record<string, string> = {
   'login attempts': 'percobaan masuk',
   'sign-up attempts': 'percobaan daftar',
   'new reports': 'laporan baru',
   'profile changes': 'perubahan profil',
   'password change attempts': 'percobaan ganti kata sandi',
+  'code attempts': 'percobaan kode',
+  'code requests': 'permintaan kode',
 };
 
 export function translateBackendMessage(message: string): string {
   const exact = BACKEND_MESSAGES[message];
   if (exact) {
     return exact;
+  }
+  const wait = /^Please wait (\d+) seconds before requesting a new code$/.exec(message);
+  if (wait) {
+    return `Tunggu ${wait[1]} detik sebelum minta kode baru.`;
   }
   const limited = RATE_LIMIT.exec(message);
   if (limited) {

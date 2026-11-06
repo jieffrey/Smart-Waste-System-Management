@@ -29,6 +29,8 @@ CREATE TABLE users (
     password_hash  text                     NOT NULL,
     role           varchar(10)              NOT NULL DEFAULT 'user',
     is_active      boolean                  NOT NULL DEFAULT true,
+    -- migration 003: false only for accounts registered while OTP_ENABLED=true that haven't entered their code
+    email_verified boolean                  NOT NULL DEFAULT true,
     created_at     timestamp with time zone NOT NULL DEFAULT now(),
     updated_at     timestamp with time zone NOT NULL DEFAULT now(),
     CONSTRAINT users_role_check CHECK (role IN ('admin', 'user'))
@@ -40,6 +42,17 @@ CREATE UNIQUE INDEX users_email_lower_uq ON users (lower(email));
 CREATE TRIGGER users_set_updated_at
     BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ─── email_verification_codes (migration 003) ──────────────────────────────
+-- The current verification code of an unverified account (hash only, 10-minute expiry, max 5 attempts).
+
+CREATE TABLE email_verification_codes (
+    user_id       uuid                     PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
+    code_hash     text                     NOT NULL,
+    expires_at    timestamp with time zone NOT NULL,
+    attempts      integer                  NOT NULL DEFAULT 0,
+    last_sent_at  timestamp with time zone NOT NULL DEFAULT now()
+);
 
 -- ─── waste_reports ───────────────────────────────────────────────────────────
 

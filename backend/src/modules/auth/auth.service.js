@@ -1,8 +1,9 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { query } = require('../../db/pool');
-const { jwtSecret, jwtExpiresIn } = require('../../config/env');
+const { jwtSecret, jwtExpiresIn, otp } = require('../../config/env');
 const HttpError = require('../../utils/http-error');
+const otpService = require('./otp.service');
 
 const SALT_ROUNDS = 10;
 const UNIQUE_VIOLATION = '23505';
@@ -23,29 +24,60 @@ function hashPassword(password) {
   return bcrypt.hash(password, SALT_ROUNDS);
 }
 
+// With OTP off (default) this is unchanged: the account is ready and a token is returned.
+// With OTP_ENABLED=true the account is created unverified, a code is emailed and NO token is returned
+// ({ user, verification_required: true }); POST /verify-email then returns the token. If the email can't be
+// sent, the account is removed again (503), so the person can simply register again.
 async function registerUser({ full_name, email, password }) {
   const passwordHash = await hashPassword(password);
 
+  let user;
   try {
     const { rows } = await query(
-      `INSERT INTO users (full_name, email, password_hash, role)
-       VALUES ($1, $2, $3, 'user')
+      `INSERT INTO users (full_name, email, password_hash, role, email_verified)
+       VALUES ($1, $2, $3, 'user', $4)
        RETURNING ${USER_COLUMNS}`,
-      [full_name, email, passwordHash]
+      [full_name, email, passwordHash, !otp.enabled]
     );
-    const user = rows[0];
-    return { user, token: createToken(user) };
+    user = rows[0];
   } catch (err) {
     if (err.code === UNIQUE_VIOLATION) {
       throw new HttpError(409, 'Email is already registered');
     }
     throw err;
   }
+
+  if (!otp.enabled) {
+    return { user, token: createToken(user) };
+  }
+  try {
+    await otpService.issueCode({ query }, user);
+  } catch (err) {
+    await query('DELETE FROM users WHERE id = $1', [user.id]);
+    throw err;
+  }
+  return { user, verification_required: true };
+}
+
+// POST /verify-email: the right code verifies the account and signs it in.
+async function verifyEmail({ email, code }) {
+  if (!otp.enabled) {
+    throw new HttpError(404, 'Email verification is not enabled');
+  }
+  const user = await otpService.verifyCode(email, code, USER_COLUMNS);
+  return { user, token: createToken(user) };
+}
+
+async function resendCode({ email }) {
+  if (!otp.enabled) {
+    throw new HttpError(404, 'Email verification is not enabled');
+  }
+  await otpService.resendCode(email);
 }
 
 async function loginUser({ email, password }) {
   const { rows } = await query(
-    `SELECT ${USER_COLUMNS}, password_hash FROM users WHERE LOWER(email) = $1`,
+    `SELECT ${USER_COLUMNS}, password_hash, email_verified FROM users WHERE LOWER(email) = $1`,
     [email]
   );
   const found = rows[0];
@@ -58,8 +90,13 @@ async function loginUser({ email, password }) {
   if (!found.is_active) {
     throw new HttpError(403, 'Account is deactivated');
   }
+  // Only while OTP is on: an account that hasn't entered its code yet can't sign in (the app then shows the
+  // code screen). With OTP off, nobody is ever blocked by this.
+  if (otp.enabled && !found.email_verified) {
+    throw new HttpError(403, 'Email not verified');
+  }
 
-  const { password_hash, ...user } = found;
+  const { password_hash, email_verified, ...user } = found;
   return { user, token: createToken(user) };
 }
 
@@ -102,4 +139,13 @@ async function getUserById(id) {
   return rows[0] || null;
 }
 
-module.exports = { hashPassword, registerUser, loginUser, getUserById, updateProfile, changePassword };
+module.exports = {
+  hashPassword,
+  registerUser,
+  loginUser,
+  getUserById,
+  updateProfile,
+  changePassword,
+  verifyEmail,
+  resendCode,
+};

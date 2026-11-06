@@ -65,7 +65,27 @@ const passwordChangeLimiter = createRateLimiter({
   onlyFailures: true,
 });
 
+// Verification codes, per IP: 20 tries per 15 minutes (each code also dies after 5 wrong tries), so a
+// 6-digit code can't be brute-forced.
+const verifyCodeLimiter = createRateLimiter({
+  windowMs: 15 * MINUTE,
+  limit: 20,
+  key: (req) => `verify-ip:${req.ip}`,
+  action: 'code attempts',
+});
+
+// New codes, per IP: 10 per hour (on top of the 60-second cooldown per account), so EmailJS's quota can't be
+// burned by a script.
+const resendCodeLimiter = createRateLimiter({
+  windowMs: HOUR,
+  limit: 10,
+  key: (req) => `resend-ip:${req.ip}`,
+  action: 'code requests',
+});
+
 module.exports = {
+  verifyCodeLimiter,
+  resendCodeLimiter,
   loginIpLimiter,
   loginEmailLimiter,
   registerLimiter,

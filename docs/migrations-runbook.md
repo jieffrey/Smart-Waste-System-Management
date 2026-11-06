@@ -53,3 +53,23 @@ Verify: one row with `is_nullable = YES`, plus the index name.
 psql "$PROD_DB" -c "SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = 'waste_reports' AND column_name = 'possible_duplicate_of';"
 psql "$PROD_DB" -c "SELECT indexname FROM pg_indexes WHERE indexname = 'waste_reports_possible_duplicate_of_idx';"
 ```
+
+---
+
+## 003: email verification (branch `feat/email-otp`)
+
+Adds `users.email_verified boolean NOT NULL DEFAULT true` (so every existing account, including the demo
+and admin accounts, counts as verified) and the `email_verification_codes` table (code hashes only). Nothing
+changes in behaviour until `OTP_ENABLED=true` is set on Railway (see `docs/email-otp-setup.md`). Run it after
+001 and 002.
+
+```bash
+psql "$PROD_DB" -v ON_ERROR_STOP=1 -f db/migrations/003_email_verification.sql
+```
+
+Verify: `unverified` must be 0 right after the migration, and the table must exist (count 0).
+
+```bash
+psql "$PROD_DB" -c "SELECT COUNT(*) FILTER (WHERE NOT email_verified) AS unverified, COUNT(*) AS users FROM users;"
+psql "$PROD_DB" -c "SELECT COUNT(*) FROM email_verification_codes;"
+```

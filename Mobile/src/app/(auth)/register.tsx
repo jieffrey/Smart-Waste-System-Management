@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -27,8 +27,12 @@ export default function RegisterScreen() {
     setError(null);
     setFieldErrors({});
     try {
-      await signUp(fullName.trim(), email.trim(), password);
-      // On success the protected routes switch to the app automatically.
+      const result = await signUp(fullName.trim(), email.trim(), password);
+      // Signed in: the protected routes switch to the app automatically. Otherwise the code screen comes next.
+      if (result === 'verify') {
+        setSubmitting(false);
+        router.push({ pathname: '/verify', params: { email: email.trim().toLowerCase(), sent: '1' } });
+      }
     } catch (err) {
       setError(getErrorMessage(err));
       setFieldErrors(getFieldErrors(err));

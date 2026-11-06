@@ -380,3 +380,11 @@ Keep the two in step.
   time, status marker).
 - **Mobile AI result:** an ink-outlined note with a 6px left rule under the result block: "Sudah ada laporan
   serupa di dekat sini. Laporanmu tetap kami catat."
+
+## Email verification screen (mobile, only with `OTP_ENABLED`)
+
+A compact ink hero ("Cek email kamu", with the email the code went to), then one big code field: JetBrains Mono
+36px, 12px letter spacing, centered, 1.5px ink border (3px when wrong), with the numeric keyboard and SMS/email
+one-time-code autofill. Then the primary "Verifikasi" (active at 6 digits), a secondary "Kirim ulang kode" that
+shows "Kirim ulang dalam N dtk" during the 60-second cooldown, and a text "Pakai email lain". Errors are ink with
+an icon. "New code sent" is ink on yellow punk.
