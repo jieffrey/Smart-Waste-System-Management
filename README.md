@@ -165,12 +165,14 @@ In place:
   decoding.
 - **EXIF stripping:** photos are re-encoded with `sharp` before storage, dropping all metadata (including GPS).
 - **ML API key:** `/predict` requires `X-API-Key` (constant-time compare); `/docs` is disabled in the image.
+- **HTTP security headers:** `helmet` on the backend (CSP off, it serves JSON and images); nosniff,
+  `X-Frame-Options: DENY`, Referrer-Policy, HSTS and a Permissions-Policy on the web panel.
 - **Private ML network:** the ML service has no public domain; only the backend reaches it over Railway's private
   network.
 - **Access control:** parameterized SQL everywhere, allowlisted request bodies, a resident can only see their own
   reports (others get `404`), admin routes need an active admin.
 
-Not in place: HTTP security headers (SEC-07) and token revocation (see below). The full white-box review, with the
+Not in place: a Content-Security-Policy and token revocation (see below). The full white-box review, with the
 status of each finding, is in [`docs/security-audit.md`](docs/security-audit.md).
 
 ## Run locally
@@ -288,6 +290,7 @@ tools/     Screenshot harness (tools/screenshots)
 
 - **Free / hobby hosting:** Railway Hobby, Vercel, Neon and Cloudinary free tiers. Fine for a demo, not sized for
   real load.
+- **No Content-Security-Policy** on the web panel yet (it needs nonces for Next.js scripts).
 - **Tokens can't be revoked:** a JWT stays valid until it expires (`JWT_EXPIRES_IN`, default 24 h), also after
   logout or a password change. Only deactivating the account stops it immediately.
 - **In-memory rate limits:** they reset on restart and only work with one backend instance. Web admin logins all
@@ -299,7 +302,6 @@ tools/     Screenshot harness (tools/screenshots)
   model does on new photos.
 - **No "not waste" class:** every photo is forced into organic, paper or plastic, even a selfie. Low confidence
   only marks it for review.
-- **No HTTP security headers** yet (SEC-07 in the security audit).
 
 ## Credits
 
