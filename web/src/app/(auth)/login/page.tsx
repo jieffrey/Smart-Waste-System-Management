@@ -26,11 +26,11 @@ async function ReasonNotice({ searchParams }: { searchParams: PageProps<"/login"
   );
 }
 
-// Facts shown on the front door. All true for this system (the accuracy is the model's test result,
-// see ml/README.md).
+// Facts shown on the front door. All true for this system (the accuracy is the served model's test result,
+// Option B, see ml/README.md). Hidden on phones so the sign-in form is in the first screen.
 function Facts() {
   return (
-    <dl className="grid gap-6 border-t border-gray-700 pt-6 sm:grid-cols-3">
+    <dl className="hidden gap-6 border-t border-gray-700 pt-6 sm:grid sm:grid-cols-3">
       <div>
         <dt className="font-mono text-title font-semibold text-highlight">3</dt>
         <dd className="mt-1 text-small text-gray-300">
@@ -43,7 +43,7 @@ function Facts() {
         </dd>
       </div>
       <div>
-        <dt className="font-mono text-title font-semibold text-highlight">97.7%</dt>
+        <dt className="font-mono text-title font-semibold text-highlight">98.3%</dt>
         <dd className="mt-1 text-small text-gray-300">test accuracy of the classifier on 701 held-out photos</dd>
       </div>
       <div>
@@ -58,7 +58,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
     <main className="grid min-h-screen lg:grid-cols-[7fr_5fr]">
       {/* The concept, in one sentence */}
-      <section className="flex flex-col justify-between gap-12 bg-ink px-6 py-8 text-snow sm:px-12 sm:py-12">
+      <section className="flex flex-col justify-between gap-6 bg-ink px-6 py-6 text-snow sm:gap-12 sm:px-12 sm:py-12">
         <div>
           <p className="font-wide text-heading font-extrabold tracking-tight">SWMS</p>
           <p className="label-micro mt-1 text-gray-300">Smart Waste Management System</p>
@@ -70,7 +70,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
       </section>
 
       {/* The door */}
-      <section className="flex items-center px-6 py-12 sm:px-12">
+      <section className="flex items-center px-6 py-8 sm:px-12 sm:py-12">
         <div className="w-full max-w-sm space-y-8">
           <div className="border-b-2 border-ink pb-4">
             <p className="label-micro text-gray-600">Admin</p>
