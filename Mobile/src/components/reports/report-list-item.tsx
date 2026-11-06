@@ -14,12 +14,20 @@ import { shortLocation } from '@/utils/short-location';
 export function ReportListItem({ report }: { report: Report }) {
   return (
     <View style={styles.row}>
-      <Image
-        source={{ uri: resolveImageUrl(report.image_url) }}
-        style={styles.thumbnail}
-        contentFit="cover"
-        accessibilityLabel={t.detail.photoLabel}
-      />
+      <View>
+        <Image
+          source={{ uri: resolveImageUrl(report.image_url) }}
+          style={styles.thumbnail}
+          contentFit="cover"
+          accessibilityLabel={t.detail.photoLabel}
+        />
+        {report.has_update ? (
+          // Changed since the owner last opened it: a small yellow-punk tag on the photo (ink text, 15.3:1).
+          <View style={styles.newTag} accessible accessibilityLabel={t.myReports.updatedA11y}>
+            <Text style={styles.newTagText}>{t.myReports.updated}</Text>
+          </View>
+        ) : null}
+      </View>
       <View style={styles.text}>
         <CategoryLabel category={report.category} />
         <Text style={styles.place} numberOfLines={1}>
@@ -43,6 +51,23 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     backgroundColor: Palette.gray100,
+  },
+  newTag: {
+    position: 'absolute',
+    top: -6,
+    left: -6,
+    backgroundColor: Palette.highlight,
+    borderWidth: 1.5,
+    borderColor: Palette.ink,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    transform: [{ rotate: '-6deg' }],
+  },
+  newTagText: {
+    fontFamily: FontFamily.extrabold,
+    fontSize: 11,
+    lineHeight: 14,
+    color: Palette.ink,
   },
   text: {
     flex: 1,

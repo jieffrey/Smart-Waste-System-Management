@@ -27,7 +27,13 @@ type Slot = { x: number; width: number };
 // slides behind the active tab. "Lapor" stays the visual anchor (a red-orange pill), but the active state is
 // always the yellow pill, so orange is not the only color in the bar.
 // Rendered through Paper's Portal so that, on Android, it sits outside the BlurTargetView it blurs.
-export function TabBar({ state, navigateToTab, target }: BottomTabBarProps & { target: GlassTarget }) {
+// `badges`: a count per tab (e.g. reports with news), drawn as an ink dot with a yellow number on the icon.
+export function TabBar({
+  state,
+  navigateToTab,
+  target,
+  badges = {},
+}: BottomTabBarProps & { target: GlassTarget; badges?: Record<string, number> }) {
   const bottom = useTabBarBottom();
   const reduceMotion = useReducedMotion();
   const [slots, setSlots] = useState<Record<number, Slot>>({});
@@ -60,12 +66,13 @@ export function TabBar({ state, navigateToTab, target }: BottomTabBarProps & { t
               const tab = TABS[route.name];
               if (!tab) return null;
               const focused = state.index === index;
+              const badge = badges[route.name] ?? 0;
               return (
                 <Pressable
                   key={route.key}
                   accessibilityRole="tab"
                   accessibilityState={{ selected: focused }}
-                  accessibilityLabel={tab.label}
+                  accessibilityLabel={badge > 0 && route.name === '(home)' ? `${tab.label}, ${t.myReports.tabUpdates(badge)}` : tab.label}
                   onLayout={(event) => onSlotLayout(index, event)}
                   onPress={() => {
                     if (!focused) navigateToTab(route.key);
@@ -73,7 +80,14 @@ export function TabBar({ state, navigateToTab, target }: BottomTabBarProps & { t
                   style={({ pressed }) => [styles.item, tab.anchor && styles.anchorSlot, pressed && styles.pressed]}>
                   {({ pressed }) => (
                     <View style={[styles.content, tab.anchor && styles.anchor, tab.anchor && pressed && styles.anchorPressed]}>
-                      <MaterialCommunityIcons name={focused ? tab.iconActive : tab.icon} size={24} color={focused || tab.anchor ? Palette.ink : Palette.gray700} />
+                      <View>
+                        <MaterialCommunityIcons name={focused ? tab.iconActive : tab.icon} size={24} color={focused || tab.anchor ? Palette.ink : Palette.gray700} />
+                        {badge > 0 ? (
+                          <View style={styles.badge}>
+                            <Text style={styles.badgeText}>{badge > 9 ? '9+' : badge}</Text>
+                          </View>
+                        ) : null}
+                      </View>
                       <Text style={[styles.label, focused || tab.anchor ? styles.labelStrong : styles.labelIdle]}>{tab.label}</Text>
                     </View>
                   )}
@@ -153,6 +167,24 @@ const styles = StyleSheet.create({
   labelStrong: {
     fontFamily: FontFamily.extrabold,
     color: Palette.ink,
+  },
+  badge: {
+    position: 'absolute',
+    top: -5,
+    right: -10,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    backgroundColor: Palette.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    fontFamily: FontFamily.monoSemibold,
+    fontSize: 11,
+    lineHeight: 14,
+    color: Palette.highlight, // yellow punk on ink: 15.3:1
   },
   labelIdle: {
     color: Palette.gray700, // 9.4:1 on the glass tint

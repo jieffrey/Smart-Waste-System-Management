@@ -17,12 +17,14 @@ import { STATUS_LABELS, t } from '@/constants/strings';
 import { Palette, Spacing } from '@/constants/theme';
 import { getErrorMessage } from '@/lib/errors';
 import { listMyReports } from '@/services/reports';
+import { useUpdates } from '@/store/updates';
 import type { Report, ReportStatus } from '@/types/api';
 
 const PAGE_SIZE = 20;
 
 export default function MyReportsScreen() {
   const tabBarSpace = useTabBarSpace();
+  const { setCount: setUpdatesCount } = useUpdates();
   const [statusFilter, setStatusFilter] = useState<ReportStatus | undefined>(undefined);
   const [reports, setReports] = useState<Report[]>([]);
   const [total, setTotal] = useState(0);
@@ -43,6 +45,7 @@ export default function MyReportsScreen() {
       if (requestId !== latestRequest.current) return;
       setReports(result.reports);
       setTotal(result.pagination.total);
+      setUpdatesCount(result.unseen_updates ?? 0);
       setPage(1);
       setLoadMoreError(null);
       setPhase('ready');
@@ -51,7 +54,7 @@ export default function MyReportsScreen() {
       setError(getErrorMessage(err));
       setPhase('error');
     }
-  }, []);
+  }, [setUpdatesCount]);
 
   // Reload whenever this tab is shown (e.g. after creating a report) or the filter changes.
   useFocusEffect(

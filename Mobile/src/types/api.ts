@@ -29,6 +29,8 @@ export interface Report {
   ai_model_version: string | null;
   // AI confidence below the review threshold and no admin has confirmed/corrected it yet (older API: absent)
   needs_review?: boolean;
+  // Changed (by an admin) since the owner last opened it (list and detail only)
+  has_update?: boolean;
   admin_note: string | null;
   created_at: string;
   updated_at: string;
@@ -72,4 +74,6 @@ export interface AuthResponse {
 export interface ReportListResponse {
   reports: Report[];
   pagination: Pagination;
+  // Reports with has_update, across all statuses (older API: absent)
+  unseen_updates?: number;
 }
