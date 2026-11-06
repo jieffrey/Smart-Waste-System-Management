@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const { webOrigins, trustProxy } = require('./config/env');
 const healthRoutes = require('./modules/health/health.routes');
 const authRoutes = require('./modules/auth/auth.routes');
@@ -15,6 +16,16 @@ const app = express();
 if (trustProxy > 0) {
   app.set('trust proxy', trustProxy);
 }
+
+// Security headers on every response (SEC-07). No CSP: the API serves JSON and images, not pages.
+// Cross-origin CORP so the web and mobile apps can still load /uploads photos from this origin.
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    frameguard: { action: 'deny' },
+  })
+);
 
 // Lets the admin web app (a different origin) call the API from the browser. The mobile app does not need CORS.
 if (webOrigins.length > 0) {
