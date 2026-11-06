@@ -4,6 +4,7 @@ import { useHeaderHeight } from 'expo-router/react-navigation';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Linking, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { HandlingGuide } from '@/components/reports/handling-guide';
 import { StatusTimeline } from '@/components/reports/status-timeline';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
@@ -108,6 +109,10 @@ export default function ReportDetailScreen() {
         <ThemedText type="mono" themeColor="textSecondary">
           {t.detail.aiConfidence(formatConfidence(report.ai_confidence))}
         </ThemedText>
+      </Section>
+
+      <Section title={t.handling.title}>
+        <HandlingGuide category={report.category} />
       </Section>
 
       {report.admin_note ? (
