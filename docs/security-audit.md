@@ -44,7 +44,7 @@ database, no rate limiting, and an ML endpoint that a big image could exhaust.
 | [SEC-04](#sec-04) | Low | Weak password policy (`12345678` is accepted) | Backend | A07 | Proven live | Fixed |
 | [SEC-05](#sec-05) | Low | Account enumeration through login timing and the register error | Backend | A07 | Proven live | Partly fixed (timing) |
 | [SEC-06](#sec-06) | Low | Uploaded photos are stored and served byte-for-byte (EXIF location kept) | Backend | A02, API3 | Proven live | Fixed |
-| [SEC-07](#sec-07) | Low | Missing HTTP security headers (backend and web) | Backend / web | A02 | Proven live | Open |
+| [SEC-07](#sec-07) | Low | Missing HTTP security headers (backend and web) | Backend / web | A02 | Proven live | Fixed (CSP: future work) |
 | [SEC-08](#sec-08) | Low | Upload limits are checked late; multipart fields are unlimited | Backend / ML | API4 | Partly proven | Fixed |
 | [SEC-09](#sec-09) | Low | ML `/predict` has no authentication; `/docs` is public | ML | A01, API2 | Proven live | Fixed |
 | [SEC-10](#sec-10) | Low | No security event logging; category/note changes leave no history | Backend | A09 | Code review | Open |
@@ -298,6 +298,12 @@ user's file safe to serve, decode it and save a fresh copy, so metadata and hidd
 <a id="sec-07"></a>
 ## SEC-07: Missing HTTP security headers (backend and web)
 
+- **Status: fixed in `security/http-headers`, except Content-Security-Policy (future work).** The backend uses
+  `helmet` (nosniff, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, HSTS, no `X-Powered-By`; CSP off and
+  `Cross-Origin-Resource-Policy: cross-origin` so photos still load), covered by `security-headers.test.js`. The web
+  app sets nosniff, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, HSTS and a
+  `Permissions-Policy` blocking camera, microphone and geolocation in `next.config.ts`, with `poweredByHeader: false`.
+  A script CSP needs nonces for Next.js and is not done yet.
 - **Severity: Low.** Proven, but these headers are defense in depth. Each one makes a different class of
   bug harder to exploit; none is a vulnerability alone.
 - **Evidence:** proven live.
