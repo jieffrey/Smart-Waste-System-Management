@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -11,6 +11,7 @@ import { Screen } from '@/components/ui/screen';
 import { TextField } from '@/components/ui/text-field';
 import { t } from '@/constants/strings';
 import { Spacing } from '@/constants/theme';
+import { ApiError } from '@/lib/api';
 import { getErrorMessage, getFieldErrors } from '@/lib/errors';
 import { useSession } from '@/store/session';
 
@@ -30,9 +31,14 @@ export default function LoginScreen() {
       await signIn(email.trim(), password);
       // On success the protected routes switch to the app automatically.
     } catch (err) {
+      setSubmitting(false);
+      // Registered but never entered the code (email verification on): go to the code screen.
+      if (err instanceof ApiError && err.status === 403 && err.message === 'Email not verified') {
+        router.push({ pathname: '/verify', params: { email: email.trim().toLowerCase() } });
+        return;
+      }
       setError(getErrorMessage(err));
       setFieldErrors(getFieldErrors(err));
-      setSubmitting(false);
     }
   }
 

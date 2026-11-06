@@ -21,7 +21,9 @@ interface SessionContextValue {
   user: User | null;
   notice: string | null; // message for the login screen, e.g. "session expired"
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (fullName: string, email: string, password: string) => Promise<void>;
+  // 'verify' = email verification is on: the account exists, the code screen comes next (no session yet)
+  signUp: (fullName: string, email: string, password: string) => Promise<'signed-in' | 'verify'>;
+  verifyEmail: (email: string, code: string) => Promise<void>;
   signOut: (notice?: string) => Promise<void>;
   setUser: (user: User) => void; // after a profile change
   retry: () => void;
@@ -72,8 +74,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback(
     async (fullName: string, email: string, password: string) => {
-      const { token, user: newUser } = await authService.register(fullName, email, password);
-      await startSession(token, newUser);
+      const result = await authService.register(fullName, email, password);
+      if (!('token' in result)) {
+        return 'verify';
+      }
+      await startSession(result.token, result.user);
+      return 'signed-in';
+    },
+    [startSession]
+  );
+
+  const verifyEmail = useCallback(
+    async (email: string, code: string) => {
+      const { token, user: verifiedUser } = await authService.verifyEmail(email, code);
+      await startSession(token, verifiedUser);
     },
     [startSession]
   );
@@ -123,7 +137,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [checkSavedToken]);
 
   return (
-    <SessionContext.Provider value={{ status, user, notice, signIn, signUp, signOut, setUser, retry }}>
+    <SessionContext.Provider value={{ status, user, notice, signIn, signUp, verifyEmail, signOut, setUser, retry }}>
       {children}
     </SessionContext.Provider>
   );

@@ -73,6 +73,12 @@ export interface AuthResponse {
   token: string;
 }
 
+// Registration with email verification on: no token until the code is entered.
+export interface VerificationRequiredResponse {
+  user: User;
+  verification_required: true;
+}
+
 export interface ReportListResponse {
   reports: Report[];
   pagination: Pagination;
