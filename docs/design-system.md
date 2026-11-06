@@ -350,3 +350,14 @@ Keep the two in step.
   review: the AI was unsure →"), linking to the filtered list. It's only shown when the count is above 0.
 - **Mobile:** on the AI result, below the confidence, a yellow-punk label: "AI kurang yakin, petugas akan
   cek manual."
+
+## Settings (web + mobile)
+
+- **Web `/settings`** (in the sidebar): three sections, each with its title and a short hint on the left and the
+  form on the right (stacked on phones). Profile (name, email), Password (current, new, repeat), and This
+  session (signed in as, role tag, when the session ends in WIB, Log out). Success messages are ink on a light
+  yellow-punk wash with a 4px ink rule. Errors are ink with an icon, never red.
+- **Mobile Akun → Pengaturan**: a pushed screen with the glass header. Sections are separated by a 2px ink rule
+  with a heading: Profil, Ganti kata sandi, Panduan ("Lihat panduan lagi" replays the onboarding) and Sesi
+  (Keluar, with the confirm dialog). The Akun screen keeps the name and email, then a secondary "Pengaturan"
+  button and a text "Keluar".

@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/reports", label: "Reports" },
   { href: "/users", label: "Users" },
+  { href: "/settings", label: "Settings" },
 ] as const;
 
 type Badges = Partial<Record<(typeof LINKS)[number]["href"], React.ReactNode>>;

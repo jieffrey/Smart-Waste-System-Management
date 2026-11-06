@@ -23,6 +23,7 @@ interface SessionContextValue {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (fullName: string, email: string, password: string) => Promise<void>;
   signOut: (notice?: string) => Promise<void>;
+  setUser: (user: User) => void; // after a profile change
   retry: () => void;
 }
 
@@ -122,7 +123,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [checkSavedToken]);
 
   return (
-    <SessionContext.Provider value={{ status, user, notice, signIn, signUp, signOut, retry }}>
+    <SessionContext.Provider value={{ status, user, notice, signIn, signUp, signOut, setUser, retry }}>
       {children}
     </SessionContext.Provider>
   );
