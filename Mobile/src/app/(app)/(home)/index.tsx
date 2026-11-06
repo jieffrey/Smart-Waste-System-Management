@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { FieldMessage } from '@/components/ui/field-message';
 import { fadeIn } from '@/components/ui/motion';
 import { Rule } from '@/components/ui/rule';
+import { useTabBarSpace } from '@/components/ui/glass';
 import { EmptyState, ErrorState, LoadingState } from '@/components/ui/state-view';
 import { STATUS_LABELS, t } from '@/constants/strings';
 import { Palette, Spacing } from '@/constants/theme';
@@ -21,6 +22,7 @@ import type { Report, ReportStatus } from '@/types/api';
 const PAGE_SIZE = 20;
 
 export default function MyReportsScreen() {
+  const tabBarSpace = useTabBarSpace();
   const [statusFilter, setStatusFilter] = useState<ReportStatus | undefined>(undefined);
   const [reports, setReports] = useState<Report[]>([]);
   const [total, setTotal] = useState(0);
@@ -121,7 +123,7 @@ export default function MyReportsScreen() {
           </Animated.View>
         )}
         ItemSeparatorComponent={() => <Rule weight="faint" />}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingBottom: tabBarSpace }]}
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={Palette.ink} colors={[Palette.ink]} />}

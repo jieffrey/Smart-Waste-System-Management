@@ -278,3 +278,31 @@ icons, so the app looks the same whatever the phone's dark-mode setting is.
 | gray-300 | cobalt | 3.48 | **Fail** for small text | Not used: secondary text on cobalt stays white |
 | ink | gray-100 | 15.27 | AAA | Text on photo placeholders |
 | gray-600 | gray-100 | 5.37 | AA | Hints on photo placeholders |
+
+## v3: glass navigation (mobile) and a lighter touch on web
+
+**Mobile: floating glass tab bar** (`Mobile/src/components/ui/tab-bar.tsx`, `glass.tsx`)
+
+- Rounded (height 68, fully round ends), inset 16px from the sides and floating above the safe area. Thin white
+  border, soft ink shadow. The screens scroll **behind** it: every scrolling screen inside the tabs pads its
+  bottom by the bar's height + gap (`useTabBarSpace()`), so nothing ends up hidden.
+- Glass = blur + snow tint (72% over a blur, 92% without), so ink text keeps ≥ 4.5:1 whatever passes behind.
+  iOS and web use a real blur. Android uses expo-blur's Dimezis blur (`blurMethod="dimezisBlurViewSdk31Plus"`)
+  against a `BlurTargetView` that wraps the tab screens. The bar renders through Paper's `Portal`, so it sits
+  outside its own blur target. Android 11 and older fall back to the translucent panel, with no blur.
+- States: a **yellow-punk pill slides** behind the active tab (Reanimated, 260ms; it jumps with "reduce
+  motion" on). The active label is ink 800, idle labels are gray-700 600, and a pressed tab scales to 0.94.
+  "Lapor" stays the anchor as a red-orange pill, but the active state is always the yellow pill, so red orange
+  is not the only color in the bar.
+- Transitions: switching tabs uses React Navigation's `shift` (fade + slight slide), and stack pushes slide
+  from the right. Both become instant with "reduce motion" on.
+- Report detail has a **glass header**: transparent, blurred and tinted, with a hairline rule. The photo and
+  content scroll underneath it. On Android the header is the translucent panel, because it lives inside the
+  blur target.
+
+**Web** (narrow screens only, nothing heavy)
+
+- The top bar on phones is sticky glass: snow at 75% + `backdrop-blur`, with a faint ink rule. Desktop keeps the
+  solid sidebar.
+- Press feedback: buttons move 1px down on press, nav links scale to 0.98, and table rows deepen their yellow
+  hover on press. All of it turns off with `prefers-reduced-motion`.

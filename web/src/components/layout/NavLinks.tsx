@@ -32,8 +32,8 @@ export function NavLinkList({ pathname, badges }: { pathname: string | null; bad
             href={href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "relative flex items-center justify-between gap-3 px-3 py-2 text-body text-ink md:py-2.5 md:pl-4",
-              active ? "font-bold" : "hover:bg-gray-50"
+              "relative flex items-center justify-between gap-3 px-3 py-2 text-body text-ink transition-[background-color,transform] duration-150 active:scale-[0.98] md:py-2.5 md:pl-4 motion-reduce:transition-none motion-reduce:active:scale-100",
+              active ? "font-extrabold" : "hover:bg-gray-50"
             )}
           >
             {active && (
