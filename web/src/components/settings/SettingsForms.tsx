@@ -5,6 +5,7 @@ import { AlertTriangle, Check } from "lucide-react";
 import { changePassword, updateProfile, type FormResult, type PasswordField, type ProfileField } from "@/actions/settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 
 function Notice({ state }: { state: FormResult<string> }) {
@@ -25,12 +26,14 @@ function Field({
   name,
   label,
   error,
+  type,
   ...props
 }: { name: string; label: string; error?: string } & React.ComponentProps<"input">) {
+  const inputProps = { id: name, name, "aria-invalid": Boolean(error), "aria-describedby": error ? `${name}-error` : undefined, ...props };
   return (
     <div className="space-y-2">
       <Label htmlFor={name}>{label}</Label>
-      <Input id={name} name={name} aria-invalid={Boolean(error)} aria-describedby={error ? `${name}-error` : undefined} {...props} />
+      {type === "password" ? <PasswordInput {...inputProps} /> : <Input type={type} {...inputProps} />}
       {error && (
         <p id={`${name}-error`} className="flex items-center gap-1.5 text-small text-ink">
           <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />
