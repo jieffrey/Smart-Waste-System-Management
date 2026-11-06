@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
+import { HandlingGuide } from '@/components/reports/handling-guide';
 import { Journey } from '@/components/reports/journey';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,13 @@ export function AiResult({ report, onViewReport, onReportAgain }: AiResultProps)
           {t.result.confidence(formatConfidence(report.ai_confidence))}
         </Text>
       </Animated.View>
+
+      <View style={styles.journey}>
+        <ThemedText type="micro" themeColor="textSecondary">
+          {t.handling.title}
+        </ThemedText>
+        <HandlingGuide category={report.category} />
+      </View>
 
       <View style={styles.journey}>
         <ThemedText type="micro" themeColor="textSecondary">

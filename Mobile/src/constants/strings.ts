@@ -81,6 +81,10 @@ export const t = {
       done: 'beres!',
     },
   },
+  handling: {
+    title: 'Cara menangani',
+    goesTo: 'Dibawa ke mana?',
+  },
   tabs: {
     myReports: 'Laporan saya',
     report: 'Lapor',

@@ -326,3 +326,16 @@ Pengaturan.
   on, everything is simply in place.
 - **Progress:** three chunky rounded segments, filled up to the current slide. The CTA is a full-width pill
   ("Lanjut"), and the last slide has a big red-orange "Mulai lapor".
+
+## Handling guidance
+
+Each category has a short handling guide: what it is, how to handle it, and where it can go. There's one
+mapping per app: `Mobile/src/constants/handling.ts` (Indonesian) and `web/src/lib/handling.ts` (English).
+Keep the two in step.
+
+- Mobile shows it on the AI result ("Cara menangani", between the colored result block and the journey) and on
+  the report detail (a section right after Kategori). Small text, dash bullets, and a bold "Dibawa ke mana?"
+  line.
+- Web shows it on the report detail under "AI sorting" as a "Handling" section: the category swatch + name, one
+  line on what it is, dash bullets, and "Where it goes". It always follows the report's final category, so a
+  correction updates the guidance.

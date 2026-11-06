@@ -6,6 +6,7 @@ import { CATEGORY_LABELS } from "@/lib/labels";
 import { shortLocation } from "@/lib/location";
 import type { AdminReportDetail } from "@/types/api";
 import { AiClassification } from "./AiClassification";
+import { HandlingGuide } from "./HandlingGuide";
 import { ReportPhoto } from "./ReportPhoto";
 import { StatusTimeline } from "./StatusTimeline";
 
@@ -76,6 +77,7 @@ export function ReportDetail({ report, children }: { report: AdminReportDetail; 
             ai_confidence={report.ai_confidence}
             ai_model_version={report.ai_model_version}
           />
+          <HandlingGuide category={report.category} />
           <section className="border-t border-ink pt-4">
             <p className="label-micro text-gray-600">Details</p>
             <dl className="mt-2">
