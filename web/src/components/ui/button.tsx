@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 // ghost     = text only, underlined on hover.
 // ink       = ink fill + snow label (18:1). The CTA inside a red-orange block, where a red button would vanish.
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-none font-sans font-semibold whitespace-nowrap transition-colors outline-none select-none disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-none font-sans font-semibold whitespace-nowrap transition-[color,background-color,border-color,transform] duration-150 outline-none select-none active:translate-y-px motion-reduce:transition-none motion-reduce:active:translate-y-0 disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {

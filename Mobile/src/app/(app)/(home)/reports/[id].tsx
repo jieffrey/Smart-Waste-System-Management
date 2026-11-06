@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Linking, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -7,6 +8,7 @@ import { StatusTimeline } from '@/components/reports/status-timeline';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { CategoryLabel } from '@/components/ui/category-label';
+import { useTabBarSpace } from '@/components/ui/glass';
 import { Rule } from '@/components/ui/rule';
 import { ErrorState, LoadingState } from '@/components/ui/state-view';
 import { StatusMarker } from '@/components/ui/status-marker';
@@ -21,6 +23,8 @@ import { coordinatesLabel, shortLocation } from '@/utils/short-location';
 
 export default function ReportDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const headerHeight = useHeaderHeight();
+  const tabBarSpace = useTabBarSpace();
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [phase, setPhase] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState('');
@@ -67,9 +71,18 @@ export default function ReportDetailScreen() {
   return (
     <ScrollView
       style={styles.screen}
-      contentContainerStyle={styles.content}
-      contentInsetAdjustmentBehavior="automatic"
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={Palette.ink} colors={[Palette.ink]} />}>
+      // The glass header is transparent: start below it, scroll underneath it, stop above the floating tab bar.
+      contentContainerStyle={[styles.content, { paddingTop: headerHeight + Spacing.three, paddingBottom: tabBarSpace }]}
+      scrollIndicatorInsets={{ top: headerHeight, bottom: tabBarSpace }}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={refresh}
+          progressViewOffset={headerHeight}
+          tintColor={Palette.ink}
+          colors={[Palette.ink]}
+        />
+      }>
       <Image
         source={{ uri: resolveImageUrl(report.image_url) }}
         style={styles.photo}

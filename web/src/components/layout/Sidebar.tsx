@@ -5,7 +5,8 @@ import { NavLinkList, NavLinks } from "./NavLinks";
 import { PendingCount } from "./PendingCount";
 
 // Light rail. The 1px ink rule belongs to this column, which stretches to the full page height, so the rule
-// never stops; the content inside is sticky. On small screens it becomes a compact top bar: logo and account
+// never stops; the content inside is sticky. On small screens it becomes a compact, sticky glass top bar (snow at
+// 75% + backdrop blur, a faint rule): logo and account
 // on one row, the nav underneath.
 export function Sidebar() {
   const badges = {
@@ -17,7 +18,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="w-full shrink-0 border-b border-ink bg-snow md:w-60 md:self-stretch md:border-r md:border-b-0">
+    <aside className="sticky top-0 z-30 w-full shrink-0 border-b border-ink/15 bg-snow/75 backdrop-blur-md backdrop-saturate-150 md:static md:w-60 md:self-stretch md:border-r md:border-b-0 md:border-ink md:bg-snow md:backdrop-blur-none">
       <div className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-3 px-4 py-3 md:sticky md:top-0 md:flex md:h-screen md:flex-col md:items-stretch md:gap-6 md:px-0 md:py-8">
         <Link href="/dashboard" className="block w-fit md:px-6">
           <span className="tracking-display block text-title leading-none font-extrabold text-ink">SWMS</span>
