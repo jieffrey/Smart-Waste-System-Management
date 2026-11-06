@@ -369,3 +369,14 @@ Keep the two in step.
   Opening the report clears it.
 - **Tab:** "Laporan saya" carries the count as an ink dot with a yellow-punk mono number (15.3:1), shown as "9+"
   above 9. The accessibility label reads "Laporan saya, N laporan ada kabar baru".
+
+## "Possible duplicate"
+
+- **Web list:** an ink-outline "Possible duplicate" tag (mono micro, no fill) under the status. It's information,
+  not urgency, so it stays quieter than the yellow "Needs review". The "Flag" filter has "Possible duplicate"
+  (`?flag=duplicate`).
+- **Web detail:** a "Possible duplicate" section above Handling, with links both ways. On the new report it links
+  to the earlier report (short id in mono). On the earlier report it lists the later linked ones (short id,
+  time, status marker).
+- **Mobile AI result:** an ink-outlined note with a 6px left rule under the result block: "Sudah ada laporan
+  serupa di dekat sini. Laporanmu tetap kami catat."

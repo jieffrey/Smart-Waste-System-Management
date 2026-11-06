@@ -20,6 +20,7 @@ export function listReports({ page, status, category, from, to, q, flag }: Repor
       to,
       q,
       needs_review: flag === "needs_review" ? "true" : undefined,
+      duplicate: flag === "duplicate" ? "true" : undefined,
     },
   });
 }

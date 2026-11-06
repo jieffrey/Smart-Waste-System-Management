@@ -43,11 +43,19 @@ export type AdminReport = {
   updated_at: string;
   // AI confidence below the threshold and no admin has confirmed or corrected the category yet
   needs_review: boolean;
+  // An earlier open report nearby (same category, ≤ 50 m, last 24 h) this one may duplicate
+  possible_duplicate_of: string | null;
   reporter_name: string;
   reporter_email: string;
 };
 
-export type AdminReportDetail = AdminReport & { status_history: StatusHistoryEntry[] };
+export type LinkedReport = { id: string; status: ReportStatus; created_at: string };
+
+export type AdminReportDetail = AdminReport & {
+  status_history: StatusHistoryEntry[];
+  // Later reports linked to this one as possible duplicates (older API: absent)
+  possible_duplicates?: LinkedReport[];
+};
 
 export type Pagination = { page: number; limit: number; total: number };
 

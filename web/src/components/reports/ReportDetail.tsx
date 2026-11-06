@@ -7,6 +7,7 @@ import { shortLocation } from "@/lib/location";
 import type { AdminReportDetail } from "@/types/api";
 import { AiClassification } from "./AiClassification";
 import { HandlingGuide } from "./HandlingGuide";
+import { DuplicateLinks } from "./DuplicateLinks";
 import { ReportPhoto } from "./ReportPhoto";
 import { StatusTimeline } from "./StatusTimeline";
 
@@ -78,6 +79,7 @@ export function ReportDetail({ report, children }: { report: AdminReportDetail; 
             ai_model_version={report.ai_model_version}
             needs_review={report.needs_review}
           />
+          <DuplicateLinks report={report} />
           <HandlingGuide category={report.category} />
           <section className="border-t border-ink pt-4">
             <p className="label-micro text-gray-600">Details</p>

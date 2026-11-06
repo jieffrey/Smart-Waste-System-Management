@@ -9,7 +9,7 @@ const { needsReviewSql } = require('../reports/needs-review');
 const ADMIN_REPORT_COLUMNS = `r.id, r.user_id, r.description, r.category, r.status, r.image_url,
   r.latitude::float8 AS latitude, r.longitude::float8 AS longitude, r.address,
   r.ai_predicted_category, r.ai_confidence::float8 AS ai_confidence, r.ai_model_version,
-  r.admin_note, r.created_at, r.updated_at,
+  r.admin_note, r.possible_duplicate_of, r.created_at, r.updated_at,
   ${needsReviewSql('r.')} AS needs_review,
   u.full_name AS reporter_name, u.email AS reporter_email`;
 
@@ -23,15 +23,16 @@ const STATUS_TRANSITIONS = {
 
 // Every filter is optional: a NULL parameter means "don't filter on this".
 // $1 status, $2 category, $3 from date, $4 to date (inclusive), $5 time zone, $6 search pattern,
-// $7 needs review (true = only reports that need review)
+// $7 needs review (true = only reports that need review), $8 possible duplicate (true = only linked ones)
 const LIST_FILTERS = `($1::text IS NULL OR r.status = $1)
   AND ($2::text IS NULL OR r.category = $2)
   AND ($3::date IS NULL OR r.created_at >= ($3::date::timestamp AT TIME ZONE $5::text))
   AND ($4::date IS NULL OR r.created_at < (($4::date + 1)::timestamp AT TIME ZONE $5::text))
   AND ($6::text IS NULL OR r.description ILIKE $6 OR r.address ILIKE $6)
-  AND ($7::boolean IS NOT TRUE OR ${needsReviewSql('r.')})`;
+  AND ($7::boolean IS NOT TRUE OR ${needsReviewSql('r.')})
+  AND ($8::boolean IS NOT TRUE OR r.possible_duplicate_of IS NOT NULL)`;
 
-async function listReports({ page, limit, status, category, from, to, q, needs_review }) {
+async function listReports({ page, limit, status, category, from, to, q, needs_review, duplicate }) {
   const filterParams = [
     status ?? null,
     category ?? null,
@@ -40,6 +41,7 @@ async function listReports({ page, limit, status, category, from, to, q, needs_r
     TIME_ZONE,
     likePattern(q),
     needs_review ?? null,
+    duplicate ?? null,
   ];
 
   const countResult = await query(`SELECT COUNT(*)::int AS total FROM waste_reports r WHERE ${LIST_FILTERS}`, filterParams);
@@ -50,7 +52,7 @@ async function listReports({ page, limit, status, category, from, to, q, needs_r
      JOIN users u ON u.id = r.user_id
      WHERE ${LIST_FILTERS}
      ORDER BY r.created_at DESC, r.id DESC
-     LIMIT $8 OFFSET $9`,
+     LIMIT $9 OFFSET $10`,
     [...filterParams, limit, (page - 1) * limit]
   );
 
@@ -84,7 +86,13 @@ async function getReport(reportId) {
     [reportId]
   );
 
-  return { ...report, status_history: history.rows };
+  // Later reports that were linked to this one as possible duplicates.
+  const duplicates = await query(
+    `SELECT id, status, created_at FROM waste_reports WHERE possible_duplicate_of = $1 ORDER BY created_at ASC`,
+    [reportId]
+  );
+
+  return { ...report, status_history: history.rows, possible_duplicates: duplicates.rows };
 }
 
 // Changes status, category and/or admin_note. ai_predicted_category is never changed.

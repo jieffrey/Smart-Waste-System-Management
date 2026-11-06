@@ -146,6 +146,7 @@ export const t = {
     whatNext: 'Laporanmu sudah masuk dan menunggu ditinjau petugas.',
     confidence: (value: string) => `Keyakinan AI ${value}`,
     lowConfidence: 'AI kurang yakin, petugas akan cek manual.',
+    possibleDuplicate: 'Sudah ada laporan serupa di dekat sini. Laporanmu tetap kami catat.',
     journeyTitle: 'Perjalanan laporanmu',
     viewReport: 'Lihat laporan',
     reportAgain: 'Lapor lagi',

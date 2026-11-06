@@ -40,6 +40,11 @@ const listReportsSchema = z
       .enum(['true', 'false'], { error: 'needs_review must be true or false' })
       .transform((value) => value === 'true')
       .optional(),
+    // ?duplicate=true: only reports linked to an earlier one as a possible duplicate
+    duplicate: z
+      .enum(['true', 'false'], { error: 'duplicate must be true or false' })
+      .transform((value) => value === 'true')
+      .optional(),
   })
   .refine((query) => !query.from || !query.to || query.from <= query.to, {
     message: 'To must be on or after From',
