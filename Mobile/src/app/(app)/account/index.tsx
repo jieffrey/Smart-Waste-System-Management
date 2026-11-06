@@ -1,3 +1,4 @@
+import { router, type Href } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -39,13 +40,8 @@ export default function AccountScreen() {
       <Row label={t.account.email} value={user?.email} />
       <Rule weight="faint" />
 
-      <Button
-        title={t.account.logOut}
-        onPress={() => setConfirming(true)}
-        variant="secondary"
-        loading={signingOut}
-        style={styles.logOut}
-      />
+      <Button title={t.account.settings} onPress={() => router.push('/account/settings' as Href)} variant="secondary" style={styles.logOut} />
+      <Button title={t.account.logOut} onPress={() => setConfirming(true)} variant="text" loading={signingOut} />
 
       <View style={styles.footer}>
         <Wordmark />

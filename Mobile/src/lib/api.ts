@@ -34,7 +34,7 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
 type QueryValue = string | number | undefined;
 
 interface RequestOptions {
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'PATCH';
   query?: Record<string, QueryValue>;
   body?: unknown; // sent as JSON
   formData?: FormData; // sent as multipart/form-data

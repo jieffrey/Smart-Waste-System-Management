@@ -181,6 +181,28 @@ export const t = {
     logOut: 'Keluar',
     logOutTitle: 'Keluar dari akun?',
     logOutMessage: 'Kamu perlu masuk lagi untuk melapor.',
+    settings: 'Pengaturan',
+  },
+
+  settings: {
+    title: 'Pengaturan',
+    back: 'Akun',
+    profile: 'Profil',
+    fullName: 'Nama lengkap',
+    email: 'Email',
+    saveProfile: 'Simpan profil',
+    profileSaved: 'Profil tersimpan.',
+    password: 'Ganti kata sandi',
+    currentPassword: 'Kata sandi sekarang',
+    newPassword: 'Kata sandi baru (8–72 karakter)',
+    repeatPassword: 'Ulangi kata sandi baru',
+    passwordMismatch: 'Dua kata sandi baru tidak sama.',
+    changePassword: 'Ganti kata sandi',
+    passwordChanged: 'Kata sandi sudah diganti. Pakai yang baru saat masuk lagi.',
+    guide: 'Panduan',
+    guideHint: 'Lihat lagi cara kerja SWMS dalam tiga langkah.',
+    replayGuide: 'Lihat panduan lagi',
+    session: 'Sesi',
   },
 
   session: {
@@ -229,14 +251,21 @@ const BACKEND_MESSAGES: Record<string, string> = {
   'A form field is too long': 'Ada isian yang terlalu panjang.',
   'Request body is too large': 'Data yang dikirim terlalu besar.',
   'Internal server error': 'Terjadi kesalahan di server. Coba lagi nanti.',
+  'Current password is incorrect': 'Kata sandi sekarang salah.',
+  'Current password is required': 'Kata sandi sekarang wajib diisi.',
+  'New password must be different from the current one': 'Kata sandi baru harus beda dari yang sekarang.',
+  'Provide at least one of: full_name, email': 'Isi nama atau email.',
 };
 
 // "Too many login attempts. Please try again in 15 minutes." and similar rate-limit messages.
-const RATE_LIMIT = /^Too many (login attempts|sign-up attempts|new reports)\. Please try again in (\d+) minutes?\.$/;
+const RATE_LIMIT =
+  /^Too many (login attempts|sign-up attempts|new reports|profile changes|password change attempts)\. Please try again in (\d+) minutes?\.$/;
 const RATE_LIMIT_WHAT: Record<string, string> = {
   'login attempts': 'percobaan masuk',
   'sign-up attempts': 'percobaan daftar',
   'new reports': 'laporan baru',
+  'profile changes': 'perubahan profil',
+  'password change attempts': 'percobaan ganti kata sandi',
 };
 
 export function translateBackendMessage(message: string): string {

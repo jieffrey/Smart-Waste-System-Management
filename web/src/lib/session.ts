@@ -64,6 +64,13 @@ export async function adminRequest<T>(path: string, options: Omit<Parameters<typ
   }
 }
 
+// When the current session token expires (read from the cookie; the backend still verifies the token).
+export async function getSessionExpiry(): Promise<Date | null> {
+  const token = await getToken();
+  const exp = token ? readTokenPayload(token)?.exp : undefined;
+  return exp ? new Date(exp * 1000) : null;
+}
+
 // The logged-in admin, checked against the backend on every request (catches deactivated accounts).
 export async function getCurrentAdmin(): Promise<User> {
   const { user } = await adminRequest<{ user: User }>("/api/auth/me");
