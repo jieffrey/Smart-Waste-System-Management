@@ -1,6 +1,5 @@
 import { AlertTriangle } from "lucide-react";
-import { logout } from "@/actions/auth";
-import { Button } from "@/components/ui/button";
+import { LogoutButton } from "@/components/layout/LogoutButton";
 import { ApiError } from "@/lib/api";
 import { getCurrentAdmin } from "@/lib/session";
 import type { User } from "@/types/api";
@@ -30,11 +29,7 @@ export async function CurrentAdmin() {
           Couldn&apos;t load your account.
         </p>
       )}
-      <form action={logout}>
-        <Button type="submit" variant="ghost" size="sm" className="px-0">
-          Log out
-        </Button>
-      </form>
+      <LogoutButton variant="ghost" size="sm" className="px-0" />
     </div>
   );
 }
