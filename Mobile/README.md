@@ -95,6 +95,30 @@ Windows blocks incoming connections to the backend by default, so the phone can'
 If Expo Go can't load the app itself (the QR code step), Windows may also be blocking Expo's port
 **8081** — allow Node.js when Windows asks, or start Expo with `npx expo start --tunnel`.
 
+## Build an installable Android APK (EAS)
+
+The `preview` profile in `eas.json` builds an **APK** (not an AAB) for direct install. App identity, in
+`app.json`: package **`com.jieffrey.swms`**, slug **`swms`**, `version` 1.0.0, Android `versionCode` 1 (raise
+`versionCode` for every new APK you hand out; `appVersionSource: local` reads it from `app.json`).
+
+The backend URL is **not** in the repo: the profile uses the EAS environment **`preview`**, so set it there once.
+It's built into the app and isn't a secret, so "plain text" visibility is fine. It must be the **https** Railway
+domain (release builds block plain `http`).
+
+```bash
+cd Mobile
+npx eas-cli@latest login
+npx eas-cli@latest init                      # links the project; adds extra.eas.projectId and owner to app.json
+npx eas-cli@latest env:create --environment preview --name EXPO_PUBLIC_API_URL   --value https://<backend>.up.railway.app --visibility plaintext
+npx eas-cli@latest build -p android --profile preview
+```
+
+EAS prints a build page with a QR code and the `.apk` link. To install on Android: open the link on the phone →
+download → allow "Install unknown apps" for the browser when asked → install → open **SWMS**. Commit the
+`app.json` changes made by `eas init`.
+
+If the backend URL changes, update the EAS variable and build again: the URL is fixed at build time.
+
 ## Demo account
 
 For **local setup only**, the backend's seed script (`npm run seed` in `backend/`) creates this user.
