@@ -57,6 +57,11 @@ All web pages at 1440 px and 390 px are in [`docs/screenshots/final/web/`](docs/
 - **Report detail:** photo, status timeline with admin notes, AI category and confidence (and the AI's original
   guess if an admin corrected it), Open in Maps.
 - **Account settings:** edit name and email, change password, replay the guide, log out.
+- **Log-out confirmation:** every log-out button (Akun, Pengaturan, and the offline start screen) asks
+  "Keluar dari akun?" first.
+- **Back-to-exit confirmation:** on Android, the hardware back button on *Laporan saya* asks "Tutup aplikasi?"
+  instead of closing the app at once.
+- **Password fields** have a show/hide toggle.
 
 ### Admin (web panel)
 
@@ -71,6 +76,9 @@ All web pages at 1440 px and 390 px are in [`docs/screenshots/final/web/`](docs/
 - **Users:** list and search users with their report count; activate or deactivate accounts (a deactivated
   user's token stops working at once; an admin can't deactivate their own account).
 - **Settings:** edit profile, change password, log out.
+- **Log-out confirmation:** the sidebar and `/settings` log-out buttons open a "Log out?" dialog (Cancel focused
+  first, Esc cancels, focus stays inside); the session ends only after confirming.
+- **Password fields** (login, settings) have a show/hide toggle.
 
 ### AI
 
