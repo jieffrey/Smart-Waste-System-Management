@@ -83,3 +83,92 @@ The ML API has no public URL: only the backend can reach it, over Railway's priv
   for the admin.
 - **AI accuracy:** the share of reviewed reports (`in_progress` / `completed`) whose category the admin left as
   the AI predicted it.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  app["Mobile app<br/>(Android APK, Expo)"]
+  web["Admin web<br/>(Next.js on Vercel)"]
+  subgraph railway["Railway project (Singapore)"]
+    api["Backend API<br/>(Express)"]
+    ml["ML API<br/>(FastAPI + ONNX Runtime)<br/>no public domain"]
+  end
+  db[("Neon Postgres")]
+  cdn["Cloudinary<br/>(report photos)"]
+
+  app -- "HTTPS, Bearer token" --> api
+  web -- "server-side HTTPS<br/>(token in httpOnly cookie)" --> api
+  api -- "private network,<br/>X-API-Key" --> ml
+  api -- "SQL over TLS" --> db
+  api -- "upload / delete" --> cdn
+  app -. "loads photos" .-> cdn
+  web -. "loads photos" .-> cdn
+```
+
+| Component | Folder | Stack |
+|---|---|---|
+| Mobile app (residents) | [`Mobile/`](Mobile/) | Expo SDK 58, React Native 0.88, Expo Router, TypeScript, React Native Paper; APK built with EAS |
+| Admin web | [`web/`](web/) | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, shadcn/ui + Radix, Bklit charts (d3) |
+| Backend API | [`backend/`](backend/) | Node.js 22, Express 5 (CommonJS), raw parameterized SQL with `pg`, zod, multer, sharp, bcryptjs, JWT |
+| ML API | [`ml/`](ml/) | Python 3.12, FastAPI, ONNX Runtime (production) / TensorFlow-Keras (training, local default), Docker |
+| Database | [`backend/db/`](backend/db/) | PostgreSQL on Neon; [`schema.sql`](backend/db/schema.sql) + numbered [migrations](backend/db/migrations/) |
+| Photo storage | `backend/src/modules/uploads/` | Cloudinary in production (`STORAGE_DRIVER=cloudinary`), local disk in development |
+
+The web panel never calls the backend from the browser: its Next.js server does, so production needs no CORS.
+
+## ML summary
+
+- **Model:** MobileNetV2 (ImageNet weights) with transfer learning, 224×224 RGB input, 3 classes. The served model
+  is **Option B**: class weights plus fine-tuning the top of MobileNetV2 (`model_version`
+  `swms_mobilenetv2_option_b`).
+- **Data:** Kaggle *Garbage Classification V2* (its `biological`, `paper` and `plastic` classes; `biological` is
+  used as `organic`), 701 test images.
+
+Results on the test set (first model in brackets, from [`ml/results/option_b/`](ml/results/option_b/)):
+
+| Metric | Option B |
+|---|---|
+| Test accuracy | **98.29%** (689 of 701) [97.72%] |
+| Recall `organic` / `paper` / `plastic` | **0.9800** / **0.9881** / **0.9799** [0.9667 / 0.9881 / 0.9732] |
+| Macro F1 | **0.9818** [0.9769] |
+| `plastic` → `paper` errors (the main confusion) | **5** of 298 plastic images [8] |
+
+The remaining `plastic` → `paper` errors are printed packaging and thin bags. Both models come from a single
+training run each, so there is no variance estimate (see [Known limitations](#known-limitations)).
+
+**Serving:** the Keras model is exported to ONNX (8.9 MB) and served with ONNX Runtime, so the always-on container
+doesn't load TensorFlow. The export is only written if it matches Keras on all 4,661 images of the 3 classes (max
+probability difference 2.9e-5, 0 label flips). Measured in the production image:
+
+| | TensorFlow runtime | ONNX Runtime (served) |
+|---|---|---|
+| RAM after startup | 595 MB | **118 MB** |
+| RAM after 20 predictions | 708 MB | **143 MB** |
+| Docker image (uncompressed) | 3.14 GB | **444 MB** |
+
+The full write-up (dataset, preprocessing, training setup, class imbalance, error analysis, limitations, Option B
+comparison) is in the [ML Development Process](ml/README.md#ml-development-process).
+
+## Security
+
+In place:
+
+- **Web session:** the JWT lives in an **httpOnly** cookie (`Secure` in production, `SameSite=Lax`); browser
+  JavaScript never sees it. The mobile app keeps its token in `expo-secure-store`.
+- **Rate limits** (`429` + `Retry-After`): login per IP and per email (failed attempts), registration, profile
+  and password changes, OTP verify/resend, and report creation (20 per user per hour).
+- **Passwords:** bcrypt, 8–72 characters, about 100 very common passwords rejected; login timing doesn't reveal
+  whether an email exists.
+- **Upload limits:** one file, max 5 MB, type checked from the file content (JPEG/PNG/WebP), multipart field
+  limits. The ML API also refuses bodies over 5 MB before reading them and images over 24 million pixels before
+  decoding.
+- **EXIF stripping:** photos are re-encoded with `sharp` before storage, dropping all metadata (including GPS).
+- **ML API key:** `/predict` requires `X-API-Key` (constant-time compare); `/docs` is disabled in the image.
+- **Private ML network:** the ML service has no public domain; only the backend reaches it over Railway's private
+  network.
+- **Access control:** parameterized SQL everywhere, allowlisted request bodies, a resident can only see their own
+  reports (others get `404`), admin routes need an active admin.
+
+Not in place: HTTP security headers (SEC-07) and token revocation (see below). The full white-box review, with the
+status of each finding, is in [`docs/security-audit.md`](docs/security-audit.md).
