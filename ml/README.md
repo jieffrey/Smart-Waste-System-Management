@@ -9,11 +9,13 @@ exposed publicly.
 | | |
 |---|---|
 | Architecture | MobileNetV2 (transfer learning) |
-| File | `models/swms_mobilenetv2_best.keras` (Keras 3.13.2); exported copy `models/swms_mobilenetv2_best.onnx` for production ([Serving runtimes](#serving-runtimes-ml_runtime)) |
+| Served model | **Option B**: class weights + fine-tuning the top of MobileNetV2 ([section 10](#10-option-b-class-weights--fine-tuning-the-served-model)) |
+| File | `models/swms_mobilenetv2_option_b.keras` (Keras 3.13.2); exported copy `models/swms_mobilenetv2_option_b.onnx` for production ([Serving runtimes](#serving-runtimes-ml_runtime)) |
+| `model_version` | `swms_mobilenetv2_option_b` |
 | Input | 224×224 RGB |
 | Classes (in order) | `organic`, `paper`, `plastic` |
-| Test accuracy | **97.72%** |
-| Test loss | **0.0800** |
+| Test accuracy | **98.29%** (689 of 701; the first model, kept as the baseline, had 97.72%) |
+| Test loss | **0.0611** (baseline 0.0800) |
 
 **Dataset:** the training data and the 3 sample images in `tests/samples/` (taken from the test split)
 come from the Kaggle [Garbage Classification V2](https://www.kaggle.com/datasets/sumn2u/garbage-classification-v2)
@@ -65,7 +67,7 @@ Interactive docs: http://localhost:8000/docs (removed when `ML_DISABLE_DOCS=1`, 
 | Env var | Default | Meaning |
 |---|---|---|
 | `ML_RUNTIME` | `tf` | `tf` = `.keras` with TensorFlow; `lite` = `.onnx` with ONNX Runtime ([Serving runtimes](#serving-runtimes-ml_runtime)) |
-| `MODEL_PATH` | `models/swms_mobilenetv2_best.keras` / `.onnx` | Model file; its name (without extension) is the `model_version` |
+| `MODEL_PATH` | `models/swms_mobilenetv2_option_b.keras` / `.onnx` | Model file; its name (without extension) is the `model_version` |
 | `ML_API_KEY` | *(unset)* | When set, `/predict` requires header `X-API-Key` with this value (constant-time compare) → otherwise `401`. `/health` stays open |
 | `ML_DISABLE_DOCS` | *(unset)* | `1` removes `/docs`, `/redoc`, `/openapi.json` |
 | `PORT` | `8000` | Port for `python -m src.api.serve` (Docker) |
@@ -76,8 +78,8 @@ Training, evaluation and the Colab parity values stay **TensorFlow/Keras**. For 
 exported to ONNX and served with **ONNX Runtime**, so the always-on container doesn't load TensorFlow.
 
 ```bash
-python -m scripts.export_lite                       # models/swms_mobilenetv2_best.keras → .onnx (+ .onnx.json report)
-python -m scripts.export_lite --model models/swms_mobilenetv2_option_b.keras   # e.g. the Option B model
+python -m scripts.export_lite                       # the served model: models/swms_mobilenetv2_option_b.keras → .onnx (+ .onnx.json)
+python -m scripts.export_lite --model models/swms_mobilenetv2_best.keras       # any other .keras file, e.g. the baseline
 python -m scripts.export_lite --dataset <folder>    # also check every image in a folder
 ```
 
@@ -85,7 +87,10 @@ The export is only written if the ONNX model matches Keras through the whole API
 class probability within **0.01** (the parity-test tolerance) and **no label flips**, on random inputs, the 3
 samples and, with `--dataset`, every image in the folder. The result is recorded in `models/*.onnx.json`.
 
-**Measured** (2026-11-05, served model, Linux container `python:3.12-slim`):
+**Measured** (2026-11-05, Linux container `python:3.12-slim`, with the first model. Re-measured with the served
+Option B model on 2026-11-06 in the production image: 118 MB after startup, 143 MB after 20 predictions, image
+444 MB, i.e. the same. Option B's own parity numbers are in
+[section 10](#10-option-b-class-weights--fine-tuning-the-served-model)):
 
 | | `tf` (TensorFlow 2.21) | `lite`: ONNX Runtime 1.31 (**chosen**) | LiteRT 2.3 (evaluated) |
 |---|---|---|---|
@@ -149,7 +154,7 @@ curl http://localhost:8000/health
 ```
 
 ```json
-{ "status": "ok", "model_loaded": true, "model_version": "swms_mobilenetv2_best", "runtime": "tf" }
+{ "status": "ok", "model_loaded": true, "model_version": "swms_mobilenetv2_option_b", "runtime": "tf" }
 ```
 
 ### `POST /predict`
@@ -175,9 +180,9 @@ curl -F "file=@tests/samples/plastic_101.jpg" http://localhost:8000/predict
 ```json
 {
   "category": "plastic",
-  "confidence": 0.9981,
-  "probabilities": { "organic": 0.0011, "paper": 0.0008, "plastic": 0.9981 },
-  "model_version": "swms_mobilenetv2_best"
+  "confidence": 0.9999,
+  "probabilities": { "organic": 0.0, "paper": 0.0001, "plastic": 0.9999 },
+  "model_version": "swms_mobilenetv2_option_b"
 }
 ```
 
@@ -204,10 +209,16 @@ All errors use the same format as the Express backend:
 ## ML Development Process
 
 How the classifier was built, what the numbers mean, and where it falls short. **Every number in this
-section comes from a file in this repository**: the notebook output
-([`notebooks/garbage_classification.ipynb`](notebooks/garbage_classification.ipynb)), the files in
-[`results/`](results/), the split script, or the test samples. Numbers marked *computed* are simple
-arithmetic on those values. When a number isn't available, the text says so instead of estimating it.
+section comes from a file in this repository**: the notebook outputs
+([`notebooks/garbage_classification.ipynb`](notebooks/garbage_classification.ipynb),
+[`notebooks/train_option_b.ipynb`](notebooks/train_option_b.ipynb)), the files in [`results/`](results/),
+the split script, or the test samples. Numbers marked *computed* are simple arithmetic on those values. When a
+number isn't available, the text says so instead of estimating it.
+
+**Two models.** Sections 1–9 describe the **first model** (`swms_mobilenetv2_best`, frozen base, 3 epochs). It is
+kept in `models/` as the **baseline**. [Section 10](#10-option-b-class-weights--fine-tuning-the-served-model)
+describes **Option B** (`swms_mobilenetv2_option_b`), which is the **served model** since it met the comparison
+criteria set before its results were known. Both were evaluated on the same 701-image test set.
 
 ### 1. Problem & dataset
 
@@ -293,13 +304,14 @@ decodes with Pillow, so they could differ in small ways. To check:
 The measured differences are far smaller than that tolerance. API output versus Colab, re-measured for
 this document:
 
-| Image | Class (both) | Largest absolute difference in any class probability |
-|---|---|---|
-| `biological_102.jpg` | `organic` | 0.0000 |
-| `paper_1000.jpg` | `paper` | 0.0001 |
-| `plastic_101.jpg` | `plastic` | 0.0002 |
+| Image | Class (both) | Largest difference, first model | Largest difference, Option B (served) |
+|---|---|---|---|
+| `biological_102.jpg` | `organic` | 0.0000 | 0.0000 |
+| `paper_1000.jpg` | `paper` | 0.0001 | 0.0000 |
+| `plastic_101.jpg` | `plastic` | 0.0002 | 0.0001 |
 
-So the API reproduces the training-time predictions to within **0.0002**. Only three images are checked;
+So the API reproduces the training-time predictions to within **0.0002**. `expected.json` now holds the Option B
+values (from `results/option_b/metrics/expected_option_b.json`, same Colab method). Only three images are checked;
 the test guards against a broken pipeline (for example normalizing twice), not against every possible decoder
 difference.
 
@@ -429,43 +441,25 @@ The 16 test errors, from the confusion matrix:
 half of all errors. `paper` is also the class the model over-predicts most (11 of its 16 errors are
 predictions of `paper`).
 
-**What the misclassified images have in common: not verified.** The dataset images are not in this
-repository (they are gitignored), and the notebook never displays or lists the misclassified files. So I
-could not look at them, and there is no grid of examples here. The ideas below are **hypotheses to check,
-not findings**:
-- **Look-alike surfaces:** plastic packaging with printed labels, or matte, white or flat plastic
-  (wrappers, bags, cups), can look like paper or cardboard at 224×224.
-- **Mixed materials:** items such as paper cups with a plastic lining or drink cartons could reasonably sit
-  in either class, so the dataset label itself may be debatable.
-- **Background:** if many paper photos share a similar background, the model may partly rely on the
-  background rather than the object.
+**What the misclassified images have in common.** The Option B notebook re-evaluated this model on the same test
+set (it reproduced the confusion matrix above exactly) and saved all 16 errors as a grid
+([`results/option_b/current_model/figures/misclassified.png`](results/option_b/current_model/figures/misclassified.png),
+file list in [`misclassified.csv`](results/option_b/current_model/metrics/misclassified.csv)):
 
-**How to verify (next Colab session):** list the wrong files and show them in a grid. With `shuffle=False`,
-`test_ds.file_paths` lines up with the predictions:
+![First model: 16 misclassified test images](results/option_b/current_model/figures/misclassified.png)
 
-```python
-import numpy as np, matplotlib.pyplot as plt
-from PIL import Image
+What the grid shows (my reading of 16 images, so a description, not a statistic):
+- **Printed plastic packaging read as paper** (the main `plastic` → `paper` confusion): a printed snack pouch,
+  a crumpled printed wrapper, a bin full of printed food packaging, and a bottle label filling most of the frame.
+- **Thin or flat plastic:** a white plastic bag and a black bag (`plastic` → `paper`), and black food trays.
+- **Mixed bins:** two photos of a blue bin with several materials. A single label is debatable for these
+  ([Limitations](#8-limitations)).
+- **Printed food imagery:** a pizza box with a big photo of pizza is predicted `organic`.
+- **Data quality, not model errors:** `biological_773.jpg` is almost completely black, and `paper_2183.jpg` shows
+  a dining room with no visible waste. No model can be "right" on these. They are label/data problems in the
+  dataset, and they count as errors for both models.
 
-test_ds = tf.keras.utils.image_dataset_from_directory(
-    f"{BASE}/dataset_split/test", image_size=(224, 224), batch_size=32, shuffle=False)
-probs = model.predict(test_ds, verbose=0)
-y_true = np.concatenate([y.numpy() for _, y in test_ds])
-y_pred = probs.argmax(axis=1)
-names = test_ds.class_names
-wrong = np.where(y_true != y_pred)[0]
-
-plt.figure(figsize=(16, 9))
-for n, i in enumerate(wrong[:16]):
-    plt.subplot(4, 4, n + 1)
-    plt.imshow(Image.open(test_ds.file_paths[i]).convert("RGB"))
-    plt.title(f"{names[y_true[i]]} → {names[y_pred[i]]} ({probs[i].max():.2f})", fontsize=9)
-    plt.axis("off")
-plt.tight_layout()
-plt.savefig(f"{BASE}/results/figures/misclassified.png", dpi=120)
-```
-
-Committing `misclassified.png` (16 small dataset images) would turn these hypotheses into findings.
+The earlier hypothesis about backgrounds can't be confirmed or ruled out from 16 images.
 
 ### 8. Limitations
 
@@ -476,7 +470,7 @@ Committing `misclassified.png` (16 small dataset images) would turn these hypoth
   pile) still gets a single answer, and the model can't say "this is mixed".
 - **Dataset photos are not street photos.** The Kaggle images differ from real reports in lighting,
   background, distance and clutter. Accuracy on real phone photos from the app has **not been measured**;
-  the 97.72% only holds for images like the test split.
+  the 98.29% (Option B) only holds for images like the test split.
 - **Phone photo pipeline.** The mobile app shrinks photos to at most 1600 px and JPEG-compresses them before
   upload, and the API applies EXIF rotation, which training didn't. The parity test shows the API matches
   Colab on dataset images, but the effect of the phone pipeline on accuracy is untested.
@@ -485,8 +479,9 @@ Committing `misclassified.png` (16 small dataset images) would turn these hypoth
   ECE). Treat it as a ranking signal, not a guarantee.
 - **Only three materials.** The dataset's other class folders were not used, so items of any other material are
   forced into one of the three classes.
-- **Not checked:** duplicates across splits ([section 1](#1-problem--dataset)), and run-to-run variance (no
-  global seed, single training run).
+- **Not checked:** duplicates across splits ([section 1](#1-problem--dataset)), and run-to-run variance (each
+  model is a single training run; Option B set global seeds, but GPU kernels aren't deterministic and it wasn't
+  re-run).
 
 ### 9. Serving
 
@@ -523,36 +518,102 @@ SEC-03 and SEC-08):
    (status `in_progress` or `completed`, with a prediction) whose final category still equals the AI
    prediction. Over time this measures the model on real app photos, which the test set can't do.
 
-### 10. Next steps
+### 10. Option B: class weights + fine-tuning (the served model)
 
-**Option B (planned, not started): class weights + fine-tuning the top of MobileNetV2.**
+The plan and the comparison rules were written down **before** training ([notebook](notebooks/train_option_b.ipynb),
+script [`src/training/train_option_b.py`](src/training/train_option_b.py)). All numbers below are from
+[`results/option_b/`](results/option_b/).
 
-1. **Class weights.** Weight the loss by inverse class frequency, `weight = total / (classes × count)`. On the
-   training counts this gives (*computed*) `organic` 1.559, `paper` 0.925 and `plastic` 0.783, so a missed
-   `organic` image costs about twice as much as a missed `plastic` one. Pass them as `class_weight=` to `fit`.
-2. **Two-stage fine-tuning.**
-   1. Train the head as now.
-   2. Unfreeze the top layers of MobileNetV2 and continue with a much lower learning rate (for example 10×
-      lower), keeping BatchNorm layers in inference mode, so the pretrained features adapt to waste photos
-      without being destroyed.
-3. **Possibly augmentation** (random flip, small rotation and zoom, brightness) on the training set only, to
-   close part of the gap to real phone photos ([Limitations](#8-limitations)).
-4. **Train longer with early stopping.** The current run stopped at the epoch limit while validation loss
-   was still falling ([section 4](#4-training-setup)).
+**What was trained** (Colab, Tesla T4, TensorFlow 2.21.0 / Keras 3.13.2; [`run_config.json`](results/option_b/run_config.json)):
 
-**How the results will be compared, so the comparison is fair:**
-- **Same data:** the **same split** (reuse the exact `dataset_split/` folder on Google Drive rather than
-  re-running the split script, because of the file-order caveat in [section 1](#1-problem--dataset)).
-- **Same selection rule:** pick the model by **validation** loss only, and evaluate the test set **once** at
-  the end, as for the current model.
-- **Same metrics, side by side with today's model:** per-class recall (above all `organic`, the
-  smallest class, now 0.9667), the `plastic` → `paper` count (now 8), macro F1 (now 0.9769) and the full
-  confusion matrix. Overall accuracy alone could hide a trade-off between classes.
-- **Keep the current model as the baseline.** Only replace `models/swms_mobilenetv2_best.keras` if the new one
-  is better on these metrics. Then update `expected.json` (the parity samples) and `model_version`, and
-  re-run the API tests.
+| | |
+|---|---|
+| Data and preprocessing | Same `dataset_split/` folder and the same loading/model code as the first model (`train.load_datasets`, `train.build_model`, preprocessing inside the model) |
+| Seeds | Python, NumPy, TensorFlow and `PYTHONHASHSEED` = 42 (GPU kernels still not deterministic) |
+| Class weights (train split only, `total / (classes × count)`) | `organic` 1.559, `paper` 0.925, `plastic` 0.783 |
+| Phase 1: frozen base | Adam 1e-3, up to 20 epochs, EarlyStopping(val_loss, patience 3). Ran 13 epochs, **best epoch 10**, val_loss 0.0395 |
+| Phase 2: fine-tuning | Unfrozen from `block_13_expand` (top 38 of 154 base layers, MobileNetV2's last stage); the 13 BatchNorm layers stayed frozen; 1,667,203 trainable parameters; Adam 1e-5. Ran 4 epochs, **best epoch 1**, val_loss 0.0343 |
+| Selection | Lowest **validation** loss → phase 2, epoch 1. The test set was evaluated once, afterwards |
 
-None of these results exist yet; this section describes the plan and how it will be judged.
+**Was the comparison fair?** Same split: the notebook re-evaluated the first model on the same test set and got
+exactly the documented confusion matrix ("baseline reproduced: True"). The model was selected on validation loss,
+and the test set was evaluated once.
+
+**Results on the same 701 test images** ([`comparison.md`](results/option_b/comparison.md)):
+
+| Metric | First model | Option B | Change |
+|---|---|---|---|
+| Test accuracy | 0.9772 | **0.9829** | +0.0057 |
+| Test loss | 0.0800 | **0.0611** | −0.0189 |
+| Errors | 16 | **12** | −4 |
+| Macro F1 | 0.9769 | **0.9818** | +0.0050 |
+| Recall `organic` (smallest class) | 0.9667 | **0.9800** | +0.0133 |
+| Recall `paper` | 0.9881 | 0.9881 | 0 |
+| Recall `plastic` | 0.9732 | **0.9799** | +0.0067 |
+| Precision `organic` | **0.9864** | 0.9735 | −0.0129 |
+| Precision `paper` | 0.9579 | **0.9766** | +0.0187 |
+| Precision `plastic` | 0.9898 | **0.9932** | +0.0034 |
+| `plastic` → `paper` errors | 8 | **5** | −3 |
+
+Confusion matrices (rows = true class, columns = prediction):
+
+| First model | `organic` | `paper` | `plastic` |
+|---|---|---|---|
+| `organic` | **145** | 3 | 2 |
+| `paper` | 2 | **250** | 1 |
+| `plastic` | 0 | 8 | **290** |
+
+| Option B | `organic` | `paper` | `plastic` |
+|---|---|---|---|
+| `organic` | **147** | 1 | 2 |
+| `paper` | 3 | **250** | 0 |
+| `plastic` | 1 | 5 | **292** |
+
+**The criteria set beforehand are met:** `organic` recall up (0.9667 → 0.9800), `plastic` → `paper` errors down
+(8 → 5), macro F1 and accuracy up, and the baseline was reproduced. So Option B became the served model.
+
+**How to read these numbers honestly:**
+- **4 fewer errors out of 701, from a single training run each.** There is **no variance estimate**: neither model
+  was trained several times, so it's unknown how much of the difference run-to-run noise could explain. The
+  direction is consistent across most per-class metrics, but the size of the gain is not proven.
+- **`organic` precision dropped** (0.9864 → 0.9735): Option B predicts `organic` more often (151 times vs 147,
+  *computed*), and 4 of those are wrong instead of 2. This is the expected trade-off of class weighting: a missed
+  `organic` image now costs more in training, so the model leans towards `organic` when unsure.
+- **Fine-tuning helped only a little, and only at first.** Phase 2's best epoch was its first. After that, training
+  accuracy reached 0.999 while validation accuracy fell (0.9900 → 0.9829), an early sign of overfitting that early
+  stopping caught. Most of the improvement may come from phase 1 (class weights and training to convergence instead
+  of 3 epochs). The two can't be separated without an ablation run, which wasn't done.
+
+![Option B training curves (phase 1 then phase 2)](results/option_b/figures/training_curves.png)
+
+![Option B confusion matrix](results/option_b/figures/confusion_matrix.png)
+
+**Errors** ([`misclassified.csv`](results/option_b/metrics/misclassified.csv)):
+
+![Option B: 12 misclassified test images](results/option_b/figures/misclassified.png)
+
+- **11 of the 12 errors are images the first model also gets wrong**, including the two data-quality images from
+  [section 7](#7-error-analysis) (the black image and the dining room).
+- **Option B fixed 5:** a bottle label, black food trays, fish bones, a paper plate, and a bin of mixed organic waste.
+- **It added 1:** an egg carton (molded pulp, `paper`) is predicted `organic`.
+- The remaining `plastic` → `paper` errors are the same kind as before: printed packaging and thin bags.
+
+**Serving Option B.** The `.keras` file was re-saved without optimizer state: 22,983,498 → **9,626,463 bytes**,
+with all 262 weight arrays identical. It was exported to ONNX for the lite runtime: 8,923,883 bytes, matching Keras through the full API pipeline on **all 4,661 images** with a max probability difference of **2.9e-5** and **0 label flips** (3 samples: 9e-10; [`models/swms_mobilenetv2_option_b.onnx.json`](models/swms_mobilenetv2_option_b.onnx.json)). Production
+(`ML_RUNTIME=lite`) serves `models/swms_mobilenetv2_option_b.onnx` with `model_version` `swms_mobilenetv2_option_b`.
+The `tf` runtime serves the `.keras` file. The first model stays in `models/swms_mobilenetv2_best.keras` as the
+baseline. Its ONNX copy was removed: to serve it again, export it and set `MODEL_PATH`.
+
+### 11. Next steps
+
+- **Measure variance:** train each configuration 3–5 times (different seeds) and compare the error-count spread
+  with the 4-error difference above.
+- **Ablation:** phase 1 only (class weights + early stopping) vs phase 1 + 2, to see what fine-tuning adds.
+- **Augmentation** (flip, small rotation/zoom, brightness) on the training set only, to close part of the gap to
+  real phone photos ([Limitations](#8-limitations)).
+- **Clean the data:** remove or relabel images like `biological_773.jpg` (black) and `paper_2183.jpg` (no waste).
+- **Real-photo evaluation and calibration:** use reviewed reports (the dashboard's AI accuracy) once the app has
+  real usage, and check whether `confidence` is calibrated.
 
 ## Reproduce the training
 
@@ -577,4 +638,9 @@ change them to run elsewhere. A GPU is recommended for training.
 
 Results can differ slightly from the ones above: no global random seed was set for training, and the
 split uses the file system's file order (the number of images per split is always the same).
+
+**Option B** (the served model) is trained with [`notebooks/train_option_b.ipynb`](notebooks/train_option_b.ipynb)
+in Colab, which runs [`src/training/train_option_b.py`](src/training/train_option_b.py) step by step and
+downloads `option_b_artifacts.zip` (model + `results/option_b/`). Then, from `ml/`:
+`python -m scripts.export_lite --dataset <image folder>` writes the parity-checked ONNX copy that production serves.
 Do not commit the downloaded dataset — `ml/dataset/` is gitignored.

@@ -113,6 +113,18 @@ an admin would, reviewed reports (`in_progress`/`completed`) where the AI was wr
 (*"Kategori dikoreksi dari … ke …"*). Pending and rejected reports keep the AI's category. Photos are stored with
 the configured `STORAGE_DRIVER`.
 
+**The dashboard's AI accuracy on demo data is optimistic.**
+- **Possible training images:** only **9** of the 48 photos are confirmed test-split images: 6 the first model got
+  wrong and the 3 parity samples. The other **39** come from a local re-run of the split, which can't reproduce
+  the Colab file order, so they **may have been training images**.
+- **Why that inflates the number:** a model does better on images it was trained on. The "AI accuracy" the
+  dashboard shows for the demo reports (and how few corrections the admin had to make) overstates how the model
+  does on new photos.
+- **With the served Option B model**, 5 of the 6 confirmed mistakes are still wrong (the paper plate, `pap-02`,
+  is now right). Expect about 5 category corrections in the demo data.
+- **For an honest measure**, use reviewed reports from real users, or the test-set numbers in
+  [`ml/README.md`](../ml/README.md#10-option-b-class-weights--fine-tuning-the-served-model).
+
 **Safe by design:**
 - **Re-runs:** each report's id is a UUID v5 of its manifest key, so a re-run skips existing reports (no new
   uploads) and creates only what's missing. Existing residents keep their password.
@@ -245,7 +257,7 @@ later while the original AI result is kept.
     "address": null,
     "ai_predicted_category": "plastic",
     "ai_confidence": 0.9981,
-    "ai_model_version": "swms_mobilenetv2_best",
+    "ai_model_version": "swms_mobilenetv2_option_b",
     "admin_note": null,
     "created_at": "…",
     "updated_at": "…"

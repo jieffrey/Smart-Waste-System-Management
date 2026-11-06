@@ -1,0 +1,26 @@
+{
+    "biological_102.jpg": {
+        "category": "organic",
+        "probabilities": {
+            "organic": 1.0,
+            "paper": 0.0,
+            "plastic": 0.0
+        }
+    },
+    "paper_1000.jpg": {
+        "category": "paper",
+        "probabilities": {
+            "organic": 0.0,
+            "paper": 1.0,
+            "plastic": 0.0
+        }
+    },
+    "plastic_101.jpg": {
+        "category": "plastic",
+        "probabilities": {
+            "organic": 0.0,
+            "paper": 0.0001,
+            "plastic": 0.9999
+        }
+    }
+}

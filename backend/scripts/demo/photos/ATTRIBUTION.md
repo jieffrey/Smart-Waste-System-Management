@@ -22,6 +22,9 @@ changed to the demo keys below.
 - "test (local split re-run)": picked from a local re-run of `ml/scripts/split_dataset.py`. The Colab split can't
   be rebuilt exactly (it depends on file-system order), so these may have been training images in the Colab run.
 
+Because 39 of the 48 photos may have been training images, the AI accuracy that the dashboard shows for the demo
+data is **optimistic** (see `backend/README.md`, "Production demo data").
+
 The dataset is partly made of images collected from the web, so the MIT label is the dataset author's claim and
 couldn't be checked image by image. If an
 image needs to be removed, replace it here (or point `DEMO_PHOTOS_DIR` at another folder with the same file names).

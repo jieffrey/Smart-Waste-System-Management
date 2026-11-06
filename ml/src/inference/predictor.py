@@ -21,7 +21,9 @@ IMAGE_SIZE = (224, 224)
 RUNTIMES = ("tf", "lite")
 
 MODELS_DIR = Path(__file__).resolve().parents[2] / "models"
-MODEL_STEM = "swms_mobilenetv2_best"
+# The served model: Option B (class weights + fine-tuning, ml/README.md "Option B"). The previous model,
+# swms_mobilenetv2_best.keras, stays in models/ as the documented baseline.
+MODEL_STEM = "swms_mobilenetv2_option_b"
 
 
 def runtime_from_env() -> str:

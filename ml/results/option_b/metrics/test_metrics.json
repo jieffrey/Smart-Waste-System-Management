@@ -1,0 +1,12 @@
+{
+    "test_loss": 0.0611,
+    "test_accuracy": 0.9829,
+    "test_images": 701,
+    "correct_predictions": 689,
+    "incorrect_predictions": 12,
+    "classes": [
+        "organic",
+        "paper",
+        "plastic"
+    ]
+}

@@ -15,7 +15,7 @@ const DEFAULT_PREDICTION = {
   category: 'plastic',
   confidence: 0.9981,
   probabilities: { organic: 0.0011, paper: 0.0008, plastic: 0.9981 },
-  model_version: 'swms_mobilenetv2_best',
+  model_version: 'swms_mobilenetv2_option_b',
 };
 
 function sendJson(res, status, body) {

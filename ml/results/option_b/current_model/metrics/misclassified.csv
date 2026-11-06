@@ -1,0 +1,17 @@
+file,true,predicted,confidence,p_organic,p_paper,p_plastic
+organic/biological_773.jpg,organic,plastic,0.9861,0.0113,0.0027,0.9861
+paper/paper_2183.jpg,paper,organic,0.9723,0.9723,0.0179,0.0098
+plastic/plastic_20241210_094533.jpg,plastic,paper,0.9641,0.0007,0.9641,0.0352
+plastic/plastic_1864.jpg,plastic,paper,0.9384,0.0013,0.9384,0.0603
+plastic/plastic_615.jpg,plastic,paper,0.9198,0.0073,0.9198,0.073
+organic/biological_239.jpg,organic,paper,0.8963,0.089,0.8963,0.0147
+organic/biological_20241210_152459.jpg,organic,plastic,0.886,0.0051,0.1089,0.886
+plastic/plastic_701.jpg,plastic,paper,0.8646,0.0001,0.8646,0.1354
+plastic/plastic_977.jpg,plastic,paper,0.8239,0.0324,0.8239,0.1437
+organic/biological_846.jpg,organic,paper,0.7833,0.2143,0.7833,0.0023
+plastic/plastic_1853.jpg,plastic,paper,0.7421,0.0181,0.7421,0.2398
+paper/paper_2576.jpg,paper,plastic,0.6122,0.1951,0.1927,0.6122
+plastic/plastic_20241210_100809.jpg,plastic,paper,0.6071,0.0113,0.6071,0.3816
+organic/biological_20240702_095915.jpg,organic,paper,0.5625,0.4278,0.5625,0.0097
+plastic/plastic_20240718_103600.jpg,plastic,paper,0.557,0.0789,0.557,0.3641
+paper/paper_1841.jpg,paper,organic,0.524,0.524,0.3341,0.1419
