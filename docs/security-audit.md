@@ -36,29 +36,29 @@ request bodies are validated with allowlists (no mass assignment), and uploads a
 content. The main risks are **operational**: a published admin password that works against the real
 database, no rate limiting, and an ML endpoint that a big image could exhaust.
 
-| ID | Severity | Title | Area | OWASP 2025 / API 2023 | Evidence |
-|---|---|---|---|---|---|
-| [SEC-01](#sec-01) | **High** | Published demo admin password works against the real database | Repo / backend | A07, A02 | Proven live |
-| [SEC-02](#sec-02) | Medium | No rate limiting on login, registration or report creation | Backend | A07, API4 | Proven live |
-| [SEC-03](#sec-03) | Medium | ML API can be made to use gigabytes of memory with one small image | ML | A10, API4 | Code review |
-| [SEC-04](#sec-04) | Low | Weak password policy (`12345678` is accepted) | Backend | A07 | Proven live |
-| [SEC-05](#sec-05) | Low | Account enumeration through login timing and the register error | Backend | A07 | Proven live |
-| [SEC-06](#sec-06) | Low | Uploaded photos are stored and served byte-for-byte (EXIF location kept) | Backend | A02, API3 | Proven live |
-| [SEC-07](#sec-07) | Low | Missing HTTP security headers (backend and web) | Backend / web | A02 | Proven live |
-| [SEC-08](#sec-08) | Low | Upload limits are checked late; multipart fields are unlimited | Backend / ML | API4 | Partly proven |
-| [SEC-09](#sec-09) | Low | ML `/predict` has no authentication; `/docs` is public | ML | A01, API2 | Proven live |
-| [SEC-10](#sec-10) | Low | No security event logging; category/note changes leave no history | Backend | A09 | Code review |
-| [SEC-11](#sec-11) | Low | 24-hour tokens that can't be revoked; no `iss`/`aud` claims | Backend / web | A07 | Proven live |
-| [SEC-12](#sec-12) | Low | Mobile app talks to the backend over plain HTTP | Mobile | A04 | Code review |
-| [SEC-13](#sec-13) | Low | Anyone can log an admin out with a link | Web | A01 | Proven live |
-| [SEC-14](#sec-14) | Low | Error-handling gaps: big JSON gives 500, a bad image gives 503 | Backend | A10 | Proven live |
-| [SEC-15](#sec-15) | Low | Any admin can deactivate every other admin | Backend | A06 | Code review |
-| [SEC-16](#sec-16) | Low | `keras 3.13.2` has known advisories (not reachable here) | ML | A03 | `pip-audit` |
-| [SEC-17](#sec-17) | Info | `npm audit`: moderate issues in dev tooling only | Web / Mobile | A03 | `npm audit` |
-| [SEC-18](#sec-18) | Info | "Deactivated" is detected from the error message text | Web | A10 | Code review |
-| [SEC-19](#sec-19) | Info | Small hardening notes (bcrypt cost, secret strength, gitignore, proxy) | Several | A02, A04 | Code review |
+| ID | Severity | Title | Area | OWASP 2025 / API 2023 | Evidence | Status |
+|---|---|---|---|---|---|---|
+| [SEC-01](#sec-01) | **High** | Published demo admin password works against the real database | Repo / backend | A07, A02 | Proven live | Fixed |
+| [SEC-02](#sec-02) | Medium | No rate limiting on login, registration or report creation | Backend | A07, API4 | Proven live | Fixed |
+| [SEC-03](#sec-03) | Medium | ML API can be made to use gigabytes of memory with one small image | ML | A10, API4 | Code review | Fixed |
+| [SEC-04](#sec-04) | Low | Weak password policy (`12345678` is accepted) | Backend | A07 | Proven live | Fixed |
+| [SEC-05](#sec-05) | Low | Account enumeration through login timing and the register error | Backend | A07 | Proven live | Partly fixed (timing) |
+| [SEC-06](#sec-06) | Low | Uploaded photos are stored and served byte-for-byte (EXIF location kept) | Backend | A02, API3 | Proven live | Fixed |
+| [SEC-07](#sec-07) | Low | Missing HTTP security headers (backend and web) | Backend / web | A02 | Proven live | Fixed (CSP: future work) |
+| [SEC-08](#sec-08) | Low | Upload limits are checked late; multipart fields are unlimited | Backend / ML | API4 | Partly proven | Fixed |
+| [SEC-09](#sec-09) | Low | ML `/predict` has no authentication; `/docs` is public | ML | A01, API2 | Proven live | Fixed |
+| [SEC-10](#sec-10) | Low | No security event logging; category/note changes leave no history | Backend | A09 | Code review | Open |
+| [SEC-11](#sec-11) | Low | 24-hour tokens that can't be revoked; no `iss`/`aud` claims | Backend / web | A07 | Proven live | Open |
+| [SEC-12](#sec-12) | Low | Mobile app talks to the backend over plain HTTP | Mobile | A04 | Code review | Open |
+| [SEC-13](#sec-13) | Low | Anyone can log an admin out with a link | Web | A01 | Proven live | Open |
+| [SEC-14](#sec-14) | Low | Error-handling gaps: big JSON gives 500, a bad image gives 503 | Backend | A10 | Proven live | Fixed |
+| [SEC-15](#sec-15) | Low | Any admin can deactivate every other admin | Backend | A06 | Code review | Open |
+| [SEC-16](#sec-16) | Low | `keras 3.13.2` has known advisories (not reachable here) | ML | A03 | `pip-audit` | Open |
+| [SEC-17](#sec-17) | Info | `npm audit`: moderate issues in dev tooling only | Web / Mobile | A03 | `npm audit` | Open |
+| [SEC-18](#sec-18) | Info | "Deactivated" is detected from the error message text | Web | A10 | Code review | Open |
+| [SEC-19](#sec-19) | Info | Small hardening notes (bcrypt cost, secret strength, gitignore, proxy) | Several | A02, A04 | Code review | Open |
 
-Fix status is shown at the top of each finding ("Status: fixed in ...").
+Details and the fixing branch are at the top of each finding ("Status: fixed in ...").
 
 Suggested fix order: SEC-01, then SEC-02 together with SEC-04, then SEC-03 and SEC-08 (they share a fix
 area), then the Low items as time allows.
@@ -244,6 +244,9 @@ to look the same, so an attacker can't tell "no such user" apart from "wrong pas
 <a id="sec-06"></a>
 ## SEC-06: Uploaded photos are stored and served byte-for-byte (EXIF location kept)
 
+- **Status: fixed in `feat/backend-cloud-storage`.** Every upload is re-encoded with `sharp` in its own format
+  after the ML check and before storage: the EXIF orientation is applied, all metadata (EXIF incl. GPS, XMP,
+  IPTC, ICC) and appended bytes are dropped, and an undecodable image gets `422`.
 - **Severity: Low.** Proven, but the URLs are random UUIDs, so this mainly matters if a photo URL leaks.
   It's a privacy issue more than an attack.
 - **Evidence:** proven live. The test JPEG contained an EXIF block (a camera tag plus GPS coordinates)
@@ -295,6 +298,12 @@ user's file safe to serve, decode it and save a fresh copy, so metadata and hidd
 <a id="sec-07"></a>
 ## SEC-07: Missing HTTP security headers (backend and web)
 
+- **Status: fixed in `security/http-headers`, except Content-Security-Policy (future work).** The backend uses
+  `helmet` (nosniff, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, HSTS, no `X-Powered-By`; CSP off and
+  `Cross-Origin-Resource-Policy: cross-origin` so photos still load), covered by `security-headers.test.js`. The web
+  app sets nosniff, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, HSTS and a
+  `Permissions-Policy` blocking camera, microphone and geolocation in `next.config.ts`, with `poweredByHeader: false`.
+  A script CSP needs nonces for Next.js and is not done yet.
 - **Severity: Low.** Proven, but these headers are defense in depth. Each one makes a different class of
   bug harder to exploit; none is a vulnerability alone.
 - **Evidence:** proven live.
@@ -608,6 +617,9 @@ declared dimensions before decoding, and keep every intermediate buffer bounded.
 <a id="sec-09"></a>
 ## SEC-09: ML `/predict` has no authentication; `/docs` is public
 
+- **Status: fixed in `feat/ml-lite-runtime`.** With `ML_API_KEY` set, `/predict` requires a matching
+  `X-API-Key` header (constant-time compare, checked before the body is read) or answers `401`; `ML_DISABLE_DOCS=1`
+  removes `/docs`, `/redoc` and `/openapi.json`. In production the ML service also has no public domain.
 - **Severity: Low.** Proven, but the documented start command binds to `127.0.0.1`, so only processes on
   the same machine can reach it. It becomes Medium if the ML API is ever deployed with a public URL.
 - **Evidence:** proven live. `POST /predict` with no `X-API-Key` header returned a normal prediction, and
