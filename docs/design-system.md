@@ -306,3 +306,23 @@ icons, so the app looks the same whatever the phone's dark-mode setting is.
   solid sidebar.
 - Press feedback: buttons move 1px down on press, nav links scale to 0.98, and table rows deepen their yellow
   hover on press. All of it turns off with `prefers-reduced-motion`.
+
+## Onboarding (mobile, first launch)
+
+Three swipeable full-color slides (`Mobile/src/components/onboarding/`), shown once per install. The flag
+`swms.onboarding.seen` lives in secure storage. "Lewati" skips, and it can be replayed later from Akun →
+Pengaturan.
+
+- **Color per slide:** 01 ink on yellow punk, 02 white on cobalt, 03 ink on snow (all ≥ 6.7:1). The color
+  change while swiping is part of the story.
+- **Type:** huge Jakarta Sans 800 (50/52, −2.2 tracking) titles, a mono kicker ("01 · lihat"), and short casual
+  body copy in 600.
+- **Stickers:** shapes built from plain Views in the palette, each with a 3px ink outline and a hard 5px ink
+  "drop", like die-cut stickers. No images, emoji or SVG dependency. Each slide has its own composition:
+  01 viewfinder corners pop around a pile of shapes, then "cekrek!" pops on top. 02 the three category stickers
+  snap in from the sides and an "AI" badge spins in. 03 the status steps stamp in one by one, then "beres!"
+  drops and floats.
+- **Motion:** Reanimated springs and delays, replayed each time a slide comes on screen. With "reduce motion"
+  on, everything is simply in place.
+- **Progress:** three chunky rounded segments, filled up to the current slide. The CTA is a full-width pill
+  ("Lanjut"), and the last slide has a big red-orange "Mulai lapor".

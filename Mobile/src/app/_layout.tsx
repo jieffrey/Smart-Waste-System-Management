@@ -11,15 +11,17 @@ import {
   PlusJakartaSans_800ExtraBold,
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { useFonts } from 'expo-font';
-import { DefaultTheme, SplashScreen, Stack, ThemeProvider } from 'expo-router';
+import { DefaultTheme, router, SplashScreen, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Platform } from 'react-native';
-import { PaperProvider } from 'react-native-paper';
+import { PaperProvider, Portal } from 'react-native-paper';
 
+import { Onboarding } from '@/components/onboarding/onboarding';
 import { EmptyState, ErrorState } from '@/components/ui/state-view';
 import { paperTheme } from '@/constants/paper-theme';
 import { AppColors } from '@/constants/theme';
 import { t } from '@/constants/strings';
+import { OnboardingProvider, useOnboarding } from '@/store/onboarding';
 import { SessionProvider, useSession } from '@/store/session';
 
 // Keep the splash screen up until the fonts are loaded and the saved session has been checked.
@@ -68,7 +70,9 @@ export default function RootLayout() {
       <ThemeProvider value={navigationTheme}>
         <StatusBar style="dark" />
         <SessionProvider>
-          <RootNavigator />
+          <OnboardingProvider>
+            <RootNavigator />
+          </OnboardingProvider>
         </SessionProvider>
       </ThemeProvider>
     </PaperProvider>
@@ -77,8 +81,9 @@ export default function RootLayout() {
 
 function RootNavigator() {
   const { status, retry, signOut } = useSession();
+  const onboarding = useOnboarding();
 
-  if (status === 'loading') {
+  if (status === 'loading' || !onboarding.ready) {
     return null; // the splash screen is still visible
   }
   SplashScreen.hide();
@@ -95,14 +100,28 @@ function RootNavigator() {
 
   const signedIn = status === 'signed-in';
 
+  // The onboarding is drawn through Paper's Portal, above everything (including the floating tab bar when it
+  // is replayed from Pengaturan). "Mulai lapor" opens the report form when signed in, else stays on login.
+  function startReporting() {
+    onboarding.finish();
+    if (signedIn) router.navigate('/new');
+  }
+
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: AppColors.background } }}>
-      <Stack.Protected guard={signedIn} redirectTo="/login">
-        <Stack.Screen name="(app)" />
-      </Stack.Protected>
-      <Stack.Protected guard={!signedIn} redirectTo="/">
-        <Stack.Screen name="(auth)" />
-      </Stack.Protected>
-    </Stack>
+    <>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: AppColors.background } }}>
+        <Stack.Protected guard={signedIn} redirectTo="/login">
+          <Stack.Screen name="(app)" />
+        </Stack.Protected>
+        <Stack.Protected guard={!signedIn} redirectTo="/">
+          <Stack.Screen name="(auth)" />
+        </Stack.Protected>
+      </Stack>
+      {onboarding.visible ? (
+        <Portal>
+          <Onboarding onDone={onboarding.finish} onStart={startReporting} />
+        </Portal>
+      ) : null}
+    </>
   );
 }
