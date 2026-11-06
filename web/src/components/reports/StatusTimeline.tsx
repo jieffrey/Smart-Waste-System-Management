@@ -19,9 +19,9 @@ export function StatusTimeline({ history }: { history: StatusHistoryEntry[] }) {
           {newestFirst.map((entry, index) => (
             <li
               key={`${entry.created_at}-${index}`}
-              className="grid gap-x-6 gap-y-1 border-b border-gray-200 py-3 pl-4 last:border-b-0 sm:grid-cols-[11rem_1fr]"
+              className="grid gap-x-6 gap-y-1 border-b border-gray-200 py-3 pl-4 last:border-b-0 sm:grid-cols-[13rem_1fr]"
             >
-              <p className="font-mono text-small text-gray-700">{formatDateTime(entry.created_at)} WIB</p>
+              <p className="font-mono text-small whitespace-nowrap text-gray-700">{formatDateTime(entry.created_at)} WIB</p>
               <div>
                 <p className="flex flex-wrap items-center gap-x-2 text-small text-ink">
                   <StatusMarker status={entry.new_status} className="font-semibold" />

@@ -18,11 +18,11 @@ export async function CurrentAdmin() {
   }
 
   return (
-    <div className="space-y-3 border-t border-ink pt-4">
+    <div className="flex items-center gap-3 md:block md:space-y-3 md:border-t md:border-ink md:pt-4">
       {admin ? (
         <div>
           <p className="text-small font-semibold text-ink">{admin.full_name}</p>
-          <p className="truncate font-mono text-micro text-gray-600">{admin.email}</p>
+          <p className="hidden truncate font-mono text-micro text-gray-600 md:block">{admin.email}</p>
         </div>
       ) : (
         <p className="flex items-center gap-2 text-small text-ink">
