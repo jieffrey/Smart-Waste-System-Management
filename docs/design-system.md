@@ -269,7 +269,7 @@ icons, so the app looks the same whatever the phone's dark-mode setting is.
 | ink | snow | 18.07 | AAA | All body text |
 | gray-600 | snow | 6.36 | AA | Secondary text |
 | gray-500 | snow | 4.51 | AA | Input placeholders only |
-| ink | red orange | 5.57 | AA | Primary button label, the "Lapor" tab, the organic result block |
+| ink | red orange | 5.57 | AA | Primary button label, the organic result block |
 | gray-700 | gray-100 | 7.81 | AAA | Disabled button label (stays readable) |
 | snow | ink | 18.07 | AAA | Ink button, the paper result block |
 | gray-300 | ink | 9.64 | AAA | Secondary text on the ink result block |
@@ -291,9 +291,10 @@ icons, so the app looks the same whatever the phone's dark-mode setting is.
   against a `BlurTargetView` that wraps the tab screens. The bar renders through Paper's `Portal`, so it sits
   outside its own blur target. Android 11 and older fall back to the translucent panel, with no blur.
 - States: a **yellow-punk pill slides** behind the active tab (Reanimated, 260ms; it jumps with "reduce
-  motion" on). The active label is ink 800, idle labels are gray-700 600, and a pressed tab scales to 0.94.
-  "Lapor" stays the anchor as a red-orange pill, but the active state is always the yellow pill, so red orange
-  is not the only color in the bar.
+  motion" on). Every tab has the same active state: the pill plus an ink icon and ink 800 label; idle icons and
+  labels are gray-700 (600). A pressed tab scales to 0.94, and an inactive one also gets a faint 6% ink wash.
+  "Lapor" stays the anchor only through a slightly wider slot and a larger camera icon (28 vs 24): no colored
+  block of its own, so the yellow pill is the one active signal.
 - Transitions: switching tabs uses React Navigation's `shift` (fade + slight slide), and stack pushes slide
   from the right. Both become instant with "reduce motion" on.
 - Report detail has a **glass header**: transparent, blurred and tinted, with a hairline rule. The photo and
