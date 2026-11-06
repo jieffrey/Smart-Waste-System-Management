@@ -47,28 +47,29 @@ export const AppColors = {
 
 export type ThemeColor = keyof typeof AppColors;
 
-// Font families loaded in the root layout (@expo-google-fonts). Archivo has no expanded width in that package,
-// so display titles use Archivo Black (900) with tight tracking instead.
+// Font families loaded in the root layout (@expo-google-fonts): Plus Jakarta Sans (designed for Jakarta's city
+// identity) and JetBrains Mono. Jakarta tops out at 800, so `black` is an alias for 800 (kept so screens don't
+// change). The scale itself uses 400 / 600 / 800, with tighter tracking on the display sizes.
 export const FontFamily = {
-  regular: 'Archivo_400Regular',
-  medium: 'Archivo_500Medium',
-  semibold: 'Archivo_600SemiBold',
-  bold: 'Archivo_700Bold',
-  extrabold: 'Archivo_800ExtraBold',
-  black: 'Archivo_900Black',
-  mono: 'IBMPlexMono_400Regular',
-  monoMedium: 'IBMPlexMono_500Medium',
-  monoSemibold: 'IBMPlexMono_600SemiBold',
+  regular: 'PlusJakartaSans_400Regular',
+  medium: 'PlusJakartaSans_500Medium',
+  semibold: 'PlusJakartaSans_600SemiBold',
+  bold: 'PlusJakartaSans_700Bold',
+  extrabold: 'PlusJakartaSans_800ExtraBold',
+  black: 'PlusJakartaSans_800ExtraBold',
+  mono: 'JetBrainsMono_400Regular',
+  monoMedium: 'JetBrainsMono_500Medium',
+  monoSemibold: 'JetBrainsMono_600SemiBold',
 } as const;
 
 // The type scale: these 6 sizes only (mobile version of the web scale).
 export const Type = {
-  display: { fontFamily: FontFamily.black, fontSize: 44, lineHeight: 46, letterSpacing: -1.5 },
-  title: { fontFamily: FontFamily.black, fontSize: 28, lineHeight: 32, letterSpacing: -0.8 },
-  heading: { fontFamily: FontFamily.bold, fontSize: 20, lineHeight: 26, letterSpacing: -0.2 },
+  display: { fontFamily: FontFamily.extrabold, fontSize: 44, lineHeight: 48, letterSpacing: -1.6 },
+  title: { fontFamily: FontFamily.extrabold, fontSize: 28, lineHeight: 34, letterSpacing: -0.8 },
+  heading: { fontFamily: FontFamily.semibold, fontSize: 20, lineHeight: 26, letterSpacing: -0.3 },
   body: { fontFamily: FontFamily.regular, fontSize: 16, lineHeight: 24 },
   small: { fontFamily: FontFamily.regular, fontSize: 14, lineHeight: 20 },
-  micro: { fontFamily: FontFamily.monoMedium, fontSize: 12, lineHeight: 16, letterSpacing: 0.6, textTransform: 'uppercase' },
+  micro: { fontFamily: FontFamily.monoMedium, fontSize: 12, lineHeight: 16, letterSpacing: 0.4, textTransform: 'uppercase' },
 } as const;
 
 // 4px base.

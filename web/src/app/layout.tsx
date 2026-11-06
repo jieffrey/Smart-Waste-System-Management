@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
-import { Archivo, IBM_Plex_Mono } from "next/font/google";
+import { JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-// Archivo with its width axis, so display sizes can use the wide cut (see `font-wide` in globals.css).
-const archivo = Archivo({
-  variable: "--font-archivo",
+// Plus Jakarta Sans (Tokotype, made for Jakarta's city identity): every text style. Weights 400/600/800 carry the
+// scale; display sizes get tighter tracking (`tracking-display`, `tracking-heading` in globals.css).
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
-  axes: ["wdth"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
-// IBM Plex Mono for numbers, dates, IDs and coordinates.
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
+// JetBrains Mono for numbers, dates, IDs and coordinates.
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
 });
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${archivo.variable} ${plexMono.variable} h-full antialiased`}>
+    <html lang="en" className={`${jakarta.variable} ${jetbrainsMono.variable} h-full antialiased`}>
       <body className="min-h-full">{children}</body>
     </html>
   );

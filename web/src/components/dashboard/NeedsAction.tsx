@@ -27,7 +27,7 @@ export function NeedsAction({ stats }: { stats: Stats }) {
   return (
     <ColorBlock color="signal" aria-label="Needs action now" className="flex flex-col">
       <p className="text-heading font-semibold">Needs action now</p>
-      <p className="font-wide mt-2 text-display font-extrabold tracking-tight">
+      <p className="tracking-display mt-2 text-display font-extrabold">
         <CountUp value={pending} />
       </p>
       <p className="mt-2 text-heading font-semibold">{pending === 1 ? "report is" : "reports are"} waiting for a crew</p>

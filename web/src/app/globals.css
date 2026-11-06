@@ -47,12 +47,16 @@
   --text-title--line-height: 2.25rem;
   --text-display: 4rem;
   --text-display--line-height: 3.75rem;
+
+  /* Tighter tracking for big Jakarta Sans sizes (body text keeps the default) */
+  --tracking-display: -0.035em;
+  --tracking-heading: -0.02em;
 }
 
 @theme inline {
-  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 
   /* shadcn's semantic colors, pointing at our palette */
   --color-background: var(--background);
@@ -203,17 +207,9 @@
   --chart-segment-line: rgb(18 18 18 / 0.3);
 }
 
-/* Wider Archivo widths for display text (variable font width axis) */
-@utility font-wide {
-  font-stretch: 125%;
-}
-@utility font-semiwide {
-  font-stretch: 112%;
-}
-
 /* The "micro" label style: mono, uppercase, tracked. Used for column headers, field labels, meta. */
 @utility label-micro {
-  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
   font-size: var(--text-micro);
   line-height: var(--text-micro--line-height);
   font-weight: 500;
