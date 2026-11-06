@@ -154,7 +154,7 @@ Railway project "swms"  (region: Southeast Asia / Singapore for both services)
 | Networking | **No** public domain. Private domain `ml.railway.internal` (the service name sets it) |
 | Healthcheck path | `/health` |
 | Restart policy | On failure |
-| Replica limits (Settings → Deploy) | Memory limit about 3× the measured peak RSS ([3.6](#36-measured-ram-image-size-and-monthly-estimate)); 1 vCPU |
+| Replica limits (Settings → Deploy) | **Memory 1 GB, 1 vCPU.** Normal use is ~145 MB, but one maximum-size photo (24 MP) briefly peaks at 660 MB ([3.6](#36-measured-ram-image-size-and-monthly-estimate)) |
 | Variables | see [8.1](#81-env-vars-per-service) (`PORT=8000`, `ML_API_KEY`, ...) |
 
 **`backend`** (`backend/railway.json` committed; Config-as-code path `/backend/railway.json`):
@@ -167,7 +167,7 @@ Railway project "swms"  (region: Southeast Asia / Singapore for both services)
 | Region | Southeast Asia (Singapore) |
 | Networking | **Generate domain** → `https://<backend>.up.railway.app`. This is the URL for Vercel and the APK |
 | Healthcheck path | `/api/health` |
-| Replica limits | Memory 512 MB, 1 vCPU (Node backend is ~100 MB) |
+| Replica limits | Memory 512 MB, 1 vCPU (measured 88 MB after startup) |
 | Variables | see [8.1](#81-env-vars-per-service). The ML URL uses a reference variable: `ML_API_URL=http://${{ml.RAILWAY_PRIVATE_DOMAIN}}:${{ml.PORT}}` |
 
 **Node and Bun:** Railpack picks the Node version from `"engines"` in `backend/package.json` (branch C adds
@@ -225,10 +225,19 @@ egress can't be capped separately, but it's tiny here (JSON plus small uploads; 
 
 ### 3.2 Runtime choice
 
-Both candidates were exported and checked in branch A: **TFLite/LiteRT** (`ai-edge-litert`) and **ONNX**
-(`onnxruntime`). The choice, the reasons and the measured numbers are in [3.6](#36-measured-ram-image-size-and-monthly-estimate)
-and in `ml/README.md`. The export script (`ml/scripts/export_lite.py`) takes any `.keras` model path, so the same
-command exports the Option B model later.
+Both candidates were exported and checked in branch A: **TFLite/LiteRT** (`ai-edge-litert` 2.3) and **ONNX**
+(`onnxruntime` 1.31). **Chosen: ONNX Runtime.**
+- **Parity:** equally perfect for both (numbers in 3.6).
+- **RAM:** LiteRT uses ~30 MB less, about $0.30/month.
+- **Export:** Keras 3.13's built-in ONNX exporter worked first time. LiteRT conversion depends on TensorFlow's
+  `tf.lite` converter, which TF marks deprecated and scheduled for removal. One of its standard routes
+  (`TFLiteConverter.from_concrete_functions`) silently produced a broken 200 KB model that output NaN.
+- **Runtime:** ONNX Runtime is independent of TensorFlow's release cycle, which matters when Option B (or a model
+  from a newer TF) is exported later.
+
+Details are in `ml/README.md`. The export script (`python -m scripts.export_lite --model <file.keras>`) refuses to
+write a model that fails parity. It already works on the Option B model: 8.9 MB `.onnx`, parity PASS. The 23 MB
+of the Option B `.keras` file is mostly optimizer state, which the export drops.
 
 ### 3.3 Container
 
@@ -236,8 +245,10 @@ command exports the Option B model later.
 - `python:3.12-slim` base, installs `requirements-lite.txt`, copies `src/` and the exported model, runs as a
   non-root user;
 - sets `ML_RUNTIME=lite` and `ML_DISABLE_DOCS=1`;
-- starts `uvicorn src.api.main:app --host :: --port ${PORT:-8000}`. That's dual stack, so it works for Railway's
-  private network (IPv4 + IPv6) and its healthcheck, and the port comes from Railway's `PORT`.
+- starts `python -m src.api.serve`, which opens **one dual-stack socket** (IPv4 + IPv6) on `$PORT`.
+  **`uvicorn --host ::` is not enough:** branch A measured that it listens on IPv6 only (asyncio sets
+  `IPV6_V6ONLY`), so IPv4 connections are refused. Railway's private DNS can return IPv4, so the launcher sets
+  `IPV6_V6ONLY=0`. A test checks that both `127.0.0.1` and `::1` connect.
 
 ### 3.4 API key and docs
 
@@ -261,7 +272,30 @@ ML log shows 401. Then change it back.
 
 ### 3.6 Measured RAM, image size and monthly estimate
 
-*Filled in from branch A's measurements; see below.*
+Measured 2026-11-05/06 in Linux containers (`python:3.12-slim`, `node:22-slim`), RSS of the server process:
+
+| | ML `tf` (TensorFlow 2.21) | ML `lite` (ONNX Runtime, **production**) | ML LiteRT (evaluated) | Backend (Node 22) |
+|---|---|---|---|---|
+| RSS after startup | 595 MB | **118 MB** | 98 MB | **88 MB** |
+| RSS after 20 predictions | 708 MB | **143 MB** | 104 MB | — |
+| Peak, one 24 MP upload | — | 660 MB (back to 156 MB after) | — | — |
+| Image size (uncompressed) | 3.14 GB | **444 MB** | 483 MB | Railpack build |
+| Parity vs Keras, 4,661 images | reference | max \|Δp\| **1.5e-5**, **0** label flips | 2.0e-5, 0 flips | — |
+
+**Monthly usage estimate (both services always on).** Rates as reported for Railway: memory ≈ **$10 per GB-month**,
+CPU ≈ **$20 per vCPU-month**, egress ≈ $0.05/GB (*third-party figures: check railway.com/pricing*). Railway bills
+**actual** usage, not the replica limit:
+
+| Item | Lite runtime (planned) | If ML ran TensorFlow |
+|---|---|---|
+| ML RAM | ~0.145 GB → **~$1.45** | ~0.71 GB → ~$7.10 |
+| Backend RAM | ~0.09–0.15 GB → **~$0.90–1.50** | same |
+| CPU (idle most of the time; one prediction is ~0.1 s of one core) | **~$0.20–0.60** | similar |
+| Egress (JSON + uploads; photos are served by Cloudinary) | **< $0.05** | same |
+| **Total usage** | **≈ $2.6–3.6 / month**: inside the **$5 included** in Hobby, so the bill stays at the $5 subscription | ≈ $8.5–9.5 / month: ~$4 over |
+
+The demo seeding and a review week add little: a few hundred predictions. Check the real numbers on the
+Usage page after the first days and adjust the alert and hard limit (2.4).
 
 ---
 
@@ -403,7 +437,7 @@ npx eas-cli@latest build -p android --profile preview
 | | Plan |
 |---|---|
 | Residents | 5 accounts with fixed emails on a non-mailbox domain (`@demo.swms.invalid`-style), Indonesian names. Passwords from `DEMO_RESIDENT_PASSWORD` (never committed). |
-| Photos | **48 committed images** in `backend/scripts/demo/photos/`, 16 per class, from the ML **test split**, resized to ≤1024 px and **EXIF-stripped**, with `ATTRIBUTION.md` (Kaggle *Garbage Classification V2* by sumn2u, version 8, **MIT**). `DEMO_PHOTOS_DIR` optionally overrides the folder. A few are images the model gets wrong, so admin corrections are real. |
+| Photos | **48 committed images** in `backend/scripts/demo/photos/` (1.2 MB in total), 16 per class, resized to ≤1024 px with **no metadata**, and an `ATTRIBUTION.md` (Kaggle *Garbage Classification V2* by sumn2u, version 8, **MIT**, full MIT text). 9 are confirmed Colab test-split images: 6 the current model gets wrong (2 per class, all on reviewed reports, so the corrections are real) and the 3 parity samples. The other 39 come from a local re-run of the split, which can't reproduce the Colab file order, so the attribution marks them. `DEMO_PHOTOS_DIR` optionally overrides the folder. |
 | AI fields | From **calling the ML API** once per photo while seeding (honest predictions). `category` = the AI prediction, or the admin's correction. |
 | Statuses | ~14 `pending`, ~12 `in_progress`, ~15 `completed`, ~7 `rejected`. History rows follow the allowed transitions. |
 | Corrections | ~6 category corrections with an `admin_note`; rejected reports have a reason in the note. |
@@ -459,7 +493,7 @@ npx eas-cli@latest build -p android --profile preview
 | `JWT_EXPIRES_IN` | `24h` | no | |
 | `ML_API_URL` | `http://${{ml.RAILWAY_PRIVATE_DOMAIN}}:${{ml.PORT}}` | no | Reference variable → `http://ml.railway.internal:8000` |
 | `ML_API_KEY` | `${{ml.ML_API_KEY}}` | **yes** | Reference variable, same value as `ml` |
-| `ML_API_TIMEOUT_MS` | `30000` | no | Optional; 1000–40000 allowed (branch C) |
+| `ML_API_TIMEOUT_MS` | `30000` | no | Optional; 100–40000 allowed, the server refuses anything else (branch C) |
 | `TRUST_PROXY` | `1` | no | Verify with [2.3](#23-trust_proxy-and-the-rate-limiters-behind-railways-edge) |
 | `WEB_ORIGIN` | *(empty)* | no | Web calls are server-side |
 | `STORAGE_DRIVER` | `cloudinary` | no | Branch B |
@@ -516,7 +550,8 @@ Before step 1, merge branches A–E to `main` ([section 10](#10-implementation-b
 | Usage above the Hobby $5 | Extra cost | Lite runtime; replica limits; email alert + hard limit (2.4); estimate in 3.6 |
 | Hard limit reached | **Everything goes offline** | Alert well below the hard limit; check the Usage page during review week |
 | Lite model drifts from Keras (e.g. Option B export) | Wrong predictions in production | Export script verifies parity before writing; the parity test runs with `ML_RUNTIME=lite` |
-| Private networking misconfigured (IPv6 / port) | Backend gets 503 "AI service unavailable" | `--host ::`; fixed `PORT=8000`; reference variables; smoke test 4 |
+| Private networking misconfigured (IPv6 / port) | Backend gets 503 "AI service unavailable" | Dual-stack launcher (`src.api.serve`, tested); fixed `PORT=8000`; reference variables; smoke test 4 |
+| A very large photo uses a lot of ML memory | Memory spike to ~660 MB for one 24 MP image | Replica memory limit 1 GB; the mobile app sends ≤ 1600 px, so normal reports stay ~145 MB |
 | `TRUST_PROXY` wrong | Shared lockout or spoofable limiter | Behavioural checks in 2.3 |
 | Web admin logins share Vercel IP buckets | Web login can be blocked for 15 min | Accepted (decision 5), documented |
 | In-memory rate limits reset on redeploy | Weaker limits | One instance; documented in `rate-limit.js` |
