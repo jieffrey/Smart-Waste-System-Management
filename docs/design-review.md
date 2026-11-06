@@ -30,8 +30,8 @@ fixes on `design/polish-mobile`.
 - **The login fact "97.7%" is stale.** The served model is Option B, with 98.29% test accuracy (ml/README.md). A
   reviewer cross-checking will notice. Copy updated to 98.3%.
 - **Web timeline times wrap "WIB" onto a second line** at 1440. Kept on one line.
-- ~~"Reset filters" is light gray and looks disabled.~~ On inspection it *is* disabled when no filter is set,
-  and it turns ink as soon as one is. Correct as is, so not changed.
+- ~~"Reset filters" is light gray and looks disabled.~~ On inspection it *is* disabled when no filter is set
+  (`disabled={!hasActiveFilters(filters)}`), so the gray is honest. Not changed.
 
 ## Result after the fixes
 
