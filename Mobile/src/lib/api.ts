@@ -2,7 +2,8 @@ import { t } from '@/constants/strings';
 import { API_URL } from '@/constants/api';
 import type { ApiErrorBody, FieldError } from '@/types/api';
 
-// Longer than the backend's 30 s ML timeout, so a slow classification still gets its real answer.
+// Longer than the backend's ML timeout (default 30 s, at most 40 s: enforced in backend/src/config/env.js), so a
+// slow classification still gets its real answer. Change both together.
 const REQUEST_TIMEOUT_MS = 45_000;
 
 // Thrown for every failed request. `status` is 0 when the server could not be reached.

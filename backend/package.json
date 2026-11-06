@@ -1,4 +1,7 @@
 {
+  "engines": {
+    "node": ">=22.9"
+  },
   "scripts": {
     "dev": "node --watch --env-file-if-exists=.env src/index.js",
     "start": "node src/index.js",
