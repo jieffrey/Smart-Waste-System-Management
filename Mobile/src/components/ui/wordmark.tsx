@@ -7,10 +7,9 @@ export function Wordmark({ color = Palette.ink, framed = false }: { color?: stri
   return (
     <View style={styles.row} accessible accessibilityLabel="SWMS">
       {(['organic', 'paper', 'plastic'] as const).map((category) => (
-        <View
-          key={category}
-          style={[styles.square, { backgroundColor: CategoryColors[category].fill }, framed && styles.framed]}
-        />
+        <View key={category} style={[styles.square, framed && styles.framed]}>
+          <View style={[styles.fill, { backgroundColor: CategoryColors[category].fill }]} />
+        </View>
       ))}
       <Text style={[styles.word, { color }]}>SWMS</Text>
     </View>
@@ -27,9 +26,15 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
   },
+  fill: {
+    flex: 1,
+  },
+  // On an ink panel: white border + 2px snow gap, so paper (ink) reads as a solid square, not an empty outline.
   framed: {
     borderWidth: 1,
-    borderColor: Palette.snow, // paper (ink) on an ink panel stays visible
+    borderColor: Palette.white,
+    backgroundColor: Palette.snow,
+    padding: 2,
   },
   word: {
     marginLeft: 6,
