@@ -1,7 +1,6 @@
 import { Suspense } from "react";
-import { logout } from "@/actions/auth";
+import { LogoutButton } from "@/components/layout/LogoutButton";
 import { PasswordForm, ProfileForm } from "@/components/settings/SettingsForms";
-import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { formatDateTime } from "@/lib/format";
 import { getCurrentAdmin, getSessionExpiry } from "@/lib/session";
@@ -63,9 +62,9 @@ async function SettingsContent() {
             <dd className="font-mono text-ink">{expiresAt ? `${formatDateTime(expiresAt.toISOString())} WIB` : "Unknown"}</dd>
           </div>
         </dl>
-        <form action={logout} className="mt-6">
-          <Button type="submit">Log out</Button>
-        </form>
+        <div className="mt-6">
+          <LogoutButton />
+        </div>
       </Section>
     </div>
   );

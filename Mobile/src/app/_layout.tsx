@@ -13,10 +13,12 @@ import {
 import { useFonts } from 'expo-font';
 import { DefaultTheme, router, SplashScreen, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useState } from 'react';
 import { Platform } from 'react-native';
 import { PaperProvider, Portal } from 'react-native-paper';
 
 import { Onboarding } from '@/components/onboarding/onboarding';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState, ErrorState } from '@/components/ui/state-view';
 import { paperTheme } from '@/constants/paper-theme';
 import { AppColors } from '@/constants/theme';
@@ -82,6 +84,7 @@ export default function RootLayout() {
 function RootNavigator() {
   const { status, retry, signOut } = useSession();
   const onboarding = useOnboarding();
+  const [confirmingLogOut, setConfirmingLogOut] = useState(false);
 
   if (status === 'loading' || !onboarding.ready) {
     return null; // the splash screen is still visible
@@ -90,11 +93,24 @@ function RootNavigator() {
 
   if (status === 'offline') {
     return (
-      <ErrorState
-        message={t.errors.offlineStartup}
-        onRetry={retry}
-        secondaryAction={{ title: t.account.logOut, onPress: () => signOut() }}
-      />
+      <>
+        <ErrorState
+          message={t.errors.offlineStartup}
+          onRetry={retry}
+          secondaryAction={{ title: t.account.logOut, onPress: () => setConfirmingLogOut(true) }}
+        />
+        <ConfirmDialog
+          visible={confirmingLogOut}
+          title={t.account.logOutTitle}
+          message={t.account.logOutMessage}
+          confirmLabel={t.account.logOut}
+          onDismiss={() => setConfirmingLogOut(false)}
+          onConfirm={() => {
+            setConfirmingLogOut(false);
+            signOut();
+          }}
+        />
+      </>
     );
   }
 

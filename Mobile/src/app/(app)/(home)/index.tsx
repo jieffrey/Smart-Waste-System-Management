@@ -8,6 +8,7 @@ import { ReportListItem } from '@/components/reports/report-list-item';
 import { StatusFilter } from '@/components/reports/status-filter';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
+import { ExitConfirmOnBack } from '@/components/ui/exit-confirm';
 import { FieldMessage } from '@/components/ui/field-message';
 import { fadeIn } from '@/components/ui/motion';
 import { Rule } from '@/components/ui/rule';
@@ -170,6 +171,7 @@ export default function MyReportsScreen() {
       <Rule weight="strong" />
       <StatusFilter value={statusFilter} onChange={changeFilter} />
       {content}
+      <ExitConfirmOnBack />
     </SafeAreaView>
   );
 }
