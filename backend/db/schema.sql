@@ -5,6 +5,7 @@
 -- Apply to a NEW, EMPTY database (it does not drop or change existing tables):
 --   psql "<connection string>" -v ON_ERROR_STOP=1 -f db/schema.sql
 -- Everything runs in one transaction: if any statement fails, nothing is created.
+-- Includes every migration in db/migrations/ (an existing database gets them through those files instead).
 
 BEGIN;
 
@@ -104,5 +105,14 @@ CREATE TABLE report_status_history (
 );
 
 CREATE INDEX report_status_history_report_idx ON report_status_history (report_id, created_at);
+
+-- ─── report_seen (migration 001) ─────────────────────────────────────────────
+-- When the report's owner last opened it. A report "has an update" for its owner when
+-- updated_at > COALESCE(seen_at, created_at).
+
+CREATE TABLE report_seen (
+    report_id  uuid                     PRIMARY KEY REFERENCES waste_reports (id) ON DELETE CASCADE,
+    seen_at    timestamp with time zone NOT NULL DEFAULT now()
+);
 
 COMMIT;

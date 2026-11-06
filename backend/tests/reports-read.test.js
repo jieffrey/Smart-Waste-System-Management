@@ -135,7 +135,7 @@ test('returns an empty list for a user without reports in that status', async ()
   const res = await get('/api/reports/me?status=rejected', otherToken);
 
   assert.equal(res.status, 200);
-  assert.deepEqual(res.body, { reports: [], pagination: { page: 1, limit: 20, total: 0 } });
+  assert.deepEqual(res.body, { reports: [], pagination: { page: 1, limit: 20, total: 0 }, unseen_updates: 0 });
 });
 
 test('rejects a request without a token with 401', async () => {

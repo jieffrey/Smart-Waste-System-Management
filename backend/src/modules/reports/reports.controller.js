@@ -6,8 +6,8 @@ async function createReport(req, res) {
 }
 
 async function listMyReports(req, res) {
-  const { reports, pagination } = await reportsService.listUserReports(req.user.id, req.validatedQuery);
-  res.status(200).json({ reports, pagination });
+  const { reports, pagination, unseen_updates } = await reportsService.listUserReports(req.user.id, req.validatedQuery);
+  res.status(200).json({ reports, pagination, unseen_updates });
 }
 
 async function getReport(req, res) {
