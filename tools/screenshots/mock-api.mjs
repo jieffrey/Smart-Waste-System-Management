@@ -50,13 +50,30 @@ for (let i = 0; i < 46; i++) {
     description: ["Pile of bags next to the bus stop, starting to smell.", "Cardboard boxes dumped behind the market.", "Plastic bottles and cups along the river bank.", "Food waste overflowing from the community bin.", "Old newspapers soaked by the rain on the pavement."][i % 5],
     category, status, image_url: `/uploads/sample-${i % 3}.jpg`,
     latitude: -6.36 - rand() * 0.06, longitude: 106.80 + rand() * 0.06, address: streets[i % streets.length],
-    ai_predicted_category: ai, ai_confidence: Number((0.62 + rand() * 0.37).toFixed(4)), ai_model_version: "swms_mobilenetv2_best",
+    ai_predicted_category: ai, ai_confidence: Number((0.62 + rand() * 0.37).toFixed(4)), ai_model_version: "swms_mobilenetv2_option_b",
     admin_note: status === "rejected" ? "Duplicate of an earlier report at the same spot." : status === "completed" ? "Collected and sorted." : null,
     created_at: new Date(created).toISOString(), updated_at: history.at(-1).created_at,
     reporter_name: reporter.full_name, reporter_email: reporter.email, status_history: history,
   });
 }
 reports.sort((a, b) => b.created_at.localeCompare(a.created_at));
+
+// Newer fields, computed like the backend: "needs review" (AI confidence below 0.70, still pending, category
+// unchanged) and "possible duplicate" (a later open report linked to an earlier one with the same category).
+const REVIEW_THRESHOLD = 0.7;
+const openReports = reports.filter((r) => r.status === "pending");
+if (openReports[1]) openReports[1].ai_confidence = 0.5812; // at least one unsure AI result
+for (const r of reports) {
+  r.needs_review = r.status === "pending" && r.category === r.ai_predicted_category && r.ai_confidence < REVIEW_THRESHOLD;
+  r.possible_duplicate_of = null;
+  r.possible_duplicates = [];
+}
+for (const later of openReports.slice(0, 2)) {
+  const earlier = reports.find((r) => r !== later && (r.status === "pending" || r.status === "in_progress") && r.category === later.category && r.created_at < later.created_at);
+  if (!earlier) continue;
+  later.possible_duplicate_of = earlier.id;
+  earlier.possible_duplicates.push({ id: later.id, status: later.status, created_at: later.created_at });
+}
 
 // The MOBILE app (citizen) is photographed as one regular user with their own reports, in Indonesian, with
 // full reverse-geocoded addresses like a phone produces. Copies, so the admin fixtures above don't change.
@@ -100,7 +117,8 @@ function stats() {
   const reviewed = reports.filter((r) => r.status === "in_progress" || r.status === "completed");
   const matching = reviewed.filter((r) => r.category === r.ai_predicted_category).length;
   const ai_flow = CATEGORIES.flatMap((a) => CATEGORIES.map((c) => ({ ai_category: a, category: c, count: reports.filter((r) => r.ai_predicted_category === a && r.category === c).length })));
-  return { totals: { reports: reports.length, by_status, by_category }, reports_per_day, ai_accuracy: { reviewed: reviewed.length, matching, accuracy: reviewed.length ? Number((matching / reviewed.length).toFixed(4)) : null }, ai_flow };
+  const needs_review = { count: reports.filter((r) => r.needs_review).length, threshold: REVIEW_THRESHOLD };
+  return { totals: { reports: reports.length, by_status, by_category }, reports_per_day, ai_accuracy: { reviewed: reviewed.length, matching, accuracy: reviewed.length ? Number((matching / reviewed.length).toFixed(4)) : null }, ai_flow, needs_review };
 }
 
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
@@ -151,9 +169,10 @@ http.createServer((req, res) => {
     if (url.pathname === "/api/admin/stats") return send(res, 200, stats());
     if (url.pathname === "/api/admin/reports") {
       const q = (url.searchParams.get("q") || "").toLowerCase();
-      const list = reports.filter((r) => (!url.searchParams.get("status") || r.status === url.searchParams.get("status")) && (!url.searchParams.get("category") || r.category === url.searchParams.get("category")) && (!q || r.description.toLowerCase().includes(q) || (r.address || "").toLowerCase().includes(q)));
+      const list = reports.filter((r) => (!url.searchParams.get("status") || r.status === url.searchParams.get("status")) && (!url.searchParams.get("category") || r.category === url.searchParams.get("category")) && (!q || r.description.toLowerCase().includes(q) || (r.address || "").toLowerCase().includes(q))
+        && (url.searchParams.get("needs_review") !== "true" || r.needs_review) && (url.searchParams.get("duplicate") !== "true" || r.possible_duplicate_of));
       const { items, pagination } = page(list, url);
-      return send(res, 200, { reports: items.map(({ status_history, ...r }) => r), pagination });
+      return send(res, 200, { reports: items.map(({ status_history, possible_duplicates, ...r }) => r), pagination });
     }
     const one = url.pathname.match(/^\/api\/admin\/reports\/(.+)$/);
     if (one) { const r = reports.find((x) => x.id === one[1]); return r ? send(res, 200, { report: r }) : send(res, 404, { error: { message: "Report not found", details: null } }); }
