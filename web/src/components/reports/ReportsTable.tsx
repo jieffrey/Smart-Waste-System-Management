@@ -17,7 +17,7 @@ function fullLocation(report: AdminReport) {
 // dates in mono. The link sits on the reporter cell and stretches over the whole row.
 export function ReportsTable({ reports, filters }: { reports: AdminReport[]; filters: ReportFilters }) {
   return (
-    <Table className="min-w-[880px]">
+    <Table className="md:min-w-[880px]">
       <TableHeader>
         <TableRow className="hover:bg-transparent">
           <TableHead className="w-14">
@@ -25,10 +25,10 @@ export function ReportsTable({ reports, filters }: { reports: AdminReport[]; fil
           </TableHead>
           <TableHead>Reporter</TableHead>
           <TableHead>Category</TableHead>
-          <TableHead numeric>AI conf.</TableHead>
+          <TableHead numeric className="hidden md:table-cell">AI conf.</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead>Location</TableHead>
-          <TableHead numeric>Created (WIB)</TableHead>
+          <TableHead className="hidden md:table-cell">Location</TableHead>
+          <TableHead numeric className="hidden md:table-cell">Created (WIB)</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -44,21 +44,21 @@ export function ReportsTable({ reports, filters }: { reports: AdminReport[]; fil
               >
                 {report.reporter_name}
               </Link>
-              <p className="font-mono text-micro text-gray-600">{report.reporter_email}</p>
+              <p className="hidden font-mono text-micro text-gray-600 md:block">{report.reporter_email}</p>
             </TableCell>
             <TableCell>
               <CategoryLabel category={report.category} />
             </TableCell>
-            <TableCell numeric>
+            <TableCell numeric className="hidden md:table-cell">
               {report.ai_confidence === null ? <span className="text-gray-500">—</span> : formatPercent(report.ai_confidence)}
             </TableCell>
             <TableCell>
               <StatusMarker status={report.status} />
             </TableCell>
-            <TableCell className="max-w-56 truncate text-gray-700" title={fullLocation(report)}>
+            <TableCell className="hidden md:table-cell max-w-56 truncate text-gray-700" title={fullLocation(report)}>
               {shortLocation(report)}
             </TableCell>
-            <TableCell numeric className="whitespace-nowrap text-gray-700">
+            <TableCell numeric className="hidden md:table-cell whitespace-nowrap text-gray-700">
               {formatDateTime(report.created_at)}
             </TableCell>
           </TableRow>
