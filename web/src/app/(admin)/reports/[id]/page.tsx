@@ -8,6 +8,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { getReport } from "@/lib/admin-data";
 import { ApiError } from "@/lib/api";
 import { parseReportFilters, reportsHref } from "@/lib/report-filters";
+import { cn } from "@/lib/utils";
 import type { AdminReportDetail } from "@/types/api";
 
 type Props = PageProps<"/reports/[id]">;
@@ -27,7 +28,7 @@ async function ReportDetailContent({ params, searchParams }: Props) {
   // The list's filters travel with the link, so "Back to reports" returns to the same filtered page.
   const backHref = reportsHref(parseReportFilters(await searchParams));
   const backLink = (
-    <Link href={backHref} className={`${buttonVariants({ variant: "ghost", size: "sm" })} px-0`}>
+    <Link href={backHref} className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "px-0")}>
       ← Back to reports
     </Link>
   );
@@ -44,7 +45,11 @@ async function ReportDetailContent({ params, searchParams }: Props) {
       return (
         <div className="space-y-6">
           {backLink}
-          <EmptyState title="Report not found" hint="It may have been removed, or the link is wrong." />
+          <EmptyState title="Report not found" hint="It may have been removed, or the link is wrong." size="page">
+            <Link href={backHref} className={buttonVariants()}>
+              Go to all reports
+            </Link>
+          </EmptyState>
         </div>
       );
     }

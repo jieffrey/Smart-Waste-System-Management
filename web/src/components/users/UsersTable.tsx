@@ -16,15 +16,15 @@ function ActiveMarker({ isActive }: { isActive: boolean }) {
 // `currentAdminId` hides the activate/deactivate button on the signed-in admin's own row.
 export function UsersTable({ users, currentAdminId }: { users: AdminUser[]; currentAdminId: string | null }) {
   return (
-    <Table className="min-w-[820px]">
+    <Table className="md:min-w-[820px]">
       <TableHeader>
         <TableRow className="hover:bg-transparent">
           <TableHead>Name</TableHead>
-          <TableHead>Email</TableHead>
-          <TableHead>Role</TableHead>
+          <TableHead className="hidden md:table-cell">Email</TableHead>
+          <TableHead className="hidden md:table-cell">Role</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead numeric>Reports</TableHead>
-          <TableHead numeric>Joined (WIB)</TableHead>
+          <TableHead numeric className="hidden md:table-cell">Reports</TableHead>
+          <TableHead numeric className="hidden md:table-cell">Joined (WIB)</TableHead>
           <TableHead>
             <span className="sr-only">Actions</span>
           </TableHead>
@@ -34,15 +34,15 @@ export function UsersTable({ users, currentAdminId }: { users: AdminUser[]; curr
         {users.map((user) => (
           <TableRow key={user.id}>
             <TableCell className="font-semibold text-ink">{user.full_name}</TableCell>
-            <TableCell className="font-mono text-micro text-gray-700">{user.email}</TableCell>
-            <TableCell>
+            <TableCell className="hidden md:table-cell font-mono text-micro text-gray-700">{user.email}</TableCell>
+            <TableCell className="hidden md:table-cell">
               {user.role === "admin" ? <span className="label-micro bg-ink px-1.5 py-0.5 text-snow">Admin</span> : "User"}
             </TableCell>
             <TableCell>
               <ActiveMarker isActive={user.is_active} />
             </TableCell>
-            <TableCell numeric>{user.report_count}</TableCell>
-            <TableCell numeric className="whitespace-nowrap text-gray-700">
+            <TableCell numeric className="hidden md:table-cell">{user.report_count}</TableCell>
+            <TableCell numeric className="hidden md:table-cell whitespace-nowrap text-gray-700">
               {formatDate(user.created_at)}
             </TableCell>
             <TableCell className="text-right">

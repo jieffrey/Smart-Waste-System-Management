@@ -1,10 +1,24 @@
+import { cn } from "@/lib/utils";
+
 // "Nothing here" message: a rule above, a short headline and an optional hint. No box, no illustration.
-export function EmptyState({ title, hint, children }: { title: string; hint?: string; children?: React.ReactNode }) {
+// size="page" is for when the whole page is the empty state (e.g. a report that doesn't exist).
+export function EmptyState({
+  title,
+  hint,
+  size = "section",
+  children,
+}: {
+  title: string;
+  hint?: string;
+  size?: "section" | "page";
+  children?: React.ReactNode;
+}) {
+  const page = size === "page";
   return (
-    <div className="border-t border-ink py-12">
-      <p className="text-heading font-semibold text-ink">{title}</p>
-      {hint && <p className="mt-1 text-small text-gray-600">{hint}</p>}
-      {children && <div className="mt-4">{children}</div>}
+    <div className={cn("border-t border-ink", page ? "py-16" : "py-12")}>
+      <p className={cn("font-semibold text-ink", page ? "font-semiwide text-title tracking-tight" : "text-heading")}>{title}</p>
+      {hint && <p className={cn("mt-1 text-gray-600", page ? "text-body" : "text-small")}>{hint}</p>}
+      {children && <div className={page ? "mt-6" : "mt-4"}>{children}</div>}
     </div>
   );
 }
