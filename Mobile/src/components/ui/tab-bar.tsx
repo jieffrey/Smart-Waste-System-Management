@@ -18,14 +18,16 @@ const TABS: Record<string, { label: string; icon: IconName; iconActive: IconName
 };
 
 const ROW_PADDING = 4;
+const ICON_SIZE = 24;
+const ANCHOR_ICON_SIZE = 28;
 const INDICATOR_INSET = 6;
 const SLIDE = { duration: 260, easing: Easing.bezier(0.2, 0, 0, 1) };
 
 type Slot = { x: number; width: number };
 
-// Floating glass tab bar: rounded, inset from the screen edges, content scrolls behind it. A yellow-punk pill
-// slides behind the active tab. "Lapor" stays the visual anchor (a red-orange pill), but the active state is
-// always the yellow pill, so orange is not the only color in the bar.
+// Floating glass tab bar: rounded, inset from the screen edges, content scrolls behind it. Every tab has the same
+// active state: a yellow-punk pill slides behind it and its icon and label turn ink. "Lapor" stays the visual
+// anchor only through a slightly wider slot and a larger camera icon, never a colored block of its own.
 // Rendered through Paper's Portal so that, on Android, it sits outside the BlurTargetView it blurs.
 // `badges`: a count per tab (e.g. reports with news), drawn as an ink dot with a yellow number on the icon.
 export function TabBar({
@@ -79,16 +81,20 @@ export function TabBar({
                   }}
                   style={({ pressed }) => [styles.item, tab.anchor && styles.anchorSlot, pressed && styles.pressed]}>
                   {({ pressed }) => (
-                    <View style={[styles.content, tab.anchor && styles.anchor, tab.anchor && pressed && styles.anchorPressed]}>
+                    <View style={[styles.content, pressed && !focused && styles.contentPressed]}>
                       <View>
-                        <MaterialCommunityIcons name={focused ? tab.iconActive : tab.icon} size={24} color={focused || tab.anchor ? Palette.ink : Palette.gray700} />
+                        <MaterialCommunityIcons
+                          name={focused ? tab.iconActive : tab.icon}
+                          size={tab.anchor ? ANCHOR_ICON_SIZE : ICON_SIZE}
+                          color={focused ? Palette.ink : Palette.gray700}
+                        />
                         {badge > 0 ? (
                           <View style={styles.badge}>
                             <Text style={styles.badgeText}>{badge > 9 ? '9+' : badge}</Text>
                           </View>
                         ) : null}
                       </View>
-                      <Text style={[styles.label, focused || tab.anchor ? styles.labelStrong : styles.labelIdle]}>{tab.label}</Text>
+                      <Text style={[styles.label, focused ? styles.labelStrong : styles.labelIdle]}>{tab.label}</Text>
                     </View>
                   )}
                 </Pressable>
@@ -152,12 +158,9 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 999,
   },
-  anchor: {
-    backgroundColor: Palette.signal, // ink icon + label on red orange: 5.57:1
-    paddingHorizontal: 20,
-  },
-  anchorPressed: {
-    backgroundColor: '#E8411A',
+  // Pressing an inactive tab: a faint ink wash, so the press shows without looking like the active pill.
+  contentPressed: {
+    backgroundColor: 'rgba(18, 18, 18, 0.06)',
   },
   label: {
     fontFamily: FontFamily.semibold,
