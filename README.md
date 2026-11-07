@@ -21,7 +21,7 @@ person who reported them.
 | 7 | Dataset beserta sumbernya | Kaggle [Garbage Classification V2](https://www.kaggle.com/datasets/sumn2u/garbage-classification-v2) by sumn2u (MIT); how it was split and used: [ML Development Process §1](ml/README.md#1-problem--dataset). The full image set isn't committed; 3 test samples are in [`ml/tests/samples/`](ml/tests/samples/) and 48 demo photos in [`backend/scripts/demo/photos/`](backend/scripts/demo/photos/ATTRIBUTION.md) |
 | 8 | Hasil evaluasi model | [`ml/results/`](ml/results/) (metrics, figures, [Option B](ml/results/option_b/)) and the [ML Development Process](ml/README.md#ml-development-process); summary in [ML summary](#ml-summary) |
 | 9 | README berisi panduan instalasi dan penggunaan | This README: [Run locally](#run-locally), [Features](#features), [Live demo](#live-demo); per app: [backend](backend/README.md), [web](web/README.md), [mobile](Mobile/README.md), [ML](ml/README.md) |
-| 10 | Video demo maksimal 10 menit yang menjelaskan hasil pengerjaan | TODO: video link |
+| 10 | Video demo maksimal 10 menit yang menjelaskan hasil pengerjaan | https://drive.google.com/file/d/1JzxsbSrcuYpnuRad-O42qt665VdttJKg/view?usp=sharing |
 
 ## Live demo
 
